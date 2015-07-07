@@ -58,7 +58,7 @@ def main():
     loop = asyncio.get_event_loop()
 
     c = Crawler(loop)
-    loop.run_until_complete(c.run('http://honeynet.org'))
+    loop.run_until_complete(c.run('http://page_name'))
 
 
 if __name__ == '__main__':
