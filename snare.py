@@ -16,35 +16,70 @@ GNU General Public License for more details.
 
 import os
 import sys
+import argparse
+import mimetypes
 
 import asyncio
-from aiohttp import web
+from urllib.parse import urlparse, unquote
+import aiohttp
+from aiohttp.web import StaticRoute
+
+from bs4 import BeautifulSoup
 
 import redis
 
 
-@asyncio.coroutine
-def handle(request):
-    print(dir(request))
-    path = request.match_info.get('path', '/')
-    return web.Response(body=path.encode('utf-8'))
+class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
+
+    def __init__(self, run_args, debug=True, keep_alive=75, **kwargs):
+        print(run_args)
+        self.run_args = run_args
+        self.sroute = StaticRoute(
+            name=None, prefix='/',
+            directory='/opt/snare/pages/{}'.format(run_args.page_dir)
+        )
+        super().__init__(debug=debug, keep_alive=keep_alive, **kwargs)
+
+    @asyncio.coroutine
+    def handle_request(self, message, payload):
+        response = aiohttp.Response(
+            self.writer, 200, http_version=message.version
+        )
+        base_path = '/'.join(['/opt/snare/pages', self.run_args.page_dir])
+        parsed_url = urlparse(unquote(message.path))
+        path = '/'.join(
+            [base_path, parsed_url.path[1:]]
+        )
+        path = os.path.normpath(path)
+        if os.path.isfile(path) and path.startswith(base_path):
+            with open(path, 'rb') as fh:
+                content = fh.read()
+            content_type = mimetypes.guess_type(path)[0]
+            if content_type:
+                if 'text/html' in content_type:
+                    print(content_type)
+                    soup = BeautifulSoup(content, 'html.parser')
+                    for p_elem in soup.find_all('p'):
+                        text_list = p_elem.text.split()
+                        for idx, word in enumerate(text_list):
+                            if idx % 5 == 0:
+                                text_list[idx] = '<a href="#">{0}</a>'.format(word)
+                        p_new = soup.new_tag('p')
+                        p_new.string = soup.new_string(' '.join(text_list))
+                        p_elem.replace_with(p_new)
+                    content = str(soup).encode('utf-8')
+                    # print(repr(content))
+                response.add_header('Content-Type', content_type)
+            response.add_header('Content-Length', str(len(content)))
+            response.send_headers()
+            response.write(content)
+        else:
+            response.status = 404
+            response.send_headers()
+        yield from response.write_eof()
 
 
-@asyncio.coroutine
-def init(inner_loop, page_name):
-    app = web.Application(loop=inner_loop)
-    app.router.add_static('/', path='/opt/snare/pages/{}'.format(page_name))
-    app.router.add_route('*', '/{path:.*}', handle)
-
-    srv = yield from loop.create_server(
-        app.make_handler(),
-        '127.0.0.1', 8080
-    )
-    print("Server started at http://127.0.0.1:8080")
-    return srv
-
-
-if __name__ == '__main__':
+def snare_setup():
     if os.getuid() != 0:
         print('Snare has to be started as root!')
         sys.exit(1)
@@ -52,10 +87,21 @@ if __name__ == '__main__':
         os.mkdir('/opt/snare')
     if not os.path.exists('/opt/snare/pages'):
         os.mkdir('/opt/snare/pages')
+
+
+if __name__ == '__main__':
+    snare_setup()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--page-dir", help="name of the folder to be served")
+    args = parser.parse_args()
     r = redis.StrictRedis(host='localhost', port=6379, db=0)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(init(loop, 'page_name'))
+    f = loop.create_server(
+        lambda: HttpRequestHandler(args, debug=True, keep_alive=75),
+        '0.0.0.0', '8080')
+    srv = loop.run_until_complete(f)
+    print('serving on', srv.sockets[0].getsockname())
     try:
         loop.run_forever()
     except KeyboardInterrupt:
-        print('Bye\n')
+        pass
