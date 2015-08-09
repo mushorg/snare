@@ -26,7 +26,7 @@ from aiohttp.web import StaticRoute
 
 from bs4 import BeautifulSoup
 
-import redis
+import aioredis
 
 
 class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
@@ -61,11 +61,19 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     soup = BeautifulSoup(content, 'html.parser')
                     for p_elem in soup.find_all('p'):
                         text_list = p_elem.text.split()
+                        p_new = soup.new_tag('p', style='color:#000000')
                         for idx, word in enumerate(text_list):
+                            word += ' '
                             if idx % 5 == 0:
-                                text_list[idx] = '<a href="#">{0}</a>'.format(word)
-                        p_new = soup.new_tag('p')
-                        p_new.string = soup.new_string(' '.join(text_list))
+                                a_tag = soup.new_tag(
+                                    'a',
+                                    href='http://foo.com',
+                                    style='color:#000000;text-decoration:none;cursor:text;'
+                                )
+                                a_tag.string = word
+                                p_new.append(a_tag)
+                            else:
+                                p_new.append(soup.new_string(word))
                         p_elem.replace_with(p_new)
                     content = str(soup).encode('utf-8')
                     # print(repr(content))
@@ -94,8 +102,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--page-dir", help="name of the folder to be served")
     args = parser.parse_args()
-    r = redis.StrictRedis(host='localhost', port=6379, db=0)
     loop = asyncio.get_event_loop()
+    redis_conn = aioredis.create_connection(('localhost', 6379), loop=loop)
     f = loop.create_server(
         lambda: HttpRequestHandler(args, debug=True, keep_alive=75),
         '0.0.0.0', '8080')
