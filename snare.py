@@ -18,6 +18,7 @@ import os
 import sys
 import argparse
 import mimetypes
+import json
 
 import asyncio
 from urllib.parse import urlparse, unquote
@@ -41,12 +42,21 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         super().__init__(debug=debug, keep_alive=keep_alive, **kwargs)
 
     @asyncio.coroutine
-    def handle_request(self, message, payload):
+    def handle_request(self, request, payload):
+        header = {key: value for (key, value) in request.headers.items()}
+        data = dict(
+            method=request.method,
+            path=request.path,
+            headers=header
+        )
+        r = yield from aiohttp.post('http://localhost:8090/event', data=json.dumps(data))
+        ret = yield from r.text()
+        print(ret)
         response = aiohttp.Response(
-            self.writer, 200, http_version=message.version
+            self.writer, 200, http_version=request.version
         )
         base_path = '/'.join(['/opt/snare/pages', self.run_args.page_dir])
-        parsed_url = urlparse(unquote(message.path))
+        parsed_url = urlparse(unquote(request.path))
         path = '/'.join(
             [base_path, parsed_url.path[1:]]
         )
