@@ -31,7 +31,11 @@ class Cloner(object):
 
     @asyncio.coroutine
     def get_body(self, root_url):
-        domain = root_url.rstrip('/').rsplit('/', 1)[1]
+        if '/' in root_url:
+            domain = root_url.rstrip('/').rsplit('/', 1)[1]
+        else:
+            domain = root_url
+            root_url = 'http://' + root_url
         if len(domain) < 4:
             sys.exit('invalid taget {}'.format(root_url))
         page_path = '/opt/snare/pages/{}'.format(domain)
@@ -70,6 +74,9 @@ class Cloner(object):
 
 
 def main():
+    if os.getuid() != 0:
+        print('Clone has to be run as root!')
+        sys.exit(1)
     loop = asyncio.get_event_loop()
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", help="domain of the page to be cloned", required=True)

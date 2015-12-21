@@ -1,3 +1,2 @@
 aiohttp
 beautifulsoup4
-aioredis

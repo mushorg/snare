@@ -19,21 +19,28 @@ import sys
 import argparse
 import mimetypes
 import json
-
 import asyncio
+import pwd
+import grp
 from urllib.parse import urlparse, unquote
+
 import aiohttp
 from aiohttp.web import StaticRoute
 
 from bs4 import BeautifulSoup
 
-import aioredis
-
 
 class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
+    @asyncio.coroutine
+    def get_dorks(self):
+        r = yield from aiohttp.get('http://{0}:8090/event'.format(self.run_args.tanner))
+        dorks = yield from r.json()
+        return dorks['response']['dorks']
+
     def __init__(self, run_args, debug=True, keep_alive=75, **kwargs):
         print(run_args)
+        self.dorks = []
         self.run_args = run_args
         self.sroute = StaticRoute(
             name=None, prefix='/',
@@ -43,58 +50,67 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
     @asyncio.coroutine
     def handle_request(self, request, payload):
-        print('handling')
         header = {key: value for (key, value) in request.headers.items()}
         data = dict(
             method=request.method,
             path=request.path,
             headers=header
         )
-        r = yield from aiohttp.post('http://localhost:8090/event', data=json.dumps(data))
-        ret = yield from r.json()
-        print(ret)
+        r = yield from aiohttp.post('http://{0}:8090/event'.format(self.run_args.tanner), data=json.dumps(data))
+        event_result = yield from r.json()
         response = aiohttp.Response(
             self.writer, 200, http_version=request.version
         )
-        base_path = '/'.join(['/opt/snare/pages', self.run_args.page_dir])
-        parsed_url = urlparse(unquote(request.path))
-        path = '/'.join(
-            [base_path, parsed_url.path[1:]]
-        )
-        path = os.path.normpath(path)
-        if os.path.isfile(path) and path.startswith(base_path):
-            with open(path, 'rb') as fh:
-                content = fh.read()
-            content_type = mimetypes.guess_type(path)[0]
-            if content_type:
-                if 'text/html' in content_type:
-                    print(content_type)
-                    soup = BeautifulSoup(content, 'html.parser')
-                    for p_elem in soup.find_all('p'):
-                        text_list = p_elem.text.split()
-                        p_new = soup.new_tag('p', style='color:#000000')
-                        for idx, word in enumerate(text_list):
-                            word += ' '
-                            if idx % 5 == 0:
-                                a_tag = soup.new_tag(
-                                    'a',
-                                    href='http://foo.com',
-                                    style='color:#000000;text-decoration:none;cursor:text;'
-                                )
-                                a_tag.string = word
-                                p_new.append(a_tag)
-                            else:
-                                p_new.append(soup.new_string(word))
-                        p_elem.replace_with(p_new)
-                    content = str(soup).encode('utf-8')
-                    # print(repr(content))
-                response.add_header('Content-Type', content_type)
-            response.add_header('Content-Length', str(len(content)))
-            response.send_headers()
-            response.write(content)
+        if 'payload' in event_result['response']['detection']:
+            content = event_result['response']['detection']['payload']
+            content_type = mimetypes.guess_type(content)[0]
+            print('fooo {}'.format(content_type))
         else:
-            response.status = 404
-            response.send_headers()
+            base_path = '/'.join(['/opt/snare/pages', self.run_args.page_dir])
+            parsed_url = urlparse(unquote(request.path))
+            path = '/'.join(
+                [base_path, parsed_url.path[1:]]
+            )
+            path = os.path.normpath(path)
+            if os.path.isfile(path) and path.startswith(base_path):
+                with open(path, 'rb') as fh:
+                    content = fh.read()
+                content_type = mimetypes.guess_type(path)[0]
+                if content_type:
+                    if 'text/html' in content_type:
+                        print(content_type)
+                        soup = BeautifulSoup(content, 'html.parser')
+                        for p_elem in soup.find_all('p'):
+                            text_list = p_elem.text.split()
+                            p_new = soup.new_tag('p', style='color:#000000')
+                            for idx, word in enumerate(text_list):
+                                if len(self.dorks) <= 0:
+                                    self.dorks = yield from self.get_dorks()
+                                word += ' '
+                                if idx % 5 == 0:
+                                    a_tag = soup.new_tag(
+                                        'a',
+                                        href=self.dorks.pop(),
+                                        style='color:#000000;text-decoration:none;cursor:text;'
+                                    )
+                                    a_tag.string = word
+                                    p_new.append(a_tag)
+                                else:
+                                    p_new.append(soup.new_string(word))
+                            p_elem.replace_with(p_new)
+                        content = soup
+                        # print(repr(content))
+            else:
+                content_type = None
+                content = None
+                response.status = 404
+        if not content_type:
+            response.add_header('Content-Type', 'text/plain')
+        if content:
+            response.add_header('Content-Length', str(len(content)))
+        response.send_headers()
+        if content:
+            response.write(str(content).encode('utf-8'))
         yield from response.write_eof()
 
 
@@ -108,18 +124,34 @@ def snare_setup():
         os.mkdir('/opt/snare/pages')
 
 
+def drop_privileges():
+    uid_name = 'nobody'
+    wanted_user = pwd.getpwnam(uid_name)
+    gid_name = grp.getgrgid(wanted_user.pw_gid).gr_name
+    wanted_group = grp.getgrnam(gid_name)
+    os.setgid(wanted_group.gr_gid)
+    os.setuid(wanted_user.pw_uid)
+    new_user = pwd.getpwuid(os.getuid())
+    new_group = grp.getgrgid(os.getgid())
+    print('Privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name))
+
+
 if __name__ == '__main__':
     snare_setup()
+    loop = asyncio.get_event_loop()
     parser = argparse.ArgumentParser()
     parser.add_argument("--page-dir", help="name of the folder to be served", required=True)
+    parser.add_argument("--port", help="port to listen on", default='8080')
+    parser.add_argument("--interface", help="interface to bind to", default='localhost')
+    parser.add_argument("--debug", help="run web server in debug mode", default=False)
+    parser.add_argument("--tanner", help="ip of the tanner service", default='localhost')
     args = parser.parse_args()
-    loop = asyncio.get_event_loop()
-    # redis_conn = aioredis.create_connection(('localhost', 6379), loop=loop)
     f = loop.create_server(
-        lambda: HttpRequestHandler(args, debug=True, keep_alive=75),
-        '0.0.0.0', '8080')
+        lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
+        args.interface, args.port)
     srv = loop.run_until_complete(f)
     print('serving on', srv.sockets[0].getsockname())
+    drop_privileges()
     try:
         loop.run_forever()
     except KeyboardInterrupt:
