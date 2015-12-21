@@ -16,23 +16,24 @@ GNU General Public License for more details.
 
 import re
 import os
-
+import sys
 
 from urllib.parse import urlparse
 
 import asyncio
-
+import argparse
 import aiohttp
 
 
-class Crawler:
-
+class Cloner(object):
     def __init__(self, loop):
         self.connector = aiohttp.TCPConnector(share_cookies=True, loop=loop)
 
     @asyncio.coroutine
     def get_body(self, root_url):
-        domain = root_url.rsplit('/', 1)[1]
+        domain = root_url.rstrip('/').rsplit('/', 1)[1]
+        if len(domain) < 4:
+            sys.exit('invalid taget {}'.format(root_url))
         page_path = '/opt/snare/pages/{}'.format(domain)
         if not os.path.exists(page_path):
             os.mkdir(page_path)
@@ -70,9 +71,11 @@ class Crawler:
 
 def main():
     loop = asyncio.get_event_loop()
-
-    c = Crawler(loop)
-    loop.run_until_complete(c.run('http://page_name'))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--target", help="domain of the page to be cloned", required=True)
+    args = parser.parse_args()
+    c = Cloner(loop)
+    loop.run_until_complete(c.run(args.target))
 
 
 if __name__ == '__main__':
