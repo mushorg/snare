@@ -43,6 +43,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
     @asyncio.coroutine
     def handle_request(self, request, payload):
+        print('handling')
         header = {key: value for (key, value) in request.headers.items()}
         data = dict(
             method=request.method,
@@ -50,7 +51,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             headers=header
         )
         r = yield from aiohttp.post('http://localhost:8090/event', data=json.dumps(data))
-        ret = yield from r.text()
+        ret = yield from r.json()
         print(ret)
         response = aiohttp.Response(
             self.writer, 200, http_version=request.version
@@ -110,10 +111,10 @@ def snare_setup():
 if __name__ == '__main__':
     snare_setup()
     parser = argparse.ArgumentParser()
-    parser.add_argument("--page-dir", help="name of the folder to be served")
+    parser.add_argument("--page-dir", help="name of the folder to be served", required=True)
     args = parser.parse_args()
     loop = asyncio.get_event_loop()
-    redis_conn = aioredis.create_connection(('localhost', 6379), loop=loop)
+    # redis_conn = aioredis.create_connection(('localhost', 6379), loop=loop)
     f = loop.create_server(
         lambda: HttpRequestHandler(args, debug=True, keep_alive=75),
         '0.0.0.0', '8080')
