@@ -34,12 +34,11 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
     @asyncio.coroutine
     def get_dorks(self):
-        r = yield from aiohttp.get('http://{0}:8090/event'.format(self.run_args.tanner))
+        r = yield from aiohttp.get('http://{0}:8090/dorks'.format(self.run_args.tanner))
         dorks = yield from r.json()
         return dorks['response']['dorks']
 
     def __init__(self, run_args, debug=True, keep_alive=75, **kwargs):
-        print(run_args)
         self.dorks = []
         self.run_args = run_args
         self.sroute = StaticRoute(
@@ -50,6 +49,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
     @asyncio.coroutine
     def handle_request(self, request, payload):
+        print(request.path)
         header = {key: value for (key, value) in request.headers.items()}
         data = dict(
             method=request.method,
@@ -58,13 +58,13 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         )
         r = yield from aiohttp.post('http://{0}:8090/event'.format(self.run_args.tanner), data=json.dumps(data))
         event_result = yield from r.json()
+        print(event_result)
         response = aiohttp.Response(
             self.writer, 200, http_version=request.version
         )
         if 'payload' in event_result['response']['detection']:
             content = event_result['response']['detection']['payload']
             content_type = mimetypes.guess_type(content)[0]
-            print('fooo {}'.format(content_type))
         else:
             base_path = '/'.join(['/opt/snare/pages', self.run_args.page_dir])
             parsed_url = urlparse(unquote(request.path))
@@ -78,7 +78,6 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 content_type = mimetypes.guess_type(path)[0]
                 if content_type:
                     if 'text/html' in content_type:
-                        print(content_type)
                         soup = BeautifulSoup(content, 'html.parser')
                         for p_elem in soup.find_all('p'):
                             text_list = p_elem.text.split()
@@ -99,18 +98,20 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                                     p_new.append(soup.new_string(word))
                             p_elem.replace_with(p_new)
                         content = soup
-                        # print(repr(content))
             else:
                 content_type = None
                 content = None
                 response.status = 404
         if not content_type:
             response.add_header('Content-Type', 'text/plain')
+        else:
+            response.add_header('Content-Type', content_type)
         if content:
+            content = str(content).encode('utf-8')
             response.add_header('Content-Length', str(len(content)))
         response.send_headers()
         if content:
-            response.write(str(content).encode('utf-8'))
+            response.write(content)
         yield from response.write_eof()
 
 
@@ -144,7 +145,7 @@ if __name__ == '__main__':
     parser.add_argument("--port", help="port to listen on", default='8080')
     parser.add_argument("--interface", help="interface to bind to", default='localhost')
     parser.add_argument("--debug", help="run web server in debug mode", default=False)
-    parser.add_argument("--tanner", help="ip of the tanner service", default='localhost')
+    parser.add_argument("--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
     args = parser.parse_args()
     f = loop.create_server(
         lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
