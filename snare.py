@@ -48,6 +48,36 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         super().__init__(debug=debug, keep_alive=keep_alive, **kwargs)
 
     @asyncio.coroutine
+    def submit_data(self, data):
+        r = yield from aiohttp.post('http://{0}:8090/event'.format(self.run_args.tanner), data=json.dumps(data))
+        event_result = yield from r.json()
+        return event_result
+
+    @asyncio.coroutine
+    def handle_html_content(self, content):
+        soup = BeautifulSoup(content, 'html.parser')
+        for p_elem in soup.find_all('p'):
+            text_list = p_elem.text.split()
+            p_new = soup.new_tag('p', style='color:#000000')
+            for idx, word in enumerate(text_list):
+                if len(self.dorks) <= 0:
+                    self.dorks = yield from self.get_dorks()
+                word += ' '
+                if idx % 5 == 0:
+                    a_tag = soup.new_tag(
+                        'a',
+                        href=self.dorks.pop(),
+                        style='color:#000000;text-decoration:none;cursor:text;'
+                    )
+                    a_tag.string = word
+                    p_new.append(a_tag)
+                else:
+                    p_new.append(soup.new_string(word))
+            p_elem.replace_with(p_new)
+        content = soup
+        return content
+
+    @asyncio.coroutine
     def handle_request(self, request, payload):
         print(request.path)
         header = {key: value for (key, value) in request.headers.items()}
@@ -56,8 +86,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             path=request.path,
             headers=header
         )
-        r = yield from aiohttp.post('http://{0}:8090/event'.format(self.run_args.tanner), data=json.dumps(data))
-        event_result = yield from r.json()
+        event_result = yield from self.submit_data(data)
         print(event_result)
         response = aiohttp.Response(
             self.writer, 200, http_version=request.version
@@ -67,9 +96,12 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             content_type = mimetypes.guess_type(content)[0]
         else:
             base_path = '/'.join(['/opt/snare/pages', self.run_args.page_dir])
-            parsed_url = urlparse(unquote(request.path))
+            if request.path == '/':
+                parsed_url = self.run_args.index_page
+            else:
+                parsed_url = urlparse(unquote(request.path)).path[1:]
             path = '/'.join(
-                [base_path, parsed_url.path[1:]]
+                [base_path, parsed_url]
             )
             path = os.path.normpath(path)
             if os.path.isfile(path) and path.startswith(base_path):
@@ -78,26 +110,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 content_type = mimetypes.guess_type(path)[0]
                 if content_type:
                     if 'text/html' in content_type:
-                        soup = BeautifulSoup(content, 'html.parser')
-                        for p_elem in soup.find_all('p'):
-                            text_list = p_elem.text.split()
-                            p_new = soup.new_tag('p', style='color:#000000')
-                            for idx, word in enumerate(text_list):
-                                if len(self.dorks) <= 0:
-                                    self.dorks = yield from self.get_dorks()
-                                word += ' '
-                                if idx % 5 == 0:
-                                    a_tag = soup.new_tag(
-                                        'a',
-                                        href=self.dorks.pop(),
-                                        style='color:#000000;text-decoration:none;cursor:text;'
-                                    )
-                                    a_tag.string = word
-                                    p_new.append(a_tag)
-                                else:
-                                    p_new.append(soup.new_string(word))
-                            p_elem.replace_with(p_new)
-                        content = soup
+                        content = yield from self.handle_html_content(content)
             else:
                 content_type = None
                 content = None
@@ -142,6 +155,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     parser = argparse.ArgumentParser()
     parser.add_argument("--page-dir", help="name of the folder to be served", required=True)
+    parser.add_argument("--index-page", help="file name of the index page", default='index.html')
     parser.add_argument("--port", help="port to listen on", default='8080')
     parser.add_argument("--interface", help="interface to bind to", default='localhost')
     parser.add_argument("--debug", help="run web server in debug mode", default=False)
