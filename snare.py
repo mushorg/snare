@@ -20,6 +20,7 @@ import argparse
 import mimetypes
 import json
 import asyncio
+from asyncio.subprocess import PIPE
 import pwd
 import grp
 from urllib.parse import urlparse, unquote
@@ -150,6 +151,26 @@ def drop_privileges():
     print('Privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name))
 
 
+@asyncio.coroutine
+def compare_version_info():
+
+    @asyncio.coroutine
+    def _run_cmd(cmd):
+        proc = yield from asyncio.create_subprocess_exec(*cmd, stdout=PIPE)
+        line = yield from proc.stdout.readline()
+        return line
+
+    cmd1 = ["git", "log", "--pretty=format:'%h'", "-n", "1"]
+    cmd2 = 'git ls-remote https://github.com/mushorg/snare.git HEAD'.split()
+    line1 = yield from _run_cmd(cmd1)
+    hash1 = line1[1:-1]
+    line2 = yield from _run_cmd(cmd2)
+    if not line2.startswith(hash1):
+        print('you are running an outdated version')
+    else:
+        print('you are running the latest version')
+
+
 if __name__ == '__main__':
     snare_setup()
     loop = asyncio.get_event_loop()
@@ -161,13 +182,14 @@ if __name__ == '__main__':
     parser.add_argument("--debug", help="run web server in debug mode", default=False)
     parser.add_argument("--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
     args = parser.parse_args()
-    f = loop.create_server(
+    future = loop.create_server(
         lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
         args.interface, args.port)
-    srv = loop.run_until_complete(f)
+    srv = loop.run_until_complete(future)
     print('serving on', srv.sockets[0].getsockname())
+    loop.run_until_complete(compare_version_info())
     drop_privileges()
     try:
         loop.run_forever()
-    except KeyboardInterrupt:
-        pass
+    except (KeyboardInterrupt, TypeError) as e:
+        print(e)
