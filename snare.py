@@ -29,17 +29,11 @@ import aiohttp
 from aiohttp.web import StaticRoute
 
 from bs4 import BeautifulSoup
+import cssutils
 
 
 class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
-
-    @asyncio.coroutine
-    def get_dorks(self):
-        r = yield from aiohttp.get('http://{0}:8090/dorks'.format(self.run_args.tanner))
-        dorks = yield from r.json()
-        return dorks['response']['dorks']
-
-    def __init__(self, run_args, debug=True, keep_alive=75, **kwargs):
+    def __init__(self, run_args, debug=False, keep_alive=75, **kwargs):
         self.dorks = []
         self.run_args = run_args
         self.sroute = StaticRoute(
@@ -49,17 +43,32 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         super().__init__(debug=debug, keep_alive=keep_alive, **kwargs)
 
     @asyncio.coroutine
+    def get_dorks(self):
+        with aiohttp.Timeout(10.0):
+            r = yield from aiohttp.get(
+                'http://{0}:8090/dorks'.format(self.run_args.tanner)
+            )
+            dorks = yield from r.json()
+        return dorks['response']['dorks']
+
+    @asyncio.coroutine
     def submit_data(self, data):
-        r = yield from aiohttp.post('http://{0}:8090/event'.format(self.run_args.tanner), data=json.dumps(data))
-        event_result = yield from r.json()
+        with aiohttp.Timeout(4.0):
+            r = yield from aiohttp.post(
+                'http://{0}:8090/event'.format(self.run_args.tanner), data=json.dumps(data)
+            )
+            event_result = yield from r.json()
         return event_result
 
     @asyncio.coroutine
     def handle_html_content(self, content):
         soup = BeautifulSoup(content, 'html.parser')
         for p_elem in soup.find_all('p'):
+            css = None
+            if 'style' in p_elem.attrs:
+                css = cssutils.parseStyle(p_elem.attrs['style'])
             text_list = p_elem.text.split()
-            p_new = soup.new_tag('p', style='color:#000000')
+            p_new = soup.new_tag('p', style=css.cssText if css else None)
             for idx, word in enumerate(text_list):
                 if len(self.dorks) <= 0:
                     self.dorks = yield from self.get_dorks()
@@ -68,7 +77,9 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     a_tag = soup.new_tag(
                         'a',
                         href=self.dorks.pop(),
-                        style='color:#000000;text-decoration:none;cursor:text;'
+                        style='color:{color};text-decoration:none;cursor:text;'.format(
+                            color=css.color if css and 'color' in css.keys() else '#000000'
+                        )
                     )
                     a_tag.string = word
                     p_new.append(a_tag)
@@ -90,7 +101,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         event_result = yield from self.submit_data(data)
         print(event_result)
         response = aiohttp.Response(
-            self.writer, 200, http_version=request.version
+            self.writer, status=200, http_version=request.version
         )
         if 'payload' in event_result['response']['detection']:
             content = event_result['response']['detection']['payload']
@@ -115,7 +126,9 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             else:
                 content_type = None
                 content = None
-                response.status = 404
+                response = aiohttp.Response(
+                    self.writer, status=404, http_version=request.version
+                )
         if not content_type:
             response.add_header('Content-Type', 'text/plain')
         else:
@@ -153,7 +166,6 @@ def drop_privileges():
 
 @asyncio.coroutine
 def compare_version_info():
-
     @asyncio.coroutine
     def _run_cmd(cmd):
         proc = yield from asyncio.create_subprocess_exec(*cmd, stdout=PIPE)
