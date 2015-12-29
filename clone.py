@@ -23,6 +23,7 @@ from urllib.parse import urlparse
 import asyncio
 import argparse
 import aiohttp
+import cssutils
 
 
 class Cloner(object):
@@ -46,27 +47,39 @@ class Cloner(object):
         with open(page_path + '/index.html', 'wb') as index_fh:
             index_fh.write(data)
         urls = re.findall(r'(?i)(href|src)=["\']?([^\s"\'<>]+)', str(data))
+        visited_urls = list()
         for url in urls:
+            urls.remove(url)
             url = url[1]
             parsed_url = urlparse(url)
+            print(parsed_url.path)
             if '/' in parsed_url.path:
                 url_dir, file_name = parsed_url.path.rsplit('/', 1)
                 if not os.path.exists(url_dir):
                     if url_dir.startswith('/'):
                         url_dir = url_dir[1:]
-                    url_dir = os.path.join(page_path, url_dir)
-                    print(url_dir)
+                    local_dir = os.path.join(page_path, url_dir)
                     try:
-                        os.makedirs(url_dir, exist_ok=True)
+                        os.makedirs(local_dir, exist_ok=True)
                     except (FileExistsError, NotADirectoryError):
                         pass
                     try:
-                        with open(os.path.join(url_dir, file_name), 'wb') as fh:
+                        with open(os.path.join(local_dir, file_name), 'wb') as fh:
                             response = yield from aiohttp.request('GET', root_url + parsed_url.path)
                             data = yield from response.read()
                             fh.write(data)
+                            if '.css' in file_name:
+                                css = cssutils.parseString(data)
+                                for carved_url in cssutils.getUrls(css):
+                                    carved_url = os.path.normpath(os.path.join(url_dir, carved_url))
+                                    if not carved_url.startswith('/'):
+                                        carved_url = '/' + carved_url
+                                    if carved_url not in visited_urls:
+                                        urls.insert(0, [None, carved_url])
                     except (IsADirectoryError, NotADirectoryError):
-                        continue
+                        pass
+                    finally:
+                        visited_urls.append(url)
 
     @asyncio.coroutine
     def run(self, url):
