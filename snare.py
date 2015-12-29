@@ -86,7 +86,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 else:
                     p_new.append(soup.new_string(word))
             p_elem.replace_with(p_new)
-        content = soup
+        content = soup.encode('utf-8')
         return content
 
     @asyncio.coroutine
@@ -99,7 +99,6 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             headers=header
         )
         event_result = yield from self.submit_data(data)
-        print(event_result)
         response = aiohttp.Response(
             self.writer, status=200, http_version=request.version
         )
@@ -111,7 +110,9 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             if request.path == '/':
                 parsed_url = self.run_args.index_page
             else:
-                parsed_url = urlparse(unquote(request.path)).path[1:]
+                parsed_url = urlparse(unquote(request.path)).path
+                if parsed_url.startswith('/'):
+                    parsed_url = parsed_url[1:]
             path = '/'.join(
                 [base_path, parsed_url]
             )
@@ -134,7 +135,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         else:
             response.add_header('Content-Type', content_type)
         if content:
-            content = str(content).encode('utf-8')
+            # content = content.encode('utf-8')
             response.add_header('Content-Length', str(len(content)))
         response.send_headers()
         if content:
