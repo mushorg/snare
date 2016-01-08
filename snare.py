@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 """
-Copyright (C) 2015 MushMush Foundation
+Copyright (C) 2015-2016 MushMush Foundation
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -214,7 +214,15 @@ if __name__ == '__main__':
         lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
         args.interface, args.port)
     srv = loop.run_until_complete(future)
-    print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname(), snare_uuid))
+    print("""
+   _____ _   _____    ____  ______
+  / ___// | / /   |  / __ \/ ____/
+  \__ \/  |/ / /| | / /_/ / __/
+ ___/ / /|  / ___ |/ _, _/ /___
+/____/_/ |_/_/  |_/_/ |_/_____/
+
+    """)
+    print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
     if not args.skip_check_version:
         loop.run_until_complete(compare_version_info())
     drop_privileges()
