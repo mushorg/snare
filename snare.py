@@ -176,26 +176,30 @@ def drop_privileges():
     os.setuid(wanted_user.pw_uid)
     new_user = pwd.getpwuid(os.getuid())
     new_group = grp.getgrgid(os.getgid())
-    print('Privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name))
+    print('privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name))
 
 
 @asyncio.coroutine
 def compare_version_info():
     @asyncio.coroutine
     def _run_cmd(cmd):
-        proc = yield from asyncio.create_subprocess_exec(*cmd, stdout=PIPE)
-        line = yield from proc.stdout.readline()
+        proc = yield from asyncio.wait_for(asyncio.create_subprocess_exec(*cmd, stdout=PIPE), 5)
+        line = yield from asyncio.wait_for(proc.stdout.readline(), 10)
         return line
 
     cmd1 = ["git", "log", "--pretty=format:'%h'", "-n", "1"]
     cmd2 = 'git ls-remote https://github.com/mushorg/snare.git HEAD'.split()
     line1 = yield from _run_cmd(cmd1)
     hash1 = line1[1:-1]
-    line2 = yield from _run_cmd(cmd2)
-    if not line2.startswith(hash1):
-        print('you are running an outdated version')
+    try:
+        line2 = yield from _run_cmd(cmd2)
+    except asyncio.TimeoutError:
+        print('timeout fetching the repository version')
     else:
-        print('you are running the latest version')
+        if not line2.startswith(hash1):
+            print('you are running an outdated version')
+        else:
+            print('you are running the latest version: {0}'.format(hash1.decode('utf-8')))
 
 
 if __name__ == '__main__':
@@ -222,10 +226,10 @@ if __name__ == '__main__':
 /____/_/ |_/_/  |_/_/ |_/_____/
 
     """)
-    print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
     if not args.skip_check_version:
         loop.run_until_complete(compare_version_info())
     drop_privileges()
+    print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
     try:
         loop.run_forever()
     except (KeyboardInterrupt, TypeError) as e:
