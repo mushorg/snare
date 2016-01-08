@@ -24,6 +24,7 @@ from asyncio.subprocess import PIPE
 import pwd
 import grp
 from urllib.parse import urlparse, unquote
+import uuid
 
 import aiohttp
 from aiohttp.web import StaticRoute
@@ -53,7 +54,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
     @asyncio.coroutine
     def submit_data(self, data):
-        with aiohttp.Timeout(4.0):
+        with aiohttp.Timeout(10.0):
             r = yield from aiohttp.post(
                 'http://{0}:8090/event'.format(self.run_args.tanner), data=json.dumps(data)
             )
@@ -96,7 +97,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         data = dict(
             method=request.method,
             path=request.path,
-            headers=header
+            headers=header,
+            uuid=snare_uuid.decode('utf-8')
         )
         event_result = yield from self.submit_data(data)
         response = aiohttp.Response(
@@ -151,6 +153,18 @@ def snare_setup():
         os.mkdir('/opt/snare')
     if not os.path.exists('/opt/snare/pages'):
         os.mkdir('/opt/snare/pages')
+    with open('/opt/snare/snare.pid', 'wb') as pid_fh:
+        pid_fh.write(str(os.getpid()).encode('utf-8'))
+    uuid_file_path = '/opt/snare/snare.uuid'
+    if os.path.exists(uuid_file_path):
+        with open(uuid_file_path, 'rb') as uuid_fh:
+            snare_uuid = uuid_fh.read()
+        return snare_uuid
+    else:
+        with open(uuid_file_path, 'wb') as uuid_fh:
+            snare_uuid = str(uuid.uuid4()).encode('utf-8')
+            uuid_fh.write(snare_uuid)
+        return snare_uuid
 
 
 def drop_privileges():
@@ -185,7 +199,7 @@ def compare_version_info():
 
 
 if __name__ == '__main__':
-    snare_setup()
+    snare_uuid = snare_setup()
     loop = asyncio.get_event_loop()
     parser = argparse.ArgumentParser()
     parser.add_argument("--page-dir", help="name of the folder to be served", required=True)
@@ -194,13 +208,15 @@ if __name__ == '__main__':
     parser.add_argument("--interface", help="interface to bind to", default='localhost')
     parser.add_argument("--debug", help="run web server in debug mode", default=False)
     parser.add_argument("--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
+    parser.add_argument("--skip-check-version", help="skip check for update", action='store_true')
     args = parser.parse_args()
     future = loop.create_server(
         lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
         args.interface, args.port)
     srv = loop.run_until_complete(future)
-    print('serving on', srv.sockets[0].getsockname())
-    loop.run_until_complete(compare_version_info())
+    print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname(), snare_uuid))
+    if not args.skip_check_version:
+        loop.run_until_complete(compare_version_info())
     drop_privileges()
     try:
         loop.run_forever()
