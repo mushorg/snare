@@ -215,14 +215,13 @@ if __name__ == '__main__':
     parser.add_argument("--skip-check-version", help="skip check for update", action='store_true')
     args = parser.parse_args()
     if not os.path.exists('/opt/snare/pages/' + args.page_dir):
-     print("--page-dir: " + args.page_dir + " does not exist")
-     exit()
-    else:
-     future = loop.create_server(
-         lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
-         args.interface, args.port)
-     srv = loop.run_until_complete(future)
-     print("""
+        print("--page-dir: {0} does not exist".format(args.page_dir))
+        exit()
+    future = loop.create_server(
+        lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
+        args.interface, args.port)
+    srv = loop.run_until_complete(future)
+    print("""
    _____ _   _____    ____  ______
   / ___// | / /   |  / __ \/ ____/
   \__ \/  |/ / /| | / /_/ / __/
