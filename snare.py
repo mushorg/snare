@@ -214,6 +214,9 @@ if __name__ == '__main__':
     parser.add_argument("--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
     parser.add_argument("--skip-check-version", help="skip check for update", action='store_true')
     args = parser.parse_args()
+    if not os.path.exists('/opt/snare/pages/' + args.page_dir):
+        print("--page-dir: {0} does not exist".format(args.page_dir))
+        exit()
     future = loop.create_server(
         lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
         args.interface, args.port)
