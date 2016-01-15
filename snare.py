@@ -107,6 +107,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         if 'payload' in event_result['response']['detection']:
             content = event_result['response']['detection']['payload']
             content_type = mimetypes.guess_type(content)[0]
+            content = content.encode('utf-8')
         else:
             base_path = '/'.join(['/opt/snare/pages', self.run_args.page_dir])
             if request.path == '/':
