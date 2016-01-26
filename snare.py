@@ -204,24 +204,6 @@ def compare_version_info():
 
 
 if __name__ == '__main__':
-    snare_uuid = snare_setup()
-    loop = asyncio.get_event_loop()
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--page-dir", help="name of the folder to be served", required=True)
-    parser.add_argument("--index-page", help="file name of the index page", default='index.html')
-    parser.add_argument("--port", help="port to listen on", default='8080')
-    parser.add_argument("--interface", help="interface to bind to", default='localhost')
-    parser.add_argument("--debug", help="run web server in debug mode", default=False)
-    parser.add_argument("--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
-    parser.add_argument("--skip-check-version", help="skip check for update", action='store_true')
-    args = parser.parse_args()
-    if not os.path.exists('/opt/snare/pages/' + args.page_dir):
-        print("--page-dir: {0} does not exist".format(args.page_dir))
-        exit()
-    future = loop.create_server(
-        lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
-        args.interface, args.port)
-    srv = loop.run_until_complete(future)
     print("""
    _____ _   _____    ____  ______
   / ___// | / /   |  / __ \/ ____/
@@ -230,6 +212,33 @@ if __name__ == '__main__':
 /____/_/ |_/_/  |_/_/ |_/_____/
 
     """)
+    snare_uuid = snare_setup()
+    loop = asyncio.get_event_loop()
+    parser = argparse.ArgumentParser()
+    page_group = parser.add_mutually_exclusive_group(required=True)
+    page_group.add_argument("--page-dir", help="name of the folder to be served")
+    page_group.add_argument("--list-pages", help="list available pages", action='store_true')
+    parser.add_argument("--index-page", help="file name of the index page", default='index.html')
+    parser.add_argument("--port", help="port to listen on", default='8080')
+    parser.add_argument("--interface", help="interface to bind to", default='localhost')
+    parser.add_argument("--debug", help="run web server in debug mode", default=False)
+    parser.add_argument("--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
+    parser.add_argument("--skip-check-version", help="skip check for update", action='store_true')
+    args = parser.parse_args()
+    if args.list_pages:
+        print('Available pages:\n')
+        for page in os.listdir('/opt/snare/pages/'):
+            print('\t- {}'.format(page))
+        print('\nuse with --page-dir {page_name}\n\n')
+        exit()
+    if not os.path.exists('/opt/snare/pages/' + args.page_dir):
+        print("--page-dir: {0} does not exist".format(args.page_dir))
+        exit()
+    future = loop.create_server(
+        lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
+        args.interface, args.port)
+    srv = loop.run_until_complete(future)
+
     if not args.skip_check_version:
         loop.run_until_complete(compare_version_info())
     drop_privileges()
