@@ -23,11 +23,12 @@ import asyncio
 from asyncio.subprocess import PIPE
 import pwd
 import grp
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse, unquote, parse_qsl
 import uuid
 
 import aiohttp
 from aiohttp.web import StaticRoute
+from aiohttp import MultiDict
 
 from bs4 import BeautifulSoup
 import cssutils
@@ -92,7 +93,13 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
     @asyncio.coroutine
     def handle_request(self, request, payload):
-        print(request.path)
+        print('Request path: {0}'.format(request.path))
+        if request.method == 'POST':
+            data = yield from payload.read()
+            post_data = MultiDict(parse_qsl(data.decode('utf-8')))
+            print('POST data:')
+            for key, val in post_data.items():
+                print('\t- {0}: {1}'.format(key, val))
         header = {key: value for (key, value) in request.headers.items()}
         data = dict(
             method=request.method,
