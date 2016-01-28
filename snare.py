@@ -111,8 +111,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         response = aiohttp.Response(
             self.writer, status=200, http_version=request.version
         )
-        if 'payload' in event_result['response']['detection']:
-            content = event_result['response']['detection']['payload']
+        if 'payload' in event_result['response']['message']['detection']:
+            content = event_result['response']['message']['detection']['payload']
             content_type = mimetypes.guess_type(content)[0]
             content = content.encode('utf-8')
         else:
