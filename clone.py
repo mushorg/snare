@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Copyright (C) 2015 MushMush Foundation
+Copyright (C) 2015-2016 MushMush Foundation
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -90,6 +90,10 @@ def main():
     if os.getuid() != 0:
         print('Clone has to be run as root!')
         sys.exit(1)
+    if not os.path.exists('/opt/snare'):
+        os.mkdir('/opt/snare')
+    if not os.path.exists('/opt/snare/pages'):
+        os.mkdir('/opt/snare/pages')
     loop = asyncio.get_event_loop()
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", help="domain of the page to be cloned", required=True)

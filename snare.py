@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 """
-Copyright (C) 2015 MushMush Foundation
+Copyright (C) 2015-2016 MushMush Foundation
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,10 +23,12 @@ import asyncio
 from asyncio.subprocess import PIPE
 import pwd
 import grp
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse, unquote, parse_qsl
+import uuid
 
 import aiohttp
 from aiohttp.web import StaticRoute
+from aiohttp import MultiDict
 
 from bs4 import BeautifulSoup
 import cssutils
@@ -53,7 +55,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
     @asyncio.coroutine
     def submit_data(self, data):
-        with aiohttp.Timeout(4.0):
+        with aiohttp.Timeout(10.0):
             r = yield from aiohttp.post(
                 'http://{0}:8090/event'.format(self.run_args.tanner), data=json.dumps(data)
             )
@@ -91,20 +93,28 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
     @asyncio.coroutine
     def handle_request(self, request, payload):
-        print(request.path)
+        print('Request path: {0}'.format(request.path))
+        if request.method == 'POST':
+            data = yield from payload.read()
+            post_data = MultiDict(parse_qsl(data.decode('utf-8')))
+            print('POST data:')
+            for key, val in post_data.items():
+                print('\t- {0}: {1}'.format(key, val))
         header = {key: value for (key, value) in request.headers.items()}
         data = dict(
             method=request.method,
             path=request.path,
-            headers=header
+            headers=header,
+            uuid=snare_uuid.decode('utf-8')
         )
         event_result = yield from self.submit_data(data)
         response = aiohttp.Response(
             self.writer, status=200, http_version=request.version
         )
-        if 'payload' in event_result['response']['detection']:
-            content = event_result['response']['detection']['payload']
+        if 'payload' in event_result['response']['message']['detection']:
+            content = event_result['response']['message']['detection']['payload']
             content_type = mimetypes.guess_type(content)[0]
+            content = content.encode('utf-8')
         else:
             base_path = '/'.join(['/opt/snare/pages', self.run_args.page_dir])
             if request.path == '/':
@@ -151,6 +161,18 @@ def snare_setup():
         os.mkdir('/opt/snare')
     if not os.path.exists('/opt/snare/pages'):
         os.mkdir('/opt/snare/pages')
+    with open('/opt/snare/snare.pid', 'wb') as pid_fh:
+        pid_fh.write(str(os.getpid()).encode('utf-8'))
+    uuid_file_path = '/opt/snare/snare.uuid'
+    if os.path.exists(uuid_file_path):
+        with open(uuid_file_path, 'rb') as uuid_fh:
+            snare_uuid = uuid_fh.read()
+        return snare_uuid
+    else:
+        with open(uuid_file_path, 'wb') as uuid_fh:
+            snare_uuid = str(uuid.uuid4()).encode('utf-8')
+            uuid_fh.write(snare_uuid)
+        return snare_uuid
 
 
 def drop_privileges():
@@ -162,46 +184,72 @@ def drop_privileges():
     os.setuid(wanted_user.pw_uid)
     new_user = pwd.getpwuid(os.getuid())
     new_group = grp.getgrgid(os.getgid())
-    print('Privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name))
+    print('privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name))
 
 
 @asyncio.coroutine
 def compare_version_info():
     @asyncio.coroutine
     def _run_cmd(cmd):
-        proc = yield from asyncio.create_subprocess_exec(*cmd, stdout=PIPE)
-        line = yield from proc.stdout.readline()
+        proc = yield from asyncio.wait_for(asyncio.create_subprocess_exec(*cmd, stdout=PIPE), 5)
+        line = yield from asyncio.wait_for(proc.stdout.readline(), 10)
         return line
 
     cmd1 = ["git", "log", "--pretty=format:'%h'", "-n", "1"]
     cmd2 = 'git ls-remote https://github.com/mushorg/snare.git HEAD'.split()
     line1 = yield from _run_cmd(cmd1)
     hash1 = line1[1:-1]
-    line2 = yield from _run_cmd(cmd2)
-    if not line2.startswith(hash1):
-        print('you are running an outdated version')
+    try:
+        line2 = yield from _run_cmd(cmd2)
+    except asyncio.TimeoutError:
+        print('timeout fetching the repository version')
     else:
-        print('you are running the latest version')
+        if not line2.startswith(hash1):
+            print('you are running an outdated version')
+        else:
+            print('you are running the latest version: {0}'.format(hash1.decode('utf-8')))
 
 
 if __name__ == '__main__':
-    snare_setup()
+    print("""
+   _____ _   _____    ____  ______
+  / ___// | / /   |  / __ \/ ____/
+  \__ \/  |/ / /| | / /_/ / __/
+ ___/ / /|  / ___ |/ _, _/ /___
+/____/_/ |_/_/  |_/_/ |_/_____/
+
+    """)
+    snare_uuid = snare_setup()
     loop = asyncio.get_event_loop()
     parser = argparse.ArgumentParser()
-    parser.add_argument("--page-dir", help="name of the folder to be served", required=True)
+    page_group = parser.add_mutually_exclusive_group(required=True)
+    page_group.add_argument("--page-dir", help="name of the folder to be served")
+    page_group.add_argument("--list-pages", help="list available pages", action='store_true')
     parser.add_argument("--index-page", help="file name of the index page", default='index.html')
     parser.add_argument("--port", help="port to listen on", default='8080')
     parser.add_argument("--interface", help="interface to bind to", default='localhost')
     parser.add_argument("--debug", help="run web server in debug mode", default=False)
     parser.add_argument("--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
+    parser.add_argument("--skip-check-version", help="skip check for update", action='store_true')
     args = parser.parse_args()
+    if args.list_pages:
+        print('Available pages:\n')
+        for page in os.listdir('/opt/snare/pages/'):
+            print('\t- {}'.format(page))
+        print('\nuse with --page-dir {page_name}\n\n')
+        exit()
+    if not os.path.exists('/opt/snare/pages/' + args.page_dir):
+        print("--page-dir: {0} does not exist".format(args.page_dir))
+        exit()
     future = loop.create_server(
         lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
         args.interface, args.port)
     srv = loop.run_until_complete(future)
-    print('serving on', srv.sockets[0].getsockname())
-    loop.run_until_complete(compare_version_info())
+
+    if not args.skip_check_version:
+        loop.run_until_complete(compare_version_info())
     drop_privileges()
+    print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
     try:
         loop.run_forever()
     except (KeyboardInterrupt, TypeError) as e:
