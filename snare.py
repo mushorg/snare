@@ -54,6 +54,18 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         return dorks['response']['dorks']
 
     @asyncio.coroutine
+    def submit_slurp(self, data):
+        with aiohttp.Timeout(10.0):
+            r = yield from aiohttp.post(
+                'https://{0}:8080/api?auth={1}&chan=snare_test&msg={2}'.format(
+                    self.run_args.slurp_host, self.run_args.slurp_auth, data
+                ),
+                data=json.dumps(data), connector=aiohttp.TCPConnector(verify_ssl=False)
+            )
+            print(r.status)
+            r.close()
+
+    @asyncio.coroutine
     def submit_data(self, data):
         with aiohttp.Timeout(10.0):
             r = yield from aiohttp.post(
@@ -108,6 +120,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             uuid=snare_uuid.decode('utf-8')
         )
         event_result = yield from self.submit_data(data)
+        if self.run_args.slurp_enabled:
+            yield from self.submit_slurp(request.path)
         response = aiohttp.Response(
             self.writer, status=200, http_version=request.version
         )
@@ -231,6 +245,9 @@ if __name__ == '__main__':
     parser.add_argument("--debug", help="run web server in debug mode", default=False)
     parser.add_argument("--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
     parser.add_argument("--skip-check-version", help="skip check for update", action='store_true')
+    parser.add_argument("--slurp-enabled", help="enable nsq logging", action='store_true')
+    parser.add_argument("--slurp-host", help="nsq logging host", default='slurp.mushmush.org')
+    parser.add_argument("--slurp-auth", help="nsq logging auth", default='slurp')
     args = parser.parse_args()
     if args.list_pages:
         print('Available pages:\n')
