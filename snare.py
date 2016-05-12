@@ -99,6 +99,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             text_list = p_elem.text.split()
             p_new = soup.new_tag('p', style=css.cssText if css else None)
             for idx, word in enumerate(text_list):
+                # Fetch dorks if required
                 if len(self.dorks) <= 0:
                     self.dorks = yield from self.get_dorks()
                 word += ' '
@@ -134,7 +135,9 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             headers=header,
             uuid=snare_uuid.decode('utf-8')
         )
+        # Submit the event to the TANNER service
         event_result = yield from self.submit_data(data)
+        # Log the event to slurp service if enabled
         if self.run_args.slurp_enabled:
             yield from self.submit_slurp(request.path)
         response = aiohttp.Response(
@@ -174,7 +177,6 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         else:
             response.add_header('Content-Type', content_type)
         if content:
-            # content = content.encode('utf-8')
             response.add_header('Content-Length', str(len(content)))
         response.send_headers()
         if content:
@@ -186,12 +188,15 @@ def snare_setup():
     if os.getuid() != 0:
         print('Snare has to be started as root!')
         sys.exit(1)
+    # Create folders
     if not os.path.exists('/opt/snare'):
         os.mkdir('/opt/snare')
     if not os.path.exists('/opt/snare/pages'):
         os.mkdir('/opt/snare/pages')
+    # Write pid to pid file
     with open('/opt/snare/snare.pid', 'wb') as pid_fh:
         pid_fh.write(str(os.getpid()).encode('utf-8'))
+    # Read or create the sensor id
     uuid_file_path = '/opt/snare/snare.uuid'
     if os.path.exists(uuid_file_path):
         with open(uuid_file_path, 'rb') as uuid_fh:
