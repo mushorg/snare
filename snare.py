@@ -46,32 +46,47 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
     @asyncio.coroutine
     def get_dorks(self):
-        with aiohttp.Timeout(10.0):
-            r = yield from aiohttp.get(
-                'http://{0}:8090/dorks'.format(self.run_args.tanner)
-            )
-            dorks = yield from r.json()
-        return dorks['response']['dorks']
+        dorks = None
+        try:
+            with aiohttp.Timeout(10.0):
+                with aiohttp.ClientSession() as session:
+                    r = yield from session.get(
+                        'http://{0}:8090/dorks'.format(self.run_args.tanner)
+                    )
+                    dorks = yield from r.json()
+                    r.close()
+        except:
+            print('Dorks timeout')
+        return dorks['response']['dorks'] if dorks else []
 
     @asyncio.coroutine
     def submit_slurp(self, data):
-        with aiohttp.Timeout(10.0):
-            r = yield from aiohttp.post(
-                'https://{0}:8080/api?auth={1}&chan=snare_test&msg={2}'.format(
-                    self.run_args.slurp_host, self.run_args.slurp_auth, data
-                ),
-                data=json.dumps(data), connector=aiohttp.TCPConnector(verify_ssl=False)
-            )
-            print(r.status)
-            r.close()
+        try:
+            with aiohttp.Timeout(10.0):
+                with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+                    r = yield from session.post(
+                        'https://{0}:8080/api?auth={1}&chan=snare_test&msg={2}'.format(
+                            self.run_args.slurp_host, self.run_args.slurp_auth, data
+                        ), data=json.dumps(data)
+                    )
+                    assert r.status == 200
+                    r.close()
+        except Exception as e:
+            print(e)
 
     @asyncio.coroutine
     def submit_data(self, data):
-        with aiohttp.Timeout(10.0):
-            r = yield from aiohttp.post(
-                'http://{0}:8090/event'.format(self.run_args.tanner), data=json.dumps(data)
-            )
-            event_result = yield from r.json()
+        event_result = None
+        try:
+            with aiohttp.Timeout(10.0):
+                with aiohttp.ClientSession() as session:
+                    r = yield from session.post(
+                        'http://{0}:8090/event'.format(self.run_args.tanner), data=json.dumps(data)
+                    )
+                    event_result = yield from r.json()
+                    r.close()
+        except Exception as e:
+            raise e
         return event_result
 
     @asyncio.coroutine
