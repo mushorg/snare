@@ -129,11 +129,16 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             for key, val in post_data.items():
                 print('\t- {0}: {1}'.format(key, val))
         header = {key: value for (key, value) in request.headers.items()}
+        peer = dict(
+            ip=self.transport.get_extra_info('peername')[0],
+            port=self.transport.get_extra_info('peername')[1]
+        )
         data = dict(
             method=request.method,
             path=request.path,
             headers=header,
-            uuid=snare_uuid.decode('utf-8')
+            uuid=snare_uuid.decode('utf-8'),
+            peer=peer
         )
         # Submit the event to the TANNER service
         event_result = yield from self.submit_data(data)
