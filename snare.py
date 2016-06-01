@@ -25,6 +25,7 @@ import pwd
 import grp
 from urllib.parse import urlparse, unquote, parse_qsl
 import uuid
+import configparser
 
 import aiohttp
 from aiohttp.web import StaticRoute
@@ -201,6 +202,12 @@ def snare_setup():
     # Write pid to pid file
     with open('/opt/snare/snare.pid', 'wb') as pid_fh:
         pid_fh.write(str(os.getpid()).encode('utf-8'))
+
+    # config file
+    cfg_file = os.getcwd() + '/snare.cfg'
+    if not os.path.exists(cfg_file):
+        create_initial_config()
+
     # Read or create the sensor id
     uuid_file_path = '/opt/snare/snare.uuid'
     if os.path.exists(uuid_file_path):
@@ -214,6 +221,13 @@ def snare_setup():
         return snare_uuid
 
 
+def create_initial_config():
+    config = configparser.ConfigParser()
+    config['WEB-TOOLS'] = dict(google='', bing='')
+    with open('snare.cfg', 'w') as configfile:
+        config.write(configfile)
+
+
 def drop_privileges():
     uid_name = 'nobody'
     wanted_user = pwd.getpwnam(uid_name)
@@ -224,6 +238,37 @@ def drop_privileges():
     new_user = pwd.getpwuid(os.getuid())
     new_group = grp.getgrgid(os.getgid())
     print('privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name))
+
+
+def add_meta_tag(page_dir, index_page, snare_config):
+    config = configparser.ConfigParser()
+    config.read(snare_config)
+    google_content = config['WEB-TOOLS']['google']
+    bing_content = config['WEB-TOOLS']['bing']
+
+    if google_content is None and bing_content is None:
+        return
+
+    with open('/opt/snare/pages/' + page_dir + "/" + index_page) as main:
+        main_page = main.read()
+    soup = BeautifulSoup(main_page, 'html.parser')
+
+    if (google_content and
+                soup.find("meta", attrs={"name": "google-site-verification"}) is not None):
+        google_meta = soup.new_tag('meta')
+        google_meta.attrs['name'] = 'google-site-verification'
+        google_meta.attrs['content'] = google_content
+        soup.head.append(google_meta)
+    if (bing_content and
+                soup.find("meta", attrs={"name": "msvalidate.01"}) is None):
+        bing_meta = soup.new_tag('meta')
+        bing_meta.attrs['name'] = 'msvalidate.01'
+        bing_meta.attrs['content'] = bing_content
+        soup.head.append(bing_meta)
+
+    html = soup.prettify("utf-8")
+    with open('/opt/snare/pages/' + page_dir + "/" + index_page, "wb") as file:
+        file.write(html)
 
 
 @asyncio.coroutine
@@ -273,6 +318,7 @@ if __name__ == '__main__':
     parser.add_argument("--slurp-enabled", help="enable nsq logging", action='store_true')
     parser.add_argument("--slurp-host", help="nsq logging host", default='slurp.mushmush.org')
     parser.add_argument("--slurp-auth", help="nsq logging auth", default='slurp')
+    parser.add_argument("--config", help="snare config file", default='snare.cfg')
     args = parser.parse_args()
     if args.list_pages:
         print('Available pages:\n')
@@ -283,11 +329,16 @@ if __name__ == '__main__':
     if not os.path.exists('/opt/snare/pages/' + args.page_dir):
         print("--page-dir: {0} does not exist".format(args.page_dir))
         exit()
+    if not os.path.exists('/opt/snare/pages/' + args.page_dir + "/" + args.index_page):
+        print('can\'t crate meta tag')
+    else:
+        add_meta_tag(args.page_dir, args.index_page, args.config)
+
     future = loop.create_server(
         lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
         args.interface, args.port)
     srv = loop.run_until_complete(future)
-
+    
     if not args.skip_check_version:
         loop.run_until_complete(compare_version_info())
     drop_privileges()
