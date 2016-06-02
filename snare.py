@@ -190,6 +190,12 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         yield from response.write_eof()
 
 
+def create_initial_config():
+    config['WEB-TOOLS'] = dict(google='', bing='')
+    with open('snare.cfg', 'w') as configfile:
+        config.write(configfile)
+
+
 def snare_setup():
     if os.getuid() != 0:
         print('Snare has to be started as root!')
@@ -202,12 +208,9 @@ def snare_setup():
     # Write pid to pid file
     with open('/opt/snare/snare.pid', 'wb') as pid_fh:
         pid_fh.write(str(os.getpid()).encode('utf-8'))
-
-    # config file
-    cfg_file = os.getcwd() + '/snare.cfg'
-    if not os.path.exists(cfg_file):
+    # Config file
+    if not os.path.exists('/opt/snare/snare.cfg'):
         create_initial_config()
-
     # Read or create the sensor id
     uuid_file_path = '/opt/snare/snare.uuid'
     if os.path.exists(uuid_file_path):
@@ -219,13 +222,6 @@ def snare_setup():
             snare_uuid = str(uuid.uuid4()).encode('utf-8')
             uuid_fh.write(snare_uuid)
         return snare_uuid
-
-
-def create_initial_config():
-    config = configparser.ConfigParser()
-    config['WEB-TOOLS'] = dict(google='', bing='')
-    with open('snare.cfg', 'w') as configfile:
-        config.write(configfile)
 
 
 def drop_privileges():
@@ -241,7 +237,6 @@ def drop_privileges():
 
 
 def add_meta_tag(page_dir, index_page, snare_config):
-    config = configparser.ConfigParser()
     config.read(snare_config)
     google_content = config['WEB-TOOLS']['google']
     bing_content = config['WEB-TOOLS']['bing']
@@ -319,6 +314,9 @@ if __name__ == '__main__':
     parser.add_argument("--slurp-host", help="nsq logging host", default='slurp.mushmush.org')
     parser.add_argument("--slurp-auth", help="nsq logging auth", default='slurp')
     parser.add_argument("--config", help="snare config file", default='snare.cfg')
+
+    config = configparser.ConfigParser()
+
     args = parser.parse_args()
     if args.list_pages:
         print('Available pages:\n')
@@ -338,7 +336,7 @@ if __name__ == '__main__':
         lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
         args.interface, args.port)
     srv = loop.run_until_complete(future)
-    
+
     if not args.skip_check_version:
         loop.run_until_complete(compare_version_info())
     drop_privileges()
