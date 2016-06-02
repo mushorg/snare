@@ -191,9 +191,10 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
 
 def create_initial_config():
-    config['WEB-TOOLS'] = dict(google='', bing='')
-    with open('snare.cfg', 'w') as configfile:
-        config.write(configfile)
+    cfg = configparser.ConfigParser()
+    cfg['WEB-TOOLS'] = dict(google='', bing='')
+    with open('/opt/snare/snare.cfg', 'w') as configfile:
+        cfg.write(configfile)
 
 
 def snare_setup():
@@ -236,12 +237,11 @@ def drop_privileges():
     print('privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name))
 
 
-def add_meta_tag(page_dir, index_page, snare_config):
-    config.read(snare_config)
+def add_meta_tag(page_dir, index_page):
     google_content = config['WEB-TOOLS']['google']
     bing_content = config['WEB-TOOLS']['bing']
 
-    if google_content is None and bing_content is None:
+    if not google_content and not bing_content:
         return
 
     with open('/opt/snare/pages/' + page_dir + "/" + index_page) as main:
@@ -249,7 +249,7 @@ def add_meta_tag(page_dir, index_page, snare_config):
     soup = BeautifulSoup(main_page, 'html.parser')
 
     if (google_content and
-                soup.find("meta", attrs={"name": "google-site-verification"}) is not None):
+                soup.find("meta", attrs={"name": "google-site-verification"}) is None):
         google_meta = soup.new_tag('meta')
         google_meta.attrs['name'] = 'google-site-verification'
         google_meta.attrs['content'] = google_content
@@ -314,10 +314,11 @@ if __name__ == '__main__':
     parser.add_argument("--slurp-host", help="nsq logging host", default='slurp.mushmush.org')
     parser.add_argument("--slurp-auth", help="nsq logging auth", default='slurp')
     parser.add_argument("--config", help="snare config file", default='snare.cfg')
+    args = parser.parse_args()
 
     config = configparser.ConfigParser()
+    config.read('/opt/snare/' + args.config)
 
-    args = parser.parse_args()
     if args.list_pages:
         print('Available pages:\n')
         for page in os.listdir('/opt/snare/pages/'):
@@ -330,7 +331,7 @@ if __name__ == '__main__':
     if not os.path.exists('/opt/snare/pages/' + args.page_dir + "/" + args.index_page):
         print('can\'t crate meta tag')
     else:
-        add_meta_tag(args.page_dir, args.index_page, args.config)
+        add_meta_tag(args.page_dir, args.index_page)
 
     future = loop.create_server(
         lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
