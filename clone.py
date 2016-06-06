@@ -32,17 +32,35 @@ class Cloner(object):
         self.connector = aiohttp.TCPConnector(share_cookies=True, loop=loop)
 
     @asyncio.coroutine
-    def get_body(self, root_url):
-        if '/' in root_url:
-            domain = root_url.rstrip('/').rsplit('/', 1)[1]
-        else:
-            domain = root_url
+    def get_body(self, root_url, urls, visited_urls):
+        if not root_url.startswith("http"):
             root_url = 'http://' + root_url
+        parsed_url = urlparse(root_url)
+        if parsed_url.fragment:
+            return
+
+        domain = parsed_url.netloc
+        file_name = parsed_url.path if parsed_url.path[1:] else '/index'
+        if file_name[-1] == '/':
+            file_name = file_name[:-1]
+        if '.' not in file_name:
+            file_name += '.html'
+
+        file_path = ''
+        patt = '/.*/.*\.'
+        if re.match(patt, file_name):
+            file_path, file_name = file_name.rsplit('/', 1)
+        print(file_path, file_name)
+
         if len(domain) < 4:
             sys.exit('invalid taget {}'.format(root_url))
         page_path = '/opt/snare/pages/{}'.format(domain)
         if not os.path.exists(page_path):
             os.mkdir(page_path)
+
+        if file_path and not os.path.exists(page_path + file_path):
+            os.mkdir(page_path + file_path)
+
         data = None
         try:
             with aiohttp.ClientSession() as session:
@@ -52,7 +70,6 @@ class Cloner(object):
         except Exception as e:
             pass
 
-        urls = list()
         if data is not None:
             soup = BeautifulSoup(data, 'html.parser')
             patt = '.*' + domain + '.*'
@@ -62,50 +79,30 @@ class Cloner(object):
                         a['href'] = a['href'][:-1]
                     urls.append(a['href'])
                 new_link = urlparse(a['href']).path
+                if not new_link:
+                    new_link = '/index'
                 a['href'] = new_link + '.html'
-            result = str(soup).encode()
-        with open(page_path + '/index.html', 'wb') as index_fh:
-            index_fh.write(result)
-        #urls = re.findall(r'(?i)(href|src)=["\']?([^\s"\'<>]+)', str(data))
-        visited_urls = list()
+            data = str(soup).encode()
+        with open(page_path + file_path + file_name, 'wb') as index_fh:
+            index_fh.write(data)
+        if '.css' in file_name:
+            css = cssutils.parseString(data)
+            for carved_url in cssutils.getUrls(css):
+                carved_url = os.path.normpath(os.path.join(domain, carved_url))
+                if not carved_url.startswith('/'):
+                    carved_url = '/' + carved_url
+                if carved_url not in visited_urls:
+                    urls.insert(0, carved_url)
+        visited_urls.append(root_url)
         for url in urls:
             urls.remove(url)
-            #url = url[1]
-            parsed_url = urlparse(url)
-            print(parsed_url.path)
-            if '/' in parsed_url.path:
-                url_dir, file_name = parsed_url.path.rsplit('/', 1)
-                if not os.path.exists(url_dir):
-                    if url_dir.startswith('/'):
-                        url_dir = url_dir[1:]
-                    local_dir = os.path.join(page_path, url_dir)
-                    try:
-                        os.makedirs(local_dir, exist_ok=True)
-                    except (FileExistsError, NotADirectoryError):
-                        pass
-                    data = None
-                    try:
-                        with open(os.path.join(local_dir, file_name)+'.html', 'wb') as fh:
-                            with aiohttp.ClientSession() as session:
-                                response = yield from session.get(root_url + parsed_url.path)
-                                data = yield from response.read()
-                            fh.write(data)
-                            if '.css' in file_name:
-                                css = cssutils.parseString(data)
-                                for carved_url in cssutils.getUrls(css):
-                                    carved_url = os.path.normpath(os.path.join(url_dir, carved_url))
-                                    if not carved_url.startswith('/'):
-                                        carved_url = '/' + carved_url
-                                    if carved_url not in visited_urls:
-                                        urls.insert(0, carved_url)
-                    except (IsADirectoryError, NotADirectoryError):
-                        pass
-                    finally:
-                        visited_urls.append(url)
+            if url in visited_urls:
+                continue
+            yield from self.get_body(url, urls, visited_urls)
 
     @asyncio.coroutine
     def run(self, url):
-        return (yield from self.get_body(url))
+        return (yield from self.get_body(url, [], []))
 
 
 def main():
