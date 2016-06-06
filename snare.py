@@ -94,6 +94,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
     def handle_html_content(self, content):
         soup = BeautifulSoup(content, 'html.parser')
         for p_elem in soup.find_all('p'):
+            if p_elem.findChildren():
+                continue
             css = None
             if 'style' in p_elem.attrs:
                 css = cssutils.parseStyle(p_elem.attrs['style'])
