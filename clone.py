@@ -24,6 +24,7 @@ import asyncio
 import argparse
 import aiohttp
 import cssutils
+from bs4 import BeautifulSoup
 
 
 class Cloner(object):
@@ -42,15 +43,34 @@ class Cloner(object):
         page_path = '/opt/snare/pages/{}'.format(domain)
         if not os.path.exists(page_path):
             os.mkdir(page_path)
-        response = yield from aiohttp.request('GET', root_url)
-        data = yield from response.read()
+        data = None
+        try:
+            with aiohttp.ClientSession() as session:
+                response = yield from session.get(root_url)
+                data = yield from response.read()
+                session.close()
+        except Exception as e:
+            pass
+
+        urls = list()
+        if data is not None:
+            soup = BeautifulSoup(data, 'html.parser')
+            patt = '.*' + domain + '.*'
+            for a in soup.findAll('a'):
+                if re.match(patt, a['href']):
+                    if a['href'][-1] == '/':
+                        a['href'] = a['href'][:-1]
+                    urls.append(a['href'])
+                new_link = urlparse(a['href']).path
+                a['href'] = new_link + '.html'
+            result = str(soup).encode()
         with open(page_path + '/index.html', 'wb') as index_fh:
-            index_fh.write(data)
-        urls = re.findall(r'(?i)(href|src)=["\']?([^\s"\'<>]+)', str(data))
+            index_fh.write(result)
+        #urls = re.findall(r'(?i)(href|src)=["\']?([^\s"\'<>]+)', str(data))
         visited_urls = list()
         for url in urls:
             urls.remove(url)
-            url = url[1]
+            #url = url[1]
             parsed_url = urlparse(url)
             print(parsed_url.path)
             if '/' in parsed_url.path:
@@ -63,10 +83,12 @@ class Cloner(object):
                         os.makedirs(local_dir, exist_ok=True)
                     except (FileExistsError, NotADirectoryError):
                         pass
+                    data = None
                     try:
-                        with open(os.path.join(local_dir, file_name), 'wb') as fh:
-                            response = yield from aiohttp.request('GET', root_url + parsed_url.path)
-                            data = yield from response.read()
+                        with open(os.path.join(local_dir, file_name)+'.html', 'wb') as fh:
+                            with aiohttp.ClientSession() as session:
+                                response = yield from session.get(root_url + parsed_url.path)
+                                data = yield from response.read()
                             fh.write(data)
                             if '.css' in file_name:
                                 css = cssutils.parseString(data)
@@ -75,7 +97,7 @@ class Cloner(object):
                                     if not carved_url.startswith('/'):
                                         carved_url = '/' + carved_url
                                     if carved_url not in visited_urls:
-                                        urls.insert(0, [None, carved_url])
+                                        urls.insert(0, carved_url)
                     except (IsADirectoryError, NotADirectoryError):
                         pass
                     finally:
