@@ -23,38 +23,39 @@ from urllib.parse import urlparse
 import asyncio
 import argparse
 import aiohttp
-import ssl
 import cssutils
 from bs4 import BeautifulSoup
 
 
 class Cloner(object):
     @staticmethod
-    def replace_links(data, domain, urls):
+    def make_new_link(url):
+        parsed = urlparse(url)
+        if parsed.path[1:]:
+            new_link = parsed.path
+        elif parsed.query:
+            new_link = '/' + parsed.query
+        else:
+            new_link = '/index'
+        if new_link[-1] == '/':
+            new_link = new_link[:-1]
+        if '.' not in new_link:
+            new_link += '.html'
+        if parsed.fragment:
+            new_link += '/#' + parsed.fragment
+        return new_link
+
+    def replace_links(self, data, domain, urls):
         soup = BeautifulSoup(data, 'html.parser')
         patt = '.*' + domain + '.*'
+
         for link in soup.findAll(True, attrs={'href': re.compile(patt)}):
             urls.append(link['href'])
-            parsed = urlparse(link['href'])
-            new_link = parsed.path
-            if new_link[-1] == '/':
-                new_link = new_link[:-1]
-            if not new_link:
-                new_link = '/index'
-            if '.' not in new_link:
-                new_link += '.html'
-            link['href'] = new_link
+            link['href'] = self.make_new_link(link['href'])
 
         for act_link in soup.findAll(True, attrs={'action': re.compile(patt)}):
-            if act_link['action'][-1] == '/':
-                act_link['action'] = act_link['action'][:-1]
             urls.append(act_link['action'])
-            new_link = urlparse(act_link['action']).path
-            if not new_link:
-                new_link = '/index'
-            if '.' not in new_link:
-                new_link += '.html'
-            act_link['action'] = new_link
+            act_link['action'] = self.make_new_link(act_link['action'])
         return soup
 
     @asyncio.coroutine
@@ -65,16 +66,8 @@ class Cloner(object):
         parsed_url = urlparse(root_url)
         if parsed_url.fragment:
             return
-        if parsed_url.path == '/' and parsed_url.query:
-            return
-
         domain = parsed_url.netloc
-        file_name = parsed_url.path if parsed_url.path[1:] else '/index'
-        if file_name[-1] == '/':
-            file_name = file_name[:-1]
-        if '.' not in file_name:
-            file_name += '.html'
-
+        file_name = self.make_new_link(root_url)
         file_path = ''
         patt = '/.*/.*\.'
         if re.match(patt, file_name):
@@ -105,16 +98,16 @@ class Cloner(object):
                 data = str(soup).encode()
             with open(page_path + file_path + file_name, 'wb') as index_fh:
                 index_fh.write(data)
-        # if '.css' in file_name:
-        #     css = cssutils.parseString(data)
-        #     for carved_url in cssutils.getUrls(css):
-        #         if not re.match(r'^http',carved_url):
-        #             continue
-        #         carved_url = os.path.normpath(os.path.join(domain, carved_url))
-        #         if not carved_url.startswith('/'):
-        #             carved_url = '/' + carved_url
-        #         if carved_url not in visited_urls:
-        #             urls.insert(0, carved_url)
+            if '.css' in file_name:
+                css = cssutils.parseString(data)
+                for carved_url in cssutils.getUrls(css):
+                    if carved_url.startswith('data'):
+                        continue
+                    carved_url = os.path.normpath(os.path.join(domain, carved_url))
+                    if not carved_url.startswith('http'):
+                        carved_url = 'http://' + carved_url
+                    if carved_url not in visited_urls:
+                        urls.insert(0, carved_url)
         for url in urls:
             urls.remove(url)
             if url in visited_urls:
