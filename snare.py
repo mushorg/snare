@@ -54,8 +54,12 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     r = yield from session.get(
                         'http://{0}:8090/dorks'.format(self.run_args.tanner)
                     )
-                    dorks = yield from r.json()
-                    r.close()
+                    try:
+                        dorks = yield from r.json()
+                    except json.decoder.JSONDecodeError as e:
+                        print(e)
+                    finally:
+                        r.close()
         except:
             print('Dorks timeout')
         return dorks['response']['dorks'] if dorks else []
@@ -84,8 +88,12 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     r = yield from session.post(
                         'http://{0}:8090/event'.format(self.run_args.tanner), data=json.dumps(data)
                     )
-                    event_result = yield from r.json()
-                    r.close()
+                    try:
+                        event_result = yield from r.json()
+                    except json.decoder.JSONDecodeError as e:
+                        print(e, data)
+                    finally:
+                        r.close()
         except Exception as e:
             raise e
         return event_result
@@ -125,12 +133,6 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
     @asyncio.coroutine
     def handle_request(self, request, payload):
         print('Request path: {0}'.format(request.path))
-        if request.method == 'POST':
-            data = yield from payload.read()
-            post_data = MultiDict(parse_qsl(data.decode('utf-8')))
-            print('POST data:')
-            for key, val in post_data.items():
-                print('\t- {0}: {1}'.format(key, val))
         header = {key: value for (key, value) in request.headers.items()}
         peer = dict(
             ip=self.transport.get_extra_info('peername')[0],
@@ -143,8 +145,17 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             uuid=snare_uuid.decode('utf-8'),
             peer=peer
         )
+        if request.method == 'POST':
+            post_data = yield from payload.read()
+            post_data = MultiDict(parse_qsl(post_data.decode('utf-8')))
+            print('POST data:')
+            for key, val in post_data.items():
+                print('\t- {0}: {1}'.format(key, val))
+            data['post_data'] = dict(post_data)
+
         # Submit the event to the TANNER service
         event_result = yield from self.submit_data(data)
+
         # Log the event to slurp service if enabled
         if self.run_args.slurp_enabled:
             yield from self.submit_slurp(request.path)
@@ -152,9 +163,23 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             self.writer, status=200, http_version=request.version
         )
         if 'payload' in event_result['response']['message']['detection']:
-            content = event_result['response']['message']['detection']['payload']
-            content_type = mimetypes.guess_type(content)[0]
-            content = content.encode('utf-8')
+            payload_content = event_result['response']['message']['detection']['payload']
+            if type(payload_content) == dict:
+                content_type = mimetypes.guess_type(payload_content['page'])[0]
+                content = '<html><body></body></html>'
+                base_path = '/'.join(['/opt/snare/pages', self.run_args.page_dir])
+                if os.path.exists(base_path + payload_content['page']):
+                    with open(base_path + payload_content['page']) as p:
+                        content = p.read()
+                soup = BeautifulSoup(content, 'html.parser')
+                script_tag = soup.new_tag('div')
+                script_tag.append(BeautifulSoup(payload_content['value'], 'html.parser'))
+                soup.body.append(script_tag)
+                content = str(soup).encode()
+
+            else:
+                content_type = mimetypes.guess_type(payload_content)[0]
+                content = payload_content.encode('utf-8')
         else:
             base_path = '/'.join(['/opt/snare/pages', self.run_args.page_dir])
             if request.path == '/':
@@ -337,7 +362,7 @@ if __name__ == '__main__':
 
     future = loop.create_server(
         lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
-        args.interface, args.port)
+        args.interface, int(args.port))
     srv = loop.run_until_complete(future)
 
     if not args.skip_check_version:
