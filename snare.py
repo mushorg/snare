@@ -152,9 +152,10 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             for key, val in post_data.items():
                 print('\t- {0}: {1}'.format(key, val))
             data['post_data'] = dict(post_data)
-        # Submit the event to the TANNER service
 
+        # Submit the event to the TANNER service
         event_result = yield from self.submit_data(data)
+
         # Log the event to slurp service if enabled
         if self.run_args.slurp_enabled:
             yield from self.submit_slurp(request.path)
@@ -165,10 +166,11 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             payload_content = event_result['response']['message']['detection']['payload']
             if type(payload_content) == dict:
                 content_type = mimetypes.guess_type(payload_content['page'])[0]
-                content = None
+                content = '<html><body></body></html>'
                 base_path = '/'.join(['/opt/snare/pages', self.run_args.page_dir])
-                with open(base_path + payload_content['page']) as p:
-                    content = p.read()
+                if os.path.exists(base_path + payload_content['page']):
+                    with open(base_path + payload_content['page']) as p:
+                        content = p.read()
                 soup = BeautifulSoup(content, 'html.parser')
                 script_tag = soup.new_tag('div')
                 script_tag.append(BeautifulSoup(payload_content['value'], 'html.parser'))
