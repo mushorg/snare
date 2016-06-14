@@ -216,6 +216,20 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             response.write(content)
         yield from response.write_eof()
 
+    def handle_error(self, status=500, message=None,
+                     payload=None, exc=None, headers=None, reason=None):
+        super().handle_error(status, message, payload, exc, headers, reason)
+
+        data = dict(
+            method=None,
+            path=None,
+            headers=None,
+            uuid=snare_uuid.decode('utf-8'),
+            peer=None,
+            payload=exc
+        )
+        self.submit_data(data)
+
 
 def create_initial_config():
     cfg = configparser.ConfigParser()
