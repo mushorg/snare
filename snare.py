@@ -79,6 +79,28 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         except Exception as e:
             print(e)
 
+    def create_data(self, request):
+        data = dict(
+            method=None,
+            path=None,
+            headers=None,
+            uuid=snare_uuid.decode('utf-8'),
+            peer=None,
+        )
+        if self.transport:
+            peer = dict(
+                ip=self.transport.get_extra_info('peername')[0],
+                port=self.transport.get_extra_info('peername')[1]
+            )
+            data['peer'] = peer
+        if request:
+            header = {key: value for (key, value) in request.headers.items()}
+            data['method'] = request.method
+            data['headers'] = header
+            data['path'] = request.path
+
+        return data
+
     @asyncio.coroutine
     def submit_data(self, data):
         event_result = None
@@ -133,18 +155,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
     @asyncio.coroutine
     def handle_request(self, request, payload):
         print('Request path: {0}'.format(request.path))
-        header = {key: value for (key, value) in request.headers.items()}
-        peer = dict(
-            ip=self.transport.get_extra_info('peername')[0],
-            port=self.transport.get_extra_info('peername')[1]
-        )
-        data = dict(
-            method=request.method,
-            path=request.path,
-            headers=header,
-            uuid=snare_uuid.decode('utf-8'),
-            peer=peer
-        )
+        data = self.create_data(request)
         if request.method == 'POST':
             post_data = yield from payload.read()
             post_data = MultiDict(parse_qsl(post_data.decode('utf-8')))
@@ -220,14 +231,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                      payload=None, exc=None, headers=None, reason=None):
         super().handle_error(status, message, payload, exc, headers, reason)
 
-        data = dict(
-            method=None,
-            path=None,
-            headers=None,
-            uuid=snare_uuid.decode('utf-8'),
-            peer=None,
-            payload=exc
-        )
+        data = self.create_data(message)
+        data['error'] = exc
         self.submit_data(data)
 
 
