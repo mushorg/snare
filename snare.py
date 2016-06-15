@@ -79,13 +79,14 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         except Exception as e:
             print(e)
 
-    def create_data(self, request):
+    def create_data(self, request, response_status):
         data = dict(
             method=None,
             path=None,
             headers=None,
             uuid=snare_uuid.decode('utf-8'),
             peer=None,
+            status=response_status
         )
         if self.transport:
             peer = dict(
@@ -155,7 +156,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
     @asyncio.coroutine
     def handle_request(self, request, payload):
         print('Request path: {0}'.format(request.path))
-        data = self.create_data(request)
+        data = self.create_data(request, 200)
         if request.method == 'POST':
             post_data = yield from payload.read()
             post_data = MultiDict(parse_qsl(post_data.decode('utf-8')))
@@ -231,7 +232,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                      payload=None, exc=None, headers=None, reason=None):
         super().handle_error(status, message, payload, exc, headers, reason)
 
-        data = self.create_data(message)
+        data = self.create_data(message, status)
         data['error'] = exc
         self.submit_data(data)
 
