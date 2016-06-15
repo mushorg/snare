@@ -43,7 +43,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             name=None, prefix='/',
             directory='/opt/snare/pages/{}'.format(run_args.page_dir)
         )
-        super().__init__(debug=debug, keep_alive=keep_alive, **kwargs)
+        super().__init__(debug=debug, keep_alive=keep_alive, access_log=None, **kwargs)
 
     @asyncio.coroutine
     def get_dorks(self):
@@ -59,7 +59,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     except json.decoder.JSONDecodeError as e:
                         print(e)
                     finally:
-                        r.close()
+                        r.release()
         except:
             print('Dorks timeout')
         return dorks['response']['dorks'] if dorks else []
