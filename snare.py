@@ -26,6 +26,7 @@ import grp
 from urllib.parse import urlparse, unquote, parse_qsl
 import uuid
 import configparser
+import git
 
 import aiohttp
 from aiohttp.web import StaticRoute
@@ -116,7 +117,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     except json.decoder.JSONDecodeError as e:
                         print(e, data)
                     finally:
-                        r.close()
+                        r.release()
         except Exception as e:
             raise e
         return event_result
@@ -174,6 +175,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         response = aiohttp.Response(
             self.writer, status=200, http_version=request.version
         )
+        mimetypes.add_type('text/html', '.php')
         if 'payload' in event_result['response']['message']['detection']:
             payload_content = event_result['response']['message']['detection']['payload']
             if type(payload_content) == dict:
@@ -315,25 +317,23 @@ def add_meta_tag(page_dir, index_page):
 
 @asyncio.coroutine
 def compare_version_info():
-    @asyncio.coroutine
-    def _run_cmd(cmd):
-        proc = yield from asyncio.wait_for(asyncio.create_subprocess_exec(*cmd, stdout=PIPE), 5)
-        line = yield from asyncio.wait_for(proc.stdout.readline(), 10)
-        return line
-
-    cmd1 = ["git", "log", "--pretty=format:'%h'", "-n", "1"]
-    cmd2 = 'git ls-remote https://github.com/mushorg/snare.git HEAD'.split()
-    line1 = yield from _run_cmd(cmd1)
-    hash1 = line1[1:-1]
+    repo = git.Repo(os.getcwd())
     try:
-        line2 = yield from _run_cmd(cmd2)
+        rem = repo.remote()
+        res = rem.fetch()
+        diff_list = res[0].commit.diff(repo.heads.master)
     except asyncio.TimeoutError:
         print('timeout fetching the repository version')
     else:
-        if not line2.startswith(hash1):
-            print('you are running an outdated version')
+        if diff_list:
+            print('you are running an outdated version, SNARE will be updated and restarted')
+            repo.git.reset('--hard')
+            repo.heads.master.checkout()
+            repo.git.clean('-xdf')
+            repo.remotes.origin.pull()
+            os.execv(sys.executable, [sys.executable, __file__] + sys.argv[1:])
         else:
-            print('you are running the latest version: {0}'.format(hash1.decode('utf-8')))
+            print('you are running the latest version')
 
 
 if __name__ == '__main__':
@@ -361,8 +361,11 @@ if __name__ == '__main__':
     parser.add_argument("--slurp-host", help="nsq logging host", default='slurp.mushmush.org')
     parser.add_argument("--slurp-auth", help="nsq logging auth", default='slurp')
     parser.add_argument("--config", help="snare config file", default='snare.cfg')
+    parser.add_argument("--auto-update", help="auto update SNARE if new version available ", default=True)
     args = parser.parse_args()
 
+    if args.auto_update is True:
+        loop.run_until_complete(compare_version_info())
     config = configparser.ConfigParser()
     config.read('/opt/snare/' + args.config)
 
@@ -385,8 +388,6 @@ if __name__ == '__main__':
         args.interface, int(args.port))
     srv = loop.run_until_complete(future)
 
-    if not args.skip_check_version:
-        loop.run_until_complete(compare_version_info())
     drop_privileges()
     print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
     try:
