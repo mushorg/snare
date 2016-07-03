@@ -20,7 +20,7 @@ import argparse
 import mimetypes
 import json
 import asyncio
-from asyncio.subprocess import PIPE
+import pip
 import pwd
 import grp
 from urllib.parse import urlparse, unquote, parse_qsl
@@ -331,6 +331,7 @@ def compare_version_info():
             repo.heads.master.checkout()
             repo.git.clean('-xdf')
             repo.remotes.origin.pull()
+            pip.main(['install', '-r', 'requirements.txt'])
             os.execv(sys.executable, [sys.executable, __file__] + sys.argv[1:])
         else:
             print('you are running the latest version')
