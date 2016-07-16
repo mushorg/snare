@@ -194,20 +194,29 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 content = payload_content.encode('utf-8')
         else:
             base_path = '/'.join(['/opt/snare/pages', self.run_args.page_dir])
+            query = None
             if request.path == '/':
                 parsed_url = self.run_args.index_page
             else:
-                parsed_url = urlparse(unquote(request.path)).path
+                parsed_url = urlparse(unquote(request.path))
+                if parsed_url.query:
+                    query = '?' + parsed_url.query
+                parsed_url = parsed_url.path
                 if parsed_url.startswith('/'):
                     parsed_url = parsed_url[1:]
             path = '/'.join(
                 [base_path, parsed_url]
             )
-            path = os.path.normpath(path)
+            content_type = mimetypes.guess_type(path)[0]
+            if content_type is None and '.php' in path:
+                content_type = 'text/html'
+            if query is not None:
+                path = os.path.normpath(path + query)
+            else:
+                path = os.path.normpath(path)
             if os.path.isfile(path) and path.startswith(base_path):
                 with open(path, 'rb') as fh:
                     content = fh.read()
-                content_type = mimetypes.guess_type(path)[0]
                 if content_type:
                     if 'text/html' in content_type:
                         content = yield from self.handle_html_content(content)
