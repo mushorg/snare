@@ -49,15 +49,17 @@ class Cloner(object):
         soup = BeautifulSoup(data, 'html.parser')
         patt = '.*' + domain + '.*'
 
+        # find all relative links
+        for link in soup.findAll(True, attrs={'href': re.compile('^((?!http|\/\/|\.\.).)*$')}):
+            if link['href'].startswith('/'):
+                link['href'] = link['href'][1:]
+            abs_link = 'http://' + domain + link['href']
+            urls.append(abs_link)
+
         # find all absolute links
         for link in soup.findAll(True, attrs={'href': re.compile(patt)}):
             urls.append(link['href'])
             link['href'] = self.make_new_link(link['href'])
-
-        # find all relative links
-        for link in soup.findAll(True, attrs={'href': re.compile('^((?!http|\/\/|\.\.).)*$')}):
-            abs_link = 'http://' + domain + link['href']
-            urls.append(abs_link)
 
         # find all images and scripts
         for elem in soup.findAll(True, attrs={'src': re.compile('^((?!http|\/\/|\.\.).)*$')}):
@@ -80,6 +82,8 @@ class Cloner(object):
         if parsed_url.fragment:
             return
         domain = parsed_url.netloc
+        if not domain.endswith('/'):
+            domain += '/'
         file_name = self.make_new_link(root_url)
 
         file_path = ''
@@ -87,6 +91,8 @@ class Cloner(object):
         if re.match(patt, file_name):
             file_path, file_name = file_name.rsplit('/', 1)
             file_path += '/'
+        if parsed_url.query:
+            file_name += '?' + parsed_url.query
         print('path: ', file_path, 'name: ', file_name)
         if len(domain) < 4:
             sys.exit('invalid taget {}'.format(root_url))
@@ -99,13 +105,15 @@ class Cloner(object):
 
         data = None
         try:
-            with aiohttp.ClientSession() as session:
-                response = yield from session.get(root_url)
-                data = yield from response.read()
-                session.close()
+            with aiohttp.Timeout(10.0):
+                with aiohttp.ClientSession() as session:
+                    response = yield from session.get(root_url)
+                    data = yield from response.read()
         except Exception as e:
             print(e)
-
+        else:
+            response.release()
+            session.close()
         if data is not None:
             if '.html' in file_name:
                 soup = self.replace_links(data, domain, urls)
@@ -119,8 +127,8 @@ class Cloner(object):
                         continue
                     carved_url = os.path.normpath(os.path.join(domain, carved_url))
                     if not carved_url.startswith('http'):
-                        if carved_url.startswith('..'):
-                            carved_url = 'http://' + domain + '/' + carved_url
+                        if carved_url.startswith('..') or carved_url.startswith('/'):
+                            carved_url = 'http://' + domain + carved_url
                         else:
                             carved_url = 'http://' + carved_url
                     if carved_url not in visited_urls:
