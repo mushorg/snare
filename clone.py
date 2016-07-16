@@ -49,25 +49,39 @@ class Cloner(object):
         soup = BeautifulSoup(data, 'html.parser')
         patt = '.*' + domain + '.*'
 
+        # find all absolute links
         for link in soup.findAll(True, attrs={'href': re.compile(patt)}):
             urls.append(link['href'])
             link['href'] = self.make_new_link(link['href'])
 
+        # find all relative links
+        for link in soup.findAll(True, attrs={'href': re.compile('^((?!http|\/\/|\.\.).)*$')}):
+            abs_link = 'http://' + domain + link['href']
+            urls.append(abs_link)
+
+        # find all images and scripts
+        for elem in soup.findAll(True, attrs={'src': re.compile('^((?!http|\/\/|\.\.).)*$')}):
+            abs_link = 'http://' + domain + elem['src']
+            urls.append(abs_link)
+
+        # find all action elements
         for act_link in soup.findAll(True, attrs={'action': re.compile(patt)}):
             urls.append(act_link['action'])
             act_link['action'] = self.make_new_link(act_link['action'])
+        urls = list(set(urls))
         return soup
 
     @asyncio.coroutine
     def get_body(self, root_url, urls, visited_urls):
-        visited_urls.append(root_url)
         if not root_url.startswith("http"):
             root_url = 'http://' + root_url
+        visited_urls.append(root_url)
         parsed_url = urlparse(root_url)
         if parsed_url.fragment:
             return
         domain = parsed_url.netloc
         file_name = self.make_new_link(root_url)
+
         file_path = ''
         patt = '/.*/.*\.'
         if re.match(patt, file_name):
@@ -105,7 +119,10 @@ class Cloner(object):
                         continue
                     carved_url = os.path.normpath(os.path.join(domain, carved_url))
                     if not carved_url.startswith('http'):
-                        carved_url = 'http://' + carved_url
+                        if carved_url.startswith('..'):
+                            carved_url = 'http://' + domain + '/' + carved_url
+                        else:
+                            carved_url = 'http://' + carved_url
                     if carved_url not in visited_urls:
                         urls.insert(0, carved_url)
         for url in urls:
