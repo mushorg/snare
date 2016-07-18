@@ -20,13 +20,14 @@ import argparse
 import mimetypes
 import json
 import asyncio
-from asyncio.subprocess import PIPE
+import pip
 import pwd
 import grp
 from urllib.parse import urlparse, unquote, parse_qsl
 import uuid
 import configparser
-
+import git
+import multiprocessing
 import aiohttp
 from aiohttp.web import StaticRoute
 from aiohttp import MultiDict
@@ -116,7 +117,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     except json.decoder.JSONDecodeError as e:
                         print(e, data)
                     finally:
-                        r.close()
+                        r.release()
         except Exception as e:
             raise e
         return event_result
@@ -174,6 +175,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         response = aiohttp.Response(
             self.writer, status=200, http_version=request.version
         )
+        mimetypes.add_type('text/html', '.php')
         if 'payload' in event_result['response']['message']['detection']:
             payload_content = event_result['response']['message']['detection']['payload']
             if type(payload_content) == dict:
@@ -323,26 +325,61 @@ def add_meta_tag(page_dir, index_page):
 
 
 @asyncio.coroutine
-def compare_version_info():
-    @asyncio.coroutine
-    def _run_cmd(cmd):
-        proc = yield from asyncio.wait_for(asyncio.create_subprocess_exec(*cmd, stdout=PIPE), 5)
-        line = yield from asyncio.wait_for(proc.stdout.readline(), 10)
-        return line
-
-    cmd1 = ["git", "log", "--pretty=format:'%h'", "-n", "1"]
-    cmd2 = 'git ls-remote https://github.com/mushorg/snare.git HEAD'.split()
-    line1 = yield from _run_cmd(cmd1)
-    hash1 = line1[1:-1]
-    try:
-        line2 = yield from _run_cmd(cmd2)
-    except asyncio.TimeoutError:
-        print('timeout fetching the repository version')
-    else:
-        if not line2.startswith(hash1):
-            print('you are running an outdated version')
+def compare_version_info(timeout):
+    while True:
+        repo = git.Repo(os.getcwd())
+        try:
+            rem = repo.remote()
+            res = rem.fetch()
+            diff_list = res[0].commit.diff(repo.heads.master)
+        except asyncio.TimeoutError:
+            print('timeout fetching the repository version')
         else:
-            print('you are running the latest version: {0}'.format(hash1.decode('utf-8')))
+            if diff_list:
+                print('you are running an outdated version, SNARE will be updated and restarted')
+                repo.git.reset('--hard')
+                repo.heads.master.checkout()
+                repo.git.clean('-xdf')
+                repo.remotes.origin.pull()
+                pip.main(['install', '-r', 'requirements.txt'])
+                return
+            else:
+                print('you are running the latest version')
+        yield from asyncio.sleep(timeout)
+
+
+def parse_timeout(timeout):
+    result = None
+    timeouts_coeff = {
+        'M': 60,
+        'H': 3600,
+        'D': 86400
+    }
+
+    form = timeout[-1]
+    if form not in timeouts_coeff.keys():
+        print('Bad timeout format, default will be used')
+        parse_timeout('24H')
+    else:
+        result = int(timeout[:-1])
+        result *= timeouts_coeff[form]
+    return result
+
+
+def server():
+    print('server')
+    loop = asyncio.get_event_loop()
+    future = loop.create_server(
+        lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
+        args.interface, int(args.port))
+    srv = loop.run_until_complete(future)
+
+    drop_privileges()
+    print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
+    try:
+        loop.run_forever()
+    except (KeyboardInterrupt, TypeError) as e:
+        print(e)
 
 
 if __name__ == '__main__':
@@ -355,7 +392,6 @@ if __name__ == '__main__':
 
     """)
     snare_uuid = snare_setup()
-    loop = asyncio.get_event_loop()
     parser = argparse.ArgumentParser()
     page_group = parser.add_mutually_exclusive_group(required=True)
     page_group.add_argument("--page-dir", help="name of the folder to be served")
@@ -370,6 +406,8 @@ if __name__ == '__main__':
     parser.add_argument("--slurp-host", help="nsq logging host", default='slurp.mushmush.org')
     parser.add_argument("--slurp-auth", help="nsq logging auth", default='slurp')
     parser.add_argument("--config", help="snare config file", default='snare.cfg')
+    parser.add_argument("--auto-update", help="auto update SNARE if new version available ", default=True)
+    parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
@@ -389,16 +427,15 @@ if __name__ == '__main__':
     else:
         add_meta_tag(args.page_dir, args.index_page)
 
-    future = loop.create_server(
-        lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
-        args.interface, int(args.port))
-    srv = loop.run_until_complete(future)
+    multiprocessing.set_start_method('fork')
+    serv = multiprocessing.Process(target=server)
+    serv.start()
 
-    if not args.skip_check_version:
-        loop.run_until_complete(compare_version_info())
-    drop_privileges()
-    print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
-    try:
-        loop.run_forever()
-    except (KeyboardInterrupt, TypeError) as e:
-        print(e)
+    if args.auto_update is True:
+        timeout = parse_timeout(args.update_timeout)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(compare_version_info(timeout))
+        serv.terminate()
+        os.execv(sys.executable, [sys.executable, __file__] + sys.argv[1:])
+
+    serv.join()
