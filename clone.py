@@ -49,30 +49,50 @@ class Cloner(object):
         soup = BeautifulSoup(data, 'html.parser')
         patt = '.*' + domain + '.*'
 
+        # find all relative links
+        for link in soup.findAll(True, attrs={'href': re.compile('^((?!http|\/\/|\.\.).)*$')}):
+            if link['href'].startswith('/'):
+                link['href'] = link['href'][1:]
+            abs_link = 'http://' + domain + link['href']
+            urls.append(abs_link)
+
+        # find all absolute links
         for link in soup.findAll(True, attrs={'href': re.compile(patt)}):
             urls.append(link['href'])
             link['href'] = self.make_new_link(link['href'])
 
+        # find all images and scripts
+        for elem in soup.findAll(True, attrs={'src': re.compile('^((?!http|\/\/|\.\.).)*$')}):
+            abs_link = 'http://' + domain + elem['src']
+            urls.append(abs_link)
+
+        # find all action elements
         for act_link in soup.findAll(True, attrs={'action': re.compile(patt)}):
             urls.append(act_link['action'])
             act_link['action'] = self.make_new_link(act_link['action'])
+        urls = list(set(urls))
         return soup
 
     @asyncio.coroutine
     def get_body(self, root_url, urls, visited_urls):
-        visited_urls.append(root_url)
         if not root_url.startswith("http"):
             root_url = 'http://' + root_url
+        visited_urls.append(root_url)
         parsed_url = urlparse(root_url)
         if parsed_url.fragment:
             return
         domain = parsed_url.netloc
+        if not domain.endswith('/'):
+            domain += '/'
         file_name = self.make_new_link(root_url)
+
         file_path = ''
         patt = '/.*/.*\.'
         if re.match(patt, file_name):
             file_path, file_name = file_name.rsplit('/', 1)
             file_path += '/'
+        if parsed_url.query:
+            file_name += '?' + parsed_url.query
         print('path: ', file_path, 'name: ', file_name)
         if len(domain) < 4:
             sys.exit('invalid taget {}'.format(root_url))
@@ -85,13 +105,15 @@ class Cloner(object):
 
         data = None
         try:
-            with aiohttp.ClientSession() as session:
-                response = yield from session.get(root_url)
-                data = yield from response.read()
-                session.close()
+            with aiohttp.Timeout(10.0):
+                with aiohttp.ClientSession() as session:
+                    response = yield from session.get(root_url)
+                    data = yield from response.read()
         except Exception as e:
             print(e)
-
+        else:
+            response.release()
+            session.close()
         if data is not None:
             if '.html' in file_name:
                 soup = self.replace_links(data, domain, urls)
@@ -105,7 +127,10 @@ class Cloner(object):
                         continue
                     carved_url = os.path.normpath(os.path.join(domain, carved_url))
                     if not carved_url.startswith('http'):
-                        carved_url = 'http://' + carved_url
+                        if carved_url.startswith('..') or carved_url.startswith('/'):
+                            carved_url = 'http://' + domain + carved_url
+                        else:
+                            carved_url = 'http://' + carved_url
                     if carved_url not in visited_urls:
                         urls.insert(0, carved_url)
         for url in urls:
