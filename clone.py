@@ -18,7 +18,7 @@ import re
 import os
 import sys
 
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 import asyncio
 import argparse
@@ -30,7 +30,9 @@ from bs4 import BeautifulSoup
 class Cloner(object):
     @staticmethod
     def make_new_link(url):
+        unquote(url)
         parsed = urlparse(url)
+
         if parsed.path[1:]:
             new_link = parsed.path
         elif parsed.query:
@@ -43,6 +45,9 @@ class Cloner(object):
             new_link += '.html'
         if parsed.fragment:
             new_link += '/#' + parsed.fragment
+        if parsed.query:
+            new_link += '?' + parsed.query
+
         return new_link
 
     def replace_links(self, data, domain, urls):
@@ -91,12 +96,13 @@ class Cloner(object):
         if re.match(patt, file_name):
             file_path, file_name = file_name.rsplit('/', 1)
             file_path += '/'
-        if parsed_url.query:
-            file_name += '?' + parsed_url.query
+            # if parsed_url.query:
+            # file_name += '?' + parsed_url.query
         print('path: ', file_path, 'name: ', file_name)
         if len(domain) < 4:
             sys.exit('invalid taget {}'.format(root_url))
         page_path = '/opt/snare/pages/{}'.format(domain)
+
         if not os.path.exists(page_path):
             os.mkdir(page_path)
 
@@ -115,7 +121,7 @@ class Cloner(object):
             response.release()
             session.close()
         if data is not None:
-            if '.html' in file_name:
+            if re.match(re.compile('.*\.(html|php)'), file_name):
                 soup = self.replace_links(data, domain, urls)
                 data = str(soup).encode()
             with open(page_path + file_path + file_name, 'wb') as index_fh:
