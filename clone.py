@@ -75,6 +75,11 @@ class Cloner(object):
         for act_link in soup.findAll(True, attrs={'action': re.compile(patt)}):
             urls.append(act_link['action'])
             act_link['action'] = self.make_new_link(act_link['action'])
+
+        # prevent redirects
+        for redir in soup.findAll(True, attrs={'name': re.compile('redirect.*')}):
+            redir['value'] = self.make_new_link(redir['value'])
+
         urls = list(set(urls))
         return soup
 
