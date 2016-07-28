@@ -101,8 +101,6 @@ class Cloner(object):
         if re.match(patt, file_name):
             file_path, file_name = file_name.rsplit('/', 1)
             file_path += '/'
-            # if parsed_url.query:
-            # file_name += '?' + parsed_url.query
         print('path: ', file_path, 'name: ', file_name)
         if len(domain) < 4:
             sys.exit('invalid taget {}'.format(root_url))
