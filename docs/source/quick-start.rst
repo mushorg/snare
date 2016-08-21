@@ -4,8 +4,8 @@ Super Next generation Advanced Reactive honEypot
 
 Basic concept
 """""""""""""
-* Surface fist. Focus on the attack surface generation.
-* Sensors and masters. Lightweight collectors (SNARE) and central decision maker (tanner).
+* Surface first: Focus on the attack surface generation.
+* Sensors and masters. Lightweight collector (SNARE) and central decision maker/emulator (TANNER).
 
 Getting started
 """""""""""""""
