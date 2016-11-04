@@ -29,8 +29,11 @@ import configparser
 import git
 import multiprocessing
 import aiohttp
-from aiohttp.web import StaticRoute
 from aiohttp import MultiDict
+try:
+    from aiohttp.web import StaticResource as StaticRoute
+except ImportError:
+    from aiohttp.web import StaticRoute
 
 from bs4 import BeautifulSoup
 import cssutils
