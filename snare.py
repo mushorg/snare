@@ -37,7 +37,7 @@ except ImportError:
 
 from bs4 import BeautifulSoup
 import cssutils
-
+import netifaces as ni
 
 class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
     def __init__(self, run_args, debug=False, keep_alive=75, **kwargs):
@@ -370,11 +370,14 @@ def parse_timeout(timeout):
 
 
 def server():
-    print('server')
+    if args.host_ip == 'localhost' and args.interface:
+        host_ip = ni.ifaddresses(args.interface)[2][0]['addr']
+    else:
+        host_ip = args.host_ip
     loop = asyncio.get_event_loop()
     future = loop.create_server(
         lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
-        args.interface, int(args.port))
+        host_ip, int(args.port))
     srv = loop.run_until_complete(future)
 
     drop_privileges()
@@ -401,7 +404,8 @@ if __name__ == '__main__':
     page_group.add_argument("--list-pages", help="list available pages", action='store_true')
     parser.add_argument("--index-page", help="file name of the index page", default='index.html')
     parser.add_argument("--port", help="port to listen on", default='8080')
-    parser.add_argument("--interface", help="interface to bind to", default='localhost')
+    parser.add_argument("--interface", help="interface to bind to")
+    parser.add_argument("--host-ip", help="host ip to bind to", default='localhost')
     parser.add_argument("--debug", help="run web server in debug mode", default=False)
     parser.add_argument("--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
     parser.add_argument("--skip-check-version", help="skip check for update", action='store_true')
