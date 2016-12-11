@@ -29,11 +29,14 @@ import configparser
 import git
 import multiprocessing
 import aiohttp
+import time
 from aiohttp import MultiDict
+from concurrent.futures import ProcessPoolExecutor
+
 try:
     from aiohttp.web import StaticResource as StaticRoute
 except ImportError:
-    from aiohttp.web import StaticRoute
+    from aiohttp.web import StaticResource
 
 from bs4 import BeautifulSoup
 import cssutils
@@ -186,7 +189,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 content = '<html><body></body></html>'
                 base_path = '/'.join(['/opt/snare/pages', self.run_args.page_dir])
                 if os.path.exists(base_path + payload_content['page']):
-                    with open(base_path + payload_content['page']) as p:
+                    with open(base_path + payload_content['page'], encoding='utf-8') as p:
                         content = p.read()
                 soup = BeautifulSoup(content, 'html.parser')
                 script_tag = soup.new_tag('div')
@@ -327,7 +330,6 @@ def add_meta_tag(page_dir, index_page):
         file.write(html)
 
 
-@asyncio.coroutine
 def compare_version_info(timeout):
     while True:
         repo = git.Repo(os.getcwd())
@@ -335,7 +337,7 @@ def compare_version_info(timeout):
             rem = repo.remote()
             res = rem.fetch()
             diff_list = res[0].commit.diff(repo.heads.master)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             print('timeout fetching the repository version')
         else:
             if diff_list:
@@ -345,10 +347,11 @@ def compare_version_info(timeout):
                 repo.git.clean('-xdf')
                 repo.remotes.origin.pull()
                 pip.main(['install', '-r', 'requirements.txt'])
+                os.execv(sys.executable, [sys.executable, __file__] + sys.argv[1:])
                 return
             else:
                 print('you are running the latest version')
-        yield from asyncio.sleep(timeout)
+            time.sleep(timeout)
 
 
 def parse_timeout(timeout):
@@ -369,23 +372,15 @@ def parse_timeout(timeout):
     return result
 
 
-def server():
-    if args.host_ip == 'localhost' and args.interface:
-        host_ip = ni.ifaddresses(args.interface)[2][0]['addr']
-    else:
-        host_ip = args.host_ip
-    loop = asyncio.get_event_loop()
-    future = loop.create_server(
-        lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
-        host_ip, int(args.port))
-    srv = loop.run_until_complete(future)
-
-    drop_privileges()
-    print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
-    try:
-        loop.run_forever()
-    except (KeyboardInterrupt, TypeError) as e:
-        print(e)
+@asyncio.coroutine
+def check_tanner_connection():
+    with aiohttp.ClientSession() as client:
+        req_url = 'http://{}:8090'.format(args.tanner)
+        try:
+            resp = yield from client.get(req_url)
+        except aiohttp.errors.ClientOSError:
+            print("Can't connect to tanner host {}".format(req_url))
+            exit(1)
 
 
 if __name__ == '__main__':
@@ -397,6 +392,7 @@ if __name__ == '__main__':
 /____/_/ |_/_/  |_/_/ |_/_____/
 
     """)
+    check_tanner_connection()
     snare_uuid = snare_setup()
     parser = argparse.ArgumentParser()
     page_group = parser.add_mutually_exclusive_group(required=True)
@@ -433,16 +429,26 @@ if __name__ == '__main__':
         print('can\'t crate meta tag')
     else:
         add_meta_tag(args.page_dir, args.index_page)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(check_tanner_connection())
 
-    multiprocessing.set_start_method('fork')
-    serv = multiprocessing.Process(target=server)
-    serv.start()
-
+    pool = ProcessPoolExecutor(max_workers=multiprocessing.cpu_count())
     if args.auto_update is True:
         timeout = parse_timeout(args.update_timeout)
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(compare_version_info(timeout))
-        serv.terminate()
-        os.execv(sys.executable, [sys.executable, __file__] + sys.argv[1:])
+        loop.run_in_executor(pool, compare_version_info, timeout)
 
-    serv.join()
+    if args.host_ip == 'localhost' and args.interface:
+        host_ip = ni.ifaddresses(args.interface)[2][0]['addr']
+    else:
+        host_ip = args.host_ip
+    future = loop.create_server(
+        lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
+        args.interface, int(args.port))
+    srv = loop.run_until_complete(future)
+
+    drop_privileges()
+    print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
+    try:
+        loop.run_forever()
+    except (KeyboardInterrupt, TypeError) as e:
+        print(e)
