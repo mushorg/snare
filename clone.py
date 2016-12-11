@@ -85,7 +85,7 @@ class Cloner(object):
 
         # prevent redirects
         for redir in soup.findAll(True, attrs={'name': re.compile('redirect.*')}):
-            redir['value'] = yarl.URL(redir['value']).relative()
+            redir['value'] = yarl.URL(redir['value']).relative().human_repr()
 
         return soup
 
