@@ -17,21 +17,23 @@ GNU General Public License for more details.
 import os
 import sys
 import argparse
-import mimetypes
 import json
 import asyncio
-import pip
 import pwd
 import grp
-from urllib.parse import urlparse, unquote, parse_qsl
-import uuid
-import configparser
-import git
 import multiprocessing
-import aiohttp
+import configparser
+import uuid
 import time
-from aiohttp import MultiDict
 from concurrent.futures import ProcessPoolExecutor
+
+import pip
+from urllib.parse import urlparse, unquote, parse_qsl
+import magic
+import git
+
+import aiohttp
+from aiohttp import MultiDict
 
 try:
     from aiohttp.web import StaticResource as StaticRoute
@@ -181,11 +183,11 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         response = aiohttp.Response(
             self.writer, status=200, http_version=request.version
         )
-        mimetypes.add_type('text/html', '.php')
+
         if 'payload' in event_result['response']['message']['detection']:
             payload_content = event_result['response']['message']['detection']['payload']
             if type(payload_content) == dict:
-                content_type = mimetypes.guess_type(payload_content['page'])[0]
+                content_type = magic.from_file(payload_content['page'], mime=True)
                 content = '<html><body></body></html>'
                 base_path = '/'.join(['/opt/snare/pages', self.run_args.page_dir])
                 if os.path.exists(base_path + payload_content['page']):
@@ -198,7 +200,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 content = str(soup).encode()
 
             else:
-                content_type = mimetypes.guess_type(payload_content)[0]
+                content_type = magic.from_file(payload_content, mime=True)
                 content = payload_content.encode('utf-8')
         else:
             base_path = '/'.join(['/opt/snare/pages', self.run_args.page_dir])
@@ -215,11 +217,9 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             path = '/'.join(
                 [base_path, parsed_url]
             )
-            content_type = mimetypes.guess_type(path)[0]
-            if content_type is None and '.php' in path:
-                content_type = 'text/html'
+            content_type = magic.from_file(path, mime=True)
             if query is not None:
-                path = os.path.normpath(path + query)
+                path = os.path.normpath(os.path.join(path, query))
             else:
                 path = os.path.normpath(path)
             if os.path.isfile(path) and path.startswith(base_path):
@@ -308,7 +308,8 @@ def add_meta_tag(page_dir, index_page):
     if not google_content and not bing_content:
         return
 
-    with open('/opt/snare/pages/' + page_dir + "/" + index_page) as main:
+    main_page_path = os.path.join('/opt/snare/pages/', page_dir, index_page)
+    with open(main_page_path) as main:
         main_page = main.read()
     soup = BeautifulSoup(main_page, 'html.parser')
 
@@ -326,7 +327,7 @@ def add_meta_tag(page_dir, index_page):
         soup.head.append(bing_meta)
 
     html = soup.prettify("utf-8")
-    with open('/opt/snare/pages/' + page_dir + "/" + index_page, "wb") as file:
+    with open(main_page_path, "wb") as file:
         file.write(html)
 
 
