@@ -4,3 +4,4 @@ cssutils
 gitpython
 netifaces
 yarl
+python-magic
