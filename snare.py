@@ -217,12 +217,12 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             path = '/'.join(
                 [base_path, parsed_url]
             )
-            content_type = magic.from_file(path, mime=True)
             if query is not None:
                 path = os.path.normpath(os.path.join(path, query))
             else:
                 path = os.path.normpath(path)
             if os.path.isfile(path) and path.startswith(base_path):
+                content_type = magic.from_file(path, mime=True)
                 with open(path, 'rb') as fh:
                     content = fh.read()
                 if content_type:
@@ -382,7 +382,8 @@ def check_tanner_connection():
         except aiohttp.errors.ClientOSError:
             print("Can't connect to tanner host {}".format(req_url))
             exit(1)
-
+        else:
+            yield from resp.release()
 
 if __name__ == '__main__':
     print("""
@@ -393,7 +394,6 @@ if __name__ == '__main__':
 /____/_/ |_/_/  |_/_/ |_/_____/
 
     """)
-    check_tanner_connection()
     snare_uuid = snare_setup()
     parser = argparse.ArgumentParser()
     page_group = parser.add_mutually_exclusive_group(required=True)
@@ -434,9 +434,10 @@ if __name__ == '__main__':
     loop.run_until_complete(check_tanner_connection())
 
     pool = ProcessPoolExecutor(max_workers=multiprocessing.cpu_count())
+    compare_version_fut = None
     if args.auto_update is True:
         timeout = parse_timeout(args.update_timeout)
-        loop.run_in_executor(pool, compare_version_info, timeout)
+        compare_version_fut = loop.run_in_executor(pool, compare_version_info, timeout)
 
     if args.host_ip == 'localhost' and args.interface:
         host_ip = ni.ifaddresses(args.interface)[2][0]['addr']
@@ -453,3 +454,9 @@ if __name__ == '__main__':
         loop.run_forever()
     except (KeyboardInterrupt, TypeError) as e:
         print(e)
+    finally:
+        if compare_version_fut:
+            compare_version_fut.cancel()
+        srv.close()
+        loop.run_until_complete(srv.wait_closed())
+        loop.close()
