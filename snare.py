@@ -30,7 +30,7 @@ from urllib.parse import urlparse, unquote, parse_qsl
 
 import aiohttp
 import git
-import magic
+import mimetypes
 import pip
 from aiohttp import MultiDict
 
@@ -184,6 +184,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             self.writer, status=200, http_version=request.version
         )
         content_type = None
+        mimetypes.add_type('text/html','.php')
+        mimetypes.add_type('text/html', '.aspx')
         base_path = os.path.join('/opt/snare/pages', self.run_args.page_dir)
         if 'payload' in event_result['response']['message']['detection']:
             payload_content = event_result['response']['message']['detection']['payload']
@@ -193,7 +195,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 page_path = os.path.join(base_path, payload_content['page'])
                 content = '<html><body></body></html>'
                 if os.path.exists(page_path):
-                    content_type = magic.from_file(page_path, mime=True)
+                    content_type = mimetypes.guess_type(page_path)[0]
                     with open(page_path, encoding='utf-8') as p:
                         content = p.read()
                 soup = BeautifulSoup(content, 'html.parser')
@@ -203,6 +205,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 content = str(soup).encode()
 
             else:
+                content_type = mimetypes.guess_type(payload_content)[0]
                 content = payload_content.encode('utf-8')
         else:
             query = None
@@ -221,7 +224,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             else:
                 path = os.path.normpath(path)
             if os.path.isfile(path) and path.startswith(base_path):
-                content_type = magic.from_file(path, mime=True)
+                content_type = mimetypes.guess_type(path)[0]
                 with open(path, 'rb') as fh:
                     content = fh.read()
                 if content_type:
