@@ -14,13 +14,15 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 """
 
-import re
-import os
-import sys
-
-import asyncio
-from asyncio import Queue
 import argparse
+import asyncio
+import hashlib
+import os
+import re
+import sys
+import json
+from asyncio import Queue
+
 import aiohttp
 import cssutils
 import yarl
@@ -39,6 +41,7 @@ class Cloner(object):
             os.mkdir(self.target_path)
 
         self.new_urls = Queue()
+        self.meta = {}
 
     @staticmethod
     def add_scheme(url):
@@ -53,7 +56,7 @@ class Cloner(object):
         url = yarl.URL(url)
         if check_host:
             if (url.host != self.root.host or url.fragment
-                            or url in self.visited_urls):
+                or url in self.visited_urls):
                 return None
         if not url.is_absolute():
             url = self.root.join(url)
@@ -85,9 +88,19 @@ class Cloner(object):
 
         # prevent redirects
         for redir in soup.findAll(True, attrs={'name': re.compile('redirect.*')}):
-            redir['value'] = yarl.URL(redir['value']).relative().human_repr()
+            if redir['value'] != "":
+                redir['value'] = yarl.URL(redir['value']).relative().human_repr()
 
         return soup
+
+    def _make_filename(self, url):
+        file_name = url.relative().human_repr()
+        if file_name == '/':
+            file_name = 'index.html'
+        m = hashlib.md5()
+        m.update(file_name.encode('utf-8'))
+        hash_name = m.hexdigest()
+        return file_name, hash_name
 
     @asyncio.coroutine
     def get_body(self):
@@ -96,28 +109,17 @@ class Cloner(object):
             if current_url in self.visited_urls:
                 continue
             self.visited_urls.append(current_url)
-            if current_url.name:
-                file_name = current_url.name
-            elif current_url.raw_path != '/':
-                file_name = current_url.path.rsplit('/')[1]
-            else:
-                file_name = 'index.html'
-            file_path = os.path.dirname(current_url.path)
-            if file_path == '/':
-                file_path = self.target_path
-            else:
-                file_path = os.path.join(self.target_path, file_path[1:])
-
-            print('path: ', file_path, 'name: ', file_name)
-
-            if file_path and not os.path.exists(file_path):
-                os.makedirs(file_path)
+            file_name, hash_name = self._make_filename(current_url)
+            print('name: ', file_name)
+            self.meta[file_name] = {}
 
             data = None
+            content_type = None
             try:
                 with aiohttp.Timeout(10.0):
                     with aiohttp.ClientSession() as session:
                         response = yield from session.get(current_url)
+                        content_type = response.content_type
                         data = yield from response.read()
             except aiohttp.ClientError as client_error:
                 print(client_error)
@@ -125,12 +127,14 @@ class Cloner(object):
                 response.release()
                 session.close()
             if data is not None:
-                if re.match(re.compile('.*\.(html|php)'), file_name):
+                self.meta[file_name]['hash'] = hash_name
+                self.meta[file_name]['content_type'] = content_type
+                if content_type == 'text/html':
                     soup = yield from self.replace_links(data)
                     data = str(soup).encode()
-                with open(os.path.join(file_path, file_name), 'wb') as index_fh:
+                with open(os.path.join(self.target_path, hash_name), 'wb') as index_fh:
                     index_fh.write(data)
-                if '.css' in file_name:
+                if content_type == 'text/css':
                     css = cssutils.parseString(data)
                     for carved_url in cssutils.getUrls(css):
                         if carved_url.startswith('data'):
@@ -144,7 +148,9 @@ class Cloner(object):
     @asyncio.coroutine
     def run(self):
         yield from self.new_urls.put(self.root)
-        return (yield from self.get_body())
+        yield from self.get_body()
+        with open(os.path.join(self.target_path,'meta.json'), 'w') as mj:
+            json.dump(self.meta,mj)
 
 
 def main():
