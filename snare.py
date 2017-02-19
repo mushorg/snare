@@ -19,6 +19,7 @@ import asyncio
 import configparser
 import grp
 import json
+import mimetypes
 import multiprocessing
 import os
 import pwd
@@ -26,11 +27,10 @@ import sys
 import time
 import uuid
 from concurrent.futures import ProcessPoolExecutor
-from urllib.parse import urlparse, unquote, parse_qsl
+from urllib.parse import parse_qsl
 
 import aiohttp
 import git
-import mimetypes
 import pip
 from aiohttp import MultiDict
 
@@ -47,10 +47,16 @@ import netifaces as ni
 class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
     def __init__(self, run_args, debug=False, keep_alive=75, **kwargs):
         self.dorks = []
+
         self.run_args = run_args
+        self.dir = '/opt/snare/pages/{}'.format(run_args.page_dir)
+
+        with open(os.path.join(self.dir, 'meta.json')) as meta_json:
+            self.meta = json.load(meta_json)
+
         self.sroute = StaticRoute(
             name=None, prefix='/',
-            directory='/opt/snare/pages/{}'.format(run_args.page_dir)
+            directory=self.dir
         )
         super().__init__(debug=debug, keep_alive=keep_alive, access_log=None, **kwargs)
 
@@ -181,24 +187,26 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         # Log the event to slurp service if enabled
         if self.run_args.slurp_enabled:
             yield from self.submit_slurp(request.path)
+
         response = aiohttp.Response(
             self.writer, status=200, http_version=request.version
         )
         content_type = None
-        mimetypes.add_type('text/html','.php')
-        mimetypes.add_type('text/html', '.aspx')
-        base_path = os.path.join('/opt/snare/pages', self.run_args.page_dir)
-        if 'payload' in event_result['response']['message']['detection'] and event_result['response']['message']['detection']['payload'] is not None:
+        content = None
+        
+        if 'payload' in event_result['response']['message']['detection']:
             payload_content = event_result['response']['message']['detection']['payload']
             if type(payload_content) == dict:
-                if payload_content['page'].startswith('/'):
-                    payload_content['page'] = payload_content['page'][1:]
-                page_path = os.path.join(base_path, payload_content['page'])
-                content = '<html><body></body></html>'
-                if os.path.exists(page_path):
-                    content_type = mimetypes.guess_type(page_path)[0]
+                try:
+                    file_name = self.meta[payload_content['page']]['hash']
+                    content_type = self.meta[payload_content['page']]['content_type']
+                    page_path = os.path.join(self.dir, file_name)
                     with open(page_path, encoding='utf-8') as p:
                         content = p.read()
+                except KeyError:
+                    content = '<html><body></body></html>'
+                    content_type = 'text\html'
+
                 soup = BeautifulSoup(content, 'html.parser')
                 script_tag = soup.new_tag('div')
                 script_tag.append(BeautifulSoup(payload_content['value'], 'html.parser'))
@@ -209,30 +217,24 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 content_type = mimetypes.guess_type(payload_content)[0]
                 content = payload_content.encode('utf-8')
         else:
-            query = None
-            if request.path == '/':
-                parsed_url = self.run_args.index_page
-            else:
-                parsed_url = urlparse(unquote(request.path))
-                if parsed_url.query:
-                    query = '?' + parsed_url.query
-                parsed_url = parsed_url.path
-                if parsed_url.startswith('/'):
-                    parsed_url = parsed_url[1:]
-            path = os.path.normpath(os.path.join(base_path, parsed_url))
-            if os.path.isfile(path) and path.startswith(base_path):
-                content_type = mimetypes.guess_type(path)[0]
-                with open(path, 'rb') as fh:
-                    content = fh.read()
-                if content_type:
-                    if 'text/html' in content_type:
-                        content = yield from self.handle_html_content(content)
-            else:
-                content_type = None
-                content = None
+            requested_name = request.path
+            if requested_name == '/':
+                requested_name = self.run_args.index_page
+            try:
+                file_name = self.meta[requested_name]['hash']
+                content_type = self.meta[requested_name]['content_type']
+            except KeyError:
+
                 response = aiohttp.Response(
                     self.writer, status=404, http_version=request.version
                 )
+            path = os.path.normpath(os.path.join(base_path, parsed_url))
+                if os.path.isfile(path) and path.startswith(self.dir):
+                    with open(path, 'rb') as fh:
+                        content = fh.read()
+                    if content_type:
+                        if 'text/html' in content_type:
+                            content = yield from self.handle_html_content(content)
         response.add_header('Server', self.run_args.server_header)
         
         if 'cookies' in data and 'sess_uuid' in data['cookies']:
