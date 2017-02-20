@@ -218,11 +218,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 parsed_url = parsed_url.path
                 if parsed_url.startswith('/'):
                     parsed_url = parsed_url[1:]
-            path = os.path.join(base_path, parsed_url)
-            if query is not None:
-                path = os.path.normpath(os.path.join(path, query))
-            else:
-                path = os.path.normpath(path)
+            path = os.path.normpath(os.path.join(base_path, parsed_url))
             if os.path.isfile(path) and path.startswith(base_path):
                 content_type = mimetypes.guess_type(path)[0]
                 with open(path, 'rb') as fh:
