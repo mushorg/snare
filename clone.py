@@ -60,7 +60,8 @@ class Cloner(object):
         if not url.is_absolute():
             url = self.root.join(url)
 
-        yield from self.new_urls.put(url)
+        if url.human_repr() not in self.visited_urls:
+            yield from self.new_urls.put(url)
         return url.relative().human_repr()
 
     @asyncio.coroutine
@@ -105,9 +106,9 @@ class Cloner(object):
     def get_body(self, session):
         while not self.new_urls.empty():
             current_url = yield from self.new_urls.get()
-            if current_url in self.visited_urls:
+            if current_url.human_repr() in self.visited_urls:
                 continue
-            self.visited_urls.append(current_url)
+            self.visited_urls.append(current_url.human_repr())
             file_name, hash_name = self._make_filename(current_url)
             print('name: ', file_name)
             self.meta[file_name] = {}
