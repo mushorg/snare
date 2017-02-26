@@ -55,8 +55,7 @@ class Cloner(object):
     def process_link(self, url, check_host=False):
         url = yarl.URL(url)
         if check_host:
-            if (url.host != self.root.host or url.fragment
-                or url in self.visited_urls):
+            if url.host != self.root.host or url.fragment:
                 return None
         if not url.is_absolute():
             url = self.root.join(url)
@@ -95,7 +94,7 @@ class Cloner(object):
 
     def _make_filename(self, url):
         file_name = url.relative().human_repr()
-        if file_name == '/':
+        if file_name == '/' or file_name == "":
             file_name = 'index.html'
         m = hashlib.md5()
         m.update(file_name.encode('utf-8'))
@@ -103,7 +102,7 @@ class Cloner(object):
         return file_name, hash_name
 
     @asyncio.coroutine
-    def get_body(self):
+    def get_body(self, session):
         while not self.new_urls.empty():
             current_url = yield from self.new_urls.get()
             if current_url in self.visited_urls:
@@ -117,15 +116,13 @@ class Cloner(object):
             content_type = None
             try:
                 with aiohttp.Timeout(10.0):
-                    with aiohttp.ClientSession() as session:
-                        response = yield from session.get(current_url)
-                        content_type = response.content_type
-                        data = yield from response.read()
-            except aiohttp.ClientError as client_error:
+                    response = yield from session.get(current_url)
+                    content_type = response.content_type
+                    data = yield from response.read()
+            except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
                 print(client_error)
             else:
                 response.release()
-                session.close()
             if data is not None:
                 self.meta[file_name]['hash'] = hash_name
                 self.meta[file_name]['content_type'] = content_type
@@ -147,11 +144,12 @@ class Cloner(object):
 
     @asyncio.coroutine
     def run(self):
+        session = aiohttp.ClientSession()
         yield from self.new_urls.put(self.root)
-        yield from self.get_body()
+        yield from self.get_body(session)
         with open(os.path.join(self.target_path,'meta.json'), 'w') as mj:
             json.dump(self.meta,mj)
-
+        session.close()
 
 def main():
     if os.getuid() != 0:
