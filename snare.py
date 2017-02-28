@@ -442,7 +442,7 @@ if __name__ == '__main__':
         print("--page-dir: {0} does not exist".format(args.page_dir))
         exit()
     if not os.path.exists('/opt/snare/pages/' + args.page_dir + "/" + args.index_page):
-        print('can\'t crate meta tag')
+        print('can\'t create meta tag')
     else:
         add_meta_tag(args.page_dir, args.index_page)
     loop = asyncio.get_event_loop()
