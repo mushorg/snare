@@ -33,6 +33,7 @@ class Cloner(object):
     def __init__(self, root):
         self.visited_urls = []
         self.root = self.add_scheme(root)
+        self.moved_root = None
         if len(self.root.host) < 4:
             sys.exit('invalid taget {}'.format(self.root.host))
         self.target_path = '/opt/snare/pages/{}'.format(self.root.host)
@@ -53,26 +54,27 @@ class Cloner(object):
 
     @asyncio.coroutine
     def process_link(self, url, check_host=False):
-        url = yarl.URL(url)
-        if url.scheme == ("data" or "javascript"):
+        try:
+            url = yarl.URL(url)
+        except UnicodeError:
+            return None
+        if url.scheme == ("data" or "javascript" or "file"):
             return url.human_repr()
         if not url.is_absolute():
             url = self.root.join(url)
-        #get subdomains
-        host = url.host
-        if host is not None:
-            host_parts = host.split(".")
 
-            if len(host_parts) > 2:
-                host = host_parts[-2]+"."+host_parts[-1]
+        host = url.host
 
         if check_host:
-            if host != self.root.host or url.fragment:
+            if (host != self.root.host and
+                    (self.moved_root is not None and host != self.moved_root.host)) or \
+                    url.fragment:
                 return None
 
         if url.human_repr() not in self.visited_urls:
             yield from self.new_urls.put(url)
 
+        res = None
         try:
             res = url.relative().human_repr()
         except ValueError:
@@ -109,10 +111,13 @@ class Cloner(object):
         return soup
 
     def _make_filename(self, url):
-        host  = url.host
-        file_name = url.relative().human_repr()
+        host = url.host
+        if url.is_absolute():
+            file_name = url.relative().human_repr()
+        else:
+            file_name = url.human_repr()
         if file_name == '/' or file_name == "":
-            if host == self.root.host:
+            if host == self.root.host or (self.moved_root is not None and self.moved_root.host == host):
                 file_name = 'index.html'
             else:
                 file_name = host
@@ -159,8 +164,15 @@ class Cloner(object):
                         carved_url = yarl.URL(carved_url)
                         if not carved_url.is_absolute():
                             carved_url = self.root.join(carved_url)
-                        if carved_url not in self.visited_urls:
+                        if carved_url.human_repr() not in self.visited_urls:
                             yield from self.new_urls.put(carved_url)
+
+    @asyncio.coroutine
+    def get_root_host(self):
+        with aiohttp.ClientSession() as session:
+            resp = yield from session.get(self.root)
+            if resp._url_obj.host != self.root.host:
+                self.moved_root = resp._url_obj
 
     @asyncio.coroutine
     def run(self):
@@ -190,6 +202,7 @@ def main():
     args = parser.parse_args()
     try:
         cloner = Cloner(args.target)
+        loop.run_until_complete(cloner.get_root_host())
         loop.run_until_complete(cloner.run())
     except KeyboardInterrupt:
         pass
