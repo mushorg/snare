@@ -236,6 +236,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 response = aiohttp.Response(
                     self.writer, status=404, http_version=request.version
                 )
+        response.add_header('Server', self.run_args.server_header)
         if not content_type:
             response.add_header('Content-Type', 'text/plain')
         else:
@@ -415,6 +416,7 @@ if __name__ == '__main__':
     parser.add_argument("--config", help="snare config file", default='snare.cfg')
     parser.add_argument("--auto-update", help="auto update SNARE if new version available ", default=True)
     parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
+    parser.add_argument("--server-header", help="set server-header", default='nginx')
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
