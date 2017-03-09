@@ -223,12 +223,12 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 file_name = self.meta[requested_name]['hash']
                 content_type = self.meta[requested_name]['content_type']
             except KeyError:
-
                 response = aiohttp.Response(
                     self.writer, status=404, http_version=request.version
                 )
-            path = os.path.normpath(os.path.join(base_path, parsed_url))
-                if os.path.isfile(path) and path.startswith(self.dir):
+            else:
+                path = os.path.join(self.dir, file_name)
+                if os.path.isfile(path):
                     with open(path, 'rb') as fh:
                         content = fh.read()
                     if content_type:
