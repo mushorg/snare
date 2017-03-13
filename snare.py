@@ -108,6 +108,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             data['method'] = request.method
             data['headers'] = header
             data['path'] = request.path
+            if ('Cookie' in header):
+                data['cookies'] = {cookie.split('=')[0]: cookie.split('=')[1] for cookie in header['Cookie'].split('; ')} 
 
         return data
 
