@@ -109,8 +109,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             data['headers'] = header
             data['path'] = request.path
             if ('Cookie' in header):
-                data['cookies'] = {cookie.split('=')[0]: cookie.split('=')[1] for cookie in header['Cookie'].split('; ')} 
-
+                data['cookies'] = {cookie.split('=')[0]: cookie.split('=')[1] for cookie in header['Cookie'].split('; ')}
         return data
 
     @asyncio.coroutine
@@ -235,6 +234,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     self.writer, status=404, http_version=request.version
                 )
         response.add_header('Server', self.run_args.server_header)
+        if 'sess_id' in event_result['response']['message']:
+            response.add_header('Set-Cookie', 'sess_id='+event_result['response']['message']['sess_id'])
         if not content_type:
             response.add_header('Content-Type', 'text/plain')
         else:
