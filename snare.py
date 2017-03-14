@@ -239,7 +239,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         else:
             previous_sess_uuid = None
         if previous_sess_uuid is None or not previous_sess_uuid.strip():
-            response.add_header('Set-Cookie', 'sess_uuid='+event_result['response']['message']['sess_uuid'])
+            if 'sess_uuid' in event_result['response']['message']:
+                response.add_header('Set-Cookie', 'sess_uuid='+event_result['response']['message']['sess_uuid'])
         if not content_type:
             response.add_header('Content-Type', 'text/plain')
         else:
