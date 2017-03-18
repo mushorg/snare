@@ -116,6 +116,9 @@ class Cloner(object):
             file_name = url.relative().human_repr()
         else:
             file_name = url.human_repr()
+        if not file_name.startswith('/'):
+            file_name = "/"+file_name
+
         if file_name == '/' or file_name == "":
             if host == self.root.host or (self.moved_root is not None and self.moved_root.host == host):
                 file_name = 'index.html'
