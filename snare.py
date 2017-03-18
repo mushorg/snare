@@ -27,7 +27,7 @@ import sys
 import time
 import uuid
 from concurrent.futures import ProcessPoolExecutor
-from urllib.parse import parse_qsl
+from urllib.parse import parse_qsl, unquote
 
 import aiohttp
 import git
@@ -220,6 +220,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             if requested_name == '/':
                 requested_name = self.run_args.index_page
             try:
+                requested_name = unquote(requested_name)
                 file_name = self.meta[requested_name]['hash']
                 content_type = self.meta[requested_name]['content_type']
             except KeyError:
