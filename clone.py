@@ -66,9 +66,9 @@ class Cloner(object):
         host = url.host
 
         if check_host:
-            if (host != self.root.host and
-                    (self.moved_root is not None and host != self.moved_root.host)) or \
-                    url.fragment:
+            if (host != self.root.host and self.moved_root is None) or \
+                    url.fragment or \
+                    (self.moved_root is not None and host != self.moved_root.host):
                 return None
 
         if url.human_repr() not in self.visited_urls:
@@ -144,6 +144,7 @@ class Cloner(object):
                     response = yield from session.get(current_url)
                     content_type = response.content_type
                     data = yield from response.read()
+
             except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
                 print(client_error)
             else:
@@ -173,6 +174,7 @@ class Cloner(object):
             resp = yield from session.get(self.root)
             if resp._url_obj.host != self.root.host:
                 self.moved_root = resp._url_obj
+            resp.close()
 
     @asyncio.coroutine
     def run(self):
