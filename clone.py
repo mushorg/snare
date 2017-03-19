@@ -30,9 +30,10 @@ from bs4 import BeautifulSoup
 
 
 class Cloner(object):
-    def __init__(self, root):
+    def __init__(self, root, max_depth):
         self.visited_urls = []
         self.root = self.add_scheme(root)
+        self.max_depth = max_depth
         self.moved_root = None
         if len(self.root.host) < 4:
             sys.exit('invalid taget {}'.format(self.root.host))
@@ -53,7 +54,7 @@ class Cloner(object):
         return new_url
 
     @asyncio.coroutine
-    def process_link(self, url, check_host=False):
+    def process_link(self, url, level, check_host=False):
         try:
             url = yarl.URL(url)
         except UnicodeError:
@@ -71,8 +72,8 @@ class Cloner(object):
                     (self.moved_root is not None and host != self.moved_root.host):
                 return None
 
-        if url.human_repr() not in self.visited_urls:
-            yield from self.new_urls.put(url)
+        if url.human_repr() not in self.visited_urls and (level + 1) <= self.max_depth:
+            yield from self.new_urls.put((url, level+1))
 
         res = None
         try:
@@ -82,24 +83,24 @@ class Cloner(object):
         return res
 
     @asyncio.coroutine
-    def replace_links(self, data):
+    def replace_links(self, data, level):
         soup = BeautifulSoup(data, 'html.parser')
 
         # find all relative links
         for link in soup.findAll(href=True):
-            res = yield from self.process_link(link['href'], check_host=True)
+            res = yield from self.process_link(link['href'], level, check_host=True)
             if res is not None:
                 link['href'] = res
 
         # find all images and scripts
         for elem in soup.findAll(src=True):
-            res = yield from self.process_link(elem['src'])
+            res = yield from self.process_link(elem['src'], level)
             if res is not None:
                 elem['src'] = res
 
         # find all action elements
         for act_link in soup.findAll(action=True):
-            res = yield from self.process_link(act_link['action'])
+            res = yield from self.process_link(act_link['action'], level)
             if res is not None:
                 act_link['action'] = res
 
@@ -117,7 +118,7 @@ class Cloner(object):
         else:
             file_name = url.human_repr()
         if not file_name.startswith('/'):
-            file_name = "/"+file_name
+            file_name = "/" + file_name
 
         if file_name == '/' or file_name == "":
             if host == self.root.host or (self.moved_root is not None and self.moved_root.host == host):
@@ -132,7 +133,7 @@ class Cloner(object):
     @asyncio.coroutine
     def get_body(self, session):
         while not self.new_urls.empty():
-            current_url = yield from self.new_urls.get()
+            current_url, level = yield from self.new_urls.get()
             if current_url.human_repr() in self.visited_urls:
                 continue
             self.visited_urls.append(current_url.human_repr())
@@ -156,7 +157,7 @@ class Cloner(object):
                 self.meta[file_name]['hash'] = hash_name
                 self.meta[file_name]['content_type'] = content_type
                 if content_type == 'text/html':
-                    soup = yield from self.replace_links(data)
+                    soup = yield from self.replace_links(data, level)
                     data = str(soup).encode()
                 with open(os.path.join(self.target_path, hash_name), 'wb') as index_fh:
                     index_fh.write(data)
@@ -183,7 +184,7 @@ class Cloner(object):
     def run(self):
         session = aiohttp.ClientSession()
         try:
-            yield from self.new_urls.put(self.root)
+            yield from self.new_urls.put((self.root, 0))
             yield from self.get_body(session)
         except KeyboardInterrupt:
             raise
@@ -204,9 +205,10 @@ def main():
     loop = asyncio.get_event_loop()
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", help="domain of the page to be cloned", required=True)
+    parser.add_argument("--max-depth", help="max depth of the cloning", required=False, default=sys.maxsize)
     args = parser.parse_args()
     try:
-        cloner = Cloner(args.target)
+        cloner = Cloner(args.target, args.max_depth)
         loop.run_until_complete(cloner.get_root_host())
         loop.run_until_complete(cloner.run())
     except KeyboardInterrupt:
