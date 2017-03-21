@@ -188,7 +188,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         mimetypes.add_type('text/html','.php')
         mimetypes.add_type('text/html', '.aspx')
         base_path = os.path.join('/opt/snare/pages', self.run_args.page_dir)
-        if 'payload' in event_result['response']['message']['detection']:
+        if 'payload' in event_result['response']['message']['detection'] and event_result['response']['message']['detection']['payload'] is not None:
             payload_content = event_result['response']['message']['detection']['payload']
             if type(payload_content) == dict:
                 if payload_content['page'].startswith('/'):
