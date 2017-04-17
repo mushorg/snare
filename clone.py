@@ -53,8 +53,7 @@ class Cloner(object):
             new_url = yarl.URL('http://' + url)
         return new_url
 
-    @asyncio.coroutine
-    def process_link(self, url, level, check_host=False):
+    async def process_link(self, url, level, check_host=False):
         try:
             url = yarl.URL(url)
         except UnicodeError:
@@ -62,7 +61,10 @@ class Cloner(object):
         if url.scheme == ("data" or "javascript" or "file"):
             return url.human_repr()
         if not url.is_absolute():
-            url = self.root.join(url)
+            if self.moved_root is None:
+                url = self.root.join(url)
+            else:
+                url = self.moved_root.join(url)
 
         host = url.host
 
@@ -73,7 +75,7 @@ class Cloner(object):
                 return None
 
         if url.human_repr() not in self.visited_urls and (level + 1) <= self.max_depth:
-            yield from self.new_urls.put((url, level+1))
+            await self.new_urls.put((url, level + 1))
 
         res = None
         try:
@@ -82,25 +84,24 @@ class Cloner(object):
             print(url)
         return res
 
-    @asyncio.coroutine
-    def replace_links(self, data, level):
+    async def replace_links(self, data, level):
         soup = BeautifulSoup(data, 'html.parser')
 
         # find all relative links
         for link in soup.findAll(href=True):
-            res = yield from self.process_link(link['href'], level, check_host=True)
+            res = await self.process_link(link['href'], level, check_host=True)
             if res is not None:
                 link['href'] = res
 
         # find all images and scripts
         for elem in soup.findAll(src=True):
-            res = yield from self.process_link(elem['src'], level)
+            res = await self.process_link(elem['src'], level)
             if res is not None:
                 elem['src'] = res
 
         # find all action elements
         for act_link in soup.findAll(action=True):
-            res = yield from self.process_link(act_link['action'], level)
+            res = await self.process_link(act_link['action'], level)
             if res is not None:
                 act_link['action'] = res
 
@@ -130,10 +131,9 @@ class Cloner(object):
         hash_name = m.hexdigest()
         return file_name, hash_name
 
-    @asyncio.coroutine
-    def get_body(self, session):
+    async def get_body(self, session):
         while not self.new_urls.empty():
-            current_url, level = yield from self.new_urls.get()
+            current_url, level = await self.new_urls.get()
             if current_url.human_repr() in self.visited_urls:
                 continue
             self.visited_urls.append(current_url.human_repr())
@@ -145,19 +145,19 @@ class Cloner(object):
             content_type = None
             try:
                 with aiohttp.Timeout(10.0):
-                    response = yield from session.get(current_url)
+                    response = await session.get(current_url)
                     content_type = response.content_type
-                    data = yield from response.read()
+                    data = await response.read()
 
             except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
                 print(client_error)
             else:
-                yield from response.release()
+                await response.release()
             if data is not None:
                 self.meta[file_name]['hash'] = hash_name
                 self.meta[file_name]['content_type'] = content_type
                 if content_type == 'text/html':
-                    soup = yield from self.replace_links(data, level)
+                    soup = await self.replace_links(data, level)
                     data = str(soup).encode()
                 with open(os.path.join(self.target_path, hash_name), 'wb') as index_fh:
                     index_fh.write(data)
@@ -170,28 +170,26 @@ class Cloner(object):
                         if not carved_url.is_absolute():
                             carved_url = self.root.join(carved_url)
                         if carved_url.human_repr() not in self.visited_urls:
-                            yield from self.new_urls.put(carved_url)
+                            await self.new_urls.put(carved_url)
 
-    @asyncio.coroutine
-    def get_root_host(self):
+    async def get_root_host(self):
         with aiohttp.ClientSession() as session:
-            resp = yield from session.get(self.root)
+            resp = await session.get(self.root)
             if resp._url_obj.host != self.root.host:
                 self.moved_root = resp._url_obj
             resp.close()
 
-    @asyncio.coroutine
-    def run(self):
+    async def run(self):
         session = aiohttp.ClientSession()
         try:
-            yield from self.new_urls.put((self.root, 0))
-            yield from self.get_body(session)
+            await self.new_urls.put((self.root, 0))
+            await self.get_body(session)
         except KeyboardInterrupt:
             raise
         finally:
             with open(os.path.join(self.target_path, 'meta.json'), 'w') as mj:
                 json.dump(self.meta, mj)
-            yield from session.close()
+            await session.close()
 
 
 def main():
@@ -208,7 +206,7 @@ def main():
     parser.add_argument("--max-depth", help="max depth of the cloning", required=False, default=sys.maxsize)
     args = parser.parse_args()
     try:
-        cloner = Cloner(args.target, args.max_depth)
+        cloner = Cloner(args.target, int(args.max_depth))
         loop.run_until_complete(cloner.get_root_host())
         loop.run_until_complete(cloner.run())
     except KeyboardInterrupt:
