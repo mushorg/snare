@@ -123,7 +123,7 @@ class Cloner(object):
 
         if file_name == '/' or file_name == "":
             if host == self.root.host or (self.moved_root is not None and self.moved_root.host == host):
-                file_name = 'index.html'
+                file_name = '/index.html'
             else:
                 file_name = host
         m = hashlib.md5()

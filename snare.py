@@ -443,6 +443,7 @@ if __name__ == '__main__':
     if not os.path.exists(os.path.join(base_page_path,args.page_dir)):
         print("--page-dir: {0} does not exist".format(args.page_dir))
         exit()
+    args.index_page = os.path.join("/",args.index_page)
     with open(os.path.join(base_page_path,args.page_dir, 'meta.json')) as meta:
         meta_info = json.load(meta)
     if not os.path.exists(os.path.join(base_page_path,args.page_dir,os.path.join(meta_info[args.index_page]['hash']))):
