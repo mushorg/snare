@@ -7,7 +7,7 @@ SNARE
 Basic Concepts
 --------------
 
-- Surface fist. Focus on the attack surface generation.
+- Surface first. Focus on the attack surface generation.
 - Sensors and masters. Lightweight collectors (SNARE) and central decision maker (tanner).
 
 
