@@ -187,64 +187,13 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         if self.run_args.slurp_enabled:
             yield from self.submit_slurp(request.path)
 
+        content, content_type, headers, status_code = yield from self.parse_tanner_response(request.path, event_result['response']['message']['detection']) 
         response = aiohttp.Response(
-            self.writer, status=200, http_version=request.version
+            self.writer, status=status_code, http_version=request.version
         )
-        content_type = None
-        content = None
-       
-        detection = event_result['response']['message']['detection']
-        if detection['type'] == 1:
-            requested_name = request.path
-            if requested_name == '/':
-                requested_name = self.run_args.index_page
-            try:
-                requested_name = unquote(requested_name)
-                file_name = self.meta[requested_name]['hash']
-                content_type = self.meta[requested_name]['content_type']
-            except KeyError:
-                response = aiohttp.Response(
-                    self.writer, status=404, http_version=request.version
-                )
-            else:
-                path = os.path.join(self.dir, file_name)
-                if os.path.isfile(path):
-                    with open(path, 'rb') as fh:
-                        content = fh.read()
-                    if content_type:
-                        if 'text/html' in content_type:
-                            content = yield from self.handle_html_content(content)
-
-        elif detection['type'] == 2:
-            payload_content = event_result['response']['message']['detection']['payload']
-            if payload_content['page']:
-                try:
-                    file_name = self.meta[payload_content['page']]['hash']
-                    content_type = self.meta[payload_content['page']]['content_type']
-                    page_path = os.path.join(self.dir, file_name)
-                    with open(page_path, encoding='utf-8') as p:
-                        content = p.read()
-                except KeyError:
-                    content = '<html><body></body></html>'
-                    content_type = 'text\html'
-
-                soup = BeautifulSoup(content, 'html.parser')
-                script_tag = soup.new_tag('div')
-                script_tag.append(BeautifulSoup(payload_content['value'], 'html.parser'))
-                soup.body.append(script_tag)
-                content = str(soup).encode()
-            else:
-                content_type = mimetypes.guess_type(payload_content['value'])[0]
-                content = payload_content['value'].encode('utf-8')
-
-            if 'headers' in payload_content:
-                for name, val in payload_content['headers']:
-                    response.add_header(name, val)
-        else:
-            response = aiohttp.Response(
-                self.writer, status=payload_content['status_code'], http_version=request.version
-            )
-
+        for name, val in headers.items():
+            response.add_header(name, val)
+        
         response.add_header('Server', self.run_args.server_header)
         
         if 'cookies' in data and 'sess_uuid' in data['cookies']:
@@ -267,6 +216,60 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         if content:
             response.write(content)
         yield from response.write_eof()
+    
+    @asyncio.coroutine
+    def parse_tanner_response(self, requested_name, detection):
+        content_type = None
+        content = None
+        status_code = 200
+        headers = {}
+
+        if detection['type'] == 1:
+            if requested_name == '/':
+                requested_name = self.run_args.index_page
+            try:
+                requested_name = unquote(requested_name)
+                file_name = self.meta[requested_name]['hash']
+                content_type = self.meta[requested_name]['content_type']
+            except KeyError:
+                status_code = 404
+            else:
+                path = os.path.join(self.dir, file_name)
+                if os.path.isfile(path):
+                    with open(path, 'rb') as fh:
+                        content = fh.read()
+                    if content_type:
+                        if 'text/html' in content_type:
+                            content = yield from self.handle_html_content(content)
+
+        elif detection['type'] == 2:
+            payload_content = detection['payload']
+            if payload_content['page']:
+                try:
+                    file_name = self.meta[payload_content['page']]['hash']
+                    content_type = self.meta[payload_content['page']]['content_type']
+                    page_path = os.path.join(self.dir, file_name)
+                    with open(page_path, encoding='utf-8') as p:
+                        content = p.read()
+                except KeyError:
+                    content = '<html><body></body></html>'
+                    content_type = 'text\html'
+
+                soup = BeautifulSoup(content, 'html.parser')
+                script_tag = soup.new_tag('div')
+                script_tag.append(BeautifulSoup(payload_content['value'], 'html.parser'))
+                soup.body.append(script_tag)
+                content = str(soup).encode()
+            else:
+                content_type = mimetypes.guess_type(payload_content['value'])[0]
+                content = payload_content['value'].encode('utf-8')
+
+            if 'headers' in payload_content:
+                headers =  payload_content['headers']
+        else:
+            status_code = payload_content['status_code']
+
+        return (content, content_type, headers, status_code)
 
     def handle_error(self, status=500, message=None,
                      payload=None, exc=None, headers=None, reason=None):
