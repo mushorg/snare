@@ -42,7 +42,7 @@ except ImportError:
 from bs4 import BeautifulSoup
 import cssutils
 import netifaces as ni
-
+from converter import Converter
 
 class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
     def __init__(self, meta, run_args, debug=False, keep_alive=75, **kwargs):
@@ -453,11 +453,16 @@ if __name__ == '__main__':
             print('\t- {}'.format(page))
         print('\nuse with --page-dir {page_name}\n\n')
         exit()
-    if not os.path.exists(os.path.join(base_page_path,args.page_dir)):
+    full_page_path = os.path.join(base_page_path, args.page_dir)
+    if not os.path.exists(full_page_path):
         print("--page-dir: {0} does not exist".format(args.page_dir))
         exit()
-    args.index_page = os.path.join("/",args.index_page)
-    with open(os.path.join(base_page_path,args.page_dir, 'meta.json')) as meta:
+    args.index_page = os.path.join("/", args.index_page)
+    if not os.path.exists(os.path.join(full_page_path, 'meta.json')):
+        conv = Converter()
+        conv.convert(full_page_path)
+
+    with open(os.path.join(full_page_path, 'meta.json')) as meta:
         meta_info = json.load(meta)
     if not os.path.exists(os.path.join(base_page_path,args.page_dir,os.path.join(meta_info[args.index_page]['hash']))):
         print('can\'t create meta tag')
