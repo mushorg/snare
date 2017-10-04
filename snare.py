@@ -458,9 +458,11 @@ if __name__ == '__main__':
         print("--page-dir: {0} does not exist".format(args.page_dir))
         exit()
     args.index_page = os.path.join("/", args.index_page)
+    
     if not os.path.exists(os.path.join(full_page_path, 'meta.json')):
         conv = Converter()
         conv.convert(full_page_path)
+        print("pages was converted. Try to clone again for the better result.")
 
     with open(os.path.join(full_page_path, 'meta.json')) as meta:
         meta_info = json.load(meta)
