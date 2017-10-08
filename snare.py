@@ -188,7 +188,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         mimetypes.add_type('text/html','.php')
         mimetypes.add_type('text/html', '.aspx')
         base_path = os.path.join('/opt/snare/pages', self.run_args.page_dir)
-        if 'payload' in event_result['response']['message']['detection'] and event_result['response']['message']['detection']['payload'] is not None:
+        if event_result is not None and ('payload' in event_result['response']['message']['detection'] and event_result['response']['message']['detection']['payload'] is not None):
             payload_content = event_result['response']['message']['detection']['payload']
             if type(payload_content) == dict:
                 if payload_content['page'].startswith('/'):
@@ -234,17 +234,17 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     self.writer, status=404, http_version=request.version
                 )
         response.add_header('Server', self.run_args.server_header)
-        
+
         if 'cookies' in data and 'sess_uuid' in data['cookies']:
             previous_sess_uuid = data['cookies']['sess_uuid']
         else:
             previous_sess_uuid = None
-        
-        if 'sess_uuid' in event_result['response']['message']:
+
+        if event_result is not None and ('sess_uuid' in event_result['response']['message']):
             cur_sess_id = event_result['response']['message']['sess_uuid']
             if previous_sess_uuid is None or not previous_sess_uuid.strip() or previous_sess_uuid != cur_sess_id:
                 response.add_header('Set-Cookie', 'sess_uuid=' + cur_sess_id)
-        
+
         if not content_type:
             response.add_header('Content-Type', 'text/plain')
         else:
