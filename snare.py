@@ -43,6 +43,7 @@ from bs4 import BeautifulSoup
 import cssutils
 import netifaces as ni
 
+import logger
 
 class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
     def __init__(self, run_args, debug=False, keep_alive=75, **kwargs):
@@ -178,6 +179,9 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         # Submit the event to the TANNER service
         event_result = yield from self.submit_data(data)
 
+        #Log the URL to /opt/snare/snare.log
+        self.logger.info('Requested path %s', self.run_args.page_dir + request.path)
+        
         # Log the event to slurp service if enabled
         if self.run_args.slurp_enabled:
             yield from self.submit_slurp(request.path)
@@ -460,6 +464,11 @@ if __name__ == '__main__':
         lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
         args.interface, int(args.port))
     srv = loop.run_until_complete(future)
+
+    #log info
+    info_log_file_name = '/opt/snare/snare.log'
+    logger.Logger.create_logger(info_log_file_name, __package__)
+    print("Info logs will be stored in", info_log_file_name)
 
     drop_privileges()
     print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
