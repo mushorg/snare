@@ -180,7 +180,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         event_result = yield from self.submit_data(data)
 
         #Log the URL to /opt/snare/snare.log
-        self.logger.info('Requested path %s', self.run_args.page_dir + request.path)
+        ip=self.transport.get_extra_info('peername')[0]
+        self.logger.info('Source IP %s - - Requested path %s', ip, self.run_args.page_dir + request.path)
         
         # Log the event to slurp service if enabled
         if self.run_args.slurp_enabled:
