@@ -1,5 +1,6 @@
 import logging
 import logging.handlers
+from time import gmtime
 
 
 class LevelFilter(logging.Filter):
@@ -17,8 +18,7 @@ class Logger:
         logger = logging.getLogger(logger_name)
         logger.setLevel(logging.INFO)
         logger.propagate = False
-        formatter = logging.Formatter(fmt='%(asctime)s %(levelname)s:%(name)s:%(funcName)s: %(message)s',
-                                      datefmt='%Y-%m-%d %H:%M')
+        formatter = logging.Formatter(fmt='%(hostIP)s - %(user)s [%(time)s]%(message)s\"%(req)s\" %(stat)d %(content_length)s')
 
         # DEBUG log to '/opt/snare/snare.log'
         debug_log_handler = logging.handlers.RotatingFileHandler(debug_filename, encoding='utf-8')

@@ -44,6 +44,8 @@ import cssutils
 import netifaces as ni
 
 import logger
+import getpass
+from time import strftime
 
 
 class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
@@ -180,16 +182,13 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         # Submit the event to the TANNER service
         event_result = yield from self.submit_data(data)
 
-        # Log the URL to /opt/snare/snare.log
-        ip = self.transport.get_extra_info('peername')[0]
-        self.logger.info('Source IP %s - - Requested path %s', ip, self.run_args.page_dir + request.path)
-
         # Log the event to slurp service if enabled
         if self.run_args.slurp_enabled:
             yield from self.submit_slurp(request.path)
         response = aiohttp.Response(
             self.writer, status=200, http_version=request.version
         )
+
         content_type = None
         mimetypes.add_type('text/html', '.php')
         mimetypes.add_type('text/html', '.aspx')
@@ -257,6 +256,19 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             response.add_header('Content-Type', content_type)
         if content:
             response.add_header('Content-Length', str(len(content)))
+
+        # logging of ip, stat, req, user, len, time
+        req = request.method + ' /' + self.run_args.page_dir + request.path
+        major = response.version.major
+        minor = response.version.minor
+        ver = " HTTP/" + str(major) + '.' + str(minor)
+        req = req + ver
+        user = getpass.getuser()
+        tim = strftime("%d/%b/%Y:%H:%M:%S %z")
+        d = {'hostIP': request.headers['Host'], 'stat': response.status, 'req': req, 'user': user,
+             'content_length': response.headers['Content-Length'], 'time': tim}
+        self.logger.info(' ', extra=d)
+
         response.send_headers()
         if content:
             response.write(content)
@@ -447,7 +459,7 @@ if __name__ == '__main__':
         print("--page-dir: {0} does not exist".format(args.page_dir))
         exit()
     if not os.path.exists('/opt/snare/pages/' + args.page_dir + "/" + args.index_page):
-        print('can\'t crate meta tag')
+        print('can\'t create meta tag')
     else:
         add_meta_tag(args.page_dir, args.index_page)
     loop = asyncio.get_event_loop()
