@@ -258,16 +258,17 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             response.add_header('Content-Length', str(len(content)))
 
         # logging of ip, stat, req, user, len, time
-        req = request.method + ' /' + self.run_args.page_dir + request.path
-        major = response.version.major
-        minor = response.version.minor
-        ver = " HTTP/" + str(major) + '.' + str(minor)
-        req = req + ver
-        user = getpass.getuser()
-        tim = strftime("%d/%b/%Y:%H:%M:%S %z")
-        d = {'hostIP': request.headers['Host'], 'stat': response.status, 'req': req, 'user': user,
-             'content_length': response.headers['Content-Length'], 'time': tim}
-        self.logger.info(' ', extra=d)
+        if args.logger:
+            req = request.method + ' /' + self.run_args.page_dir + request.path
+            major = response.version.major
+            minor = response.version.minor
+            ver = " HTTP/" + str(major) + '.' + str(minor)
+            req = req + ver
+            user = getpass.getuser()
+            tim = strftime("%d/%b/%Y:%H:%M:%S %z")
+            d = {'hostIP': request.headers['Host'], 'stat': response.status, 'req': req, 'user': user,
+                 'content_length': response.headers['Content-Length'], 'time': tim}
+            self.logger.info(' ', extra=d)
 
         response.send_headers()
         if content:
