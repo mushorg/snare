@@ -13,7 +13,6 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 """
-
 import argparse
 import asyncio
 import configparser
@@ -27,7 +26,7 @@ import time
 import uuid
 from concurrent.futures import ProcessPoolExecutor
 from urllib.parse import urlparse, unquote, parse_qsl
-
+import versions
 import aiohttp
 import git
 import mimetypes
@@ -385,11 +384,14 @@ def parse_timeout(timeout):
 
 
 @asyncio.coroutine
-def check_tanner_connection():
+def check_tanner():
     with aiohttp.ClientSession() as client:
-        req_url = 'http://{}:8090'.format(args.tanner)
+        req_url = 'http://{}:8090/version'.format(args.tanner)
         try:
             resp = yield from client.get(req_url)
+            result = yield from resp.json()
+            version = result["version"]
+            versions.check_compatibility(version)
         except aiohttp.errors.ClientOSError:
             print("Can't connect to tanner host {}".format(req_url))
             exit(1)
@@ -444,7 +446,7 @@ if __name__ == '__main__':
     else:
         add_meta_tag(args.page_dir, args.index_page)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(check_tanner_connection())
+    loop.run_until_complete(check_tanner())
 
     pool = ProcessPoolExecutor(max_workers=multiprocessing.cpu_count())
     compare_version_fut = None
