@@ -11,5 +11,5 @@ class VersionManager:
     def check_compatibility(self, tanner_version):
         max_version =  self.version_mapper[self.version]
         if not StrictVersion(tanner_version) <= StrictVersion(max_version):
-            print("Wrong tanner version {}. Need version {} or less".format(tanner_version, max_version))
+            print("Wrong tanner version: {}. Need version: {} or less".format(tanner_version, max_version))
             exit(1)
