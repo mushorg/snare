@@ -53,7 +53,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             directory='/opt/snare/pages/{}'.format(run_args.page_dir)
         )
         super().__init__(debug=debug, keep_alive=keep_alive, access_log=None, **kwargs)
-
+        
     async def get_dorks(self):
         dorks = None
         try:
@@ -72,7 +72,6 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             print('Dorks timeout')
         return dorks['response']['dorks'] if dorks else []
 
-
     async def submit_slurp(self, data):
         try:
             with aiohttp.Timeout(10.0):
@@ -86,7 +85,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     r.close()
         except Exception as e:
             print(e)
-
+            
     def create_data(self, request, response_status):
         data = dict(
             method=None,
@@ -111,7 +110,6 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 data['cookies'] = {cookie.split('=')[0]: cookie.split('=')[1] for cookie in header['Cookie'].split('; ')}
         return data
 
-
     async def submit_data(self, data):
         event_result = None
         try:
@@ -129,7 +127,6 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         except Exception as e:
             raise e
         return event_result
-
 
     async def handle_html_content(self, content):
         soup = BeautifulSoup(content, 'html.parser')
@@ -161,7 +158,6 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             p_elem.replace_with(p_new)
         content = soup.encode('utf-8')
         return content
-
    
     async def handle_request(self, request, payload):
         print('Request path: {0}'.format(request.path))
@@ -381,7 +377,6 @@ def parse_timeout(timeout):
         result = int(timeout[:-1])
         result *= timeouts_coeff[form]
     return result
-
 
 
 async def check_tanner_connection():
