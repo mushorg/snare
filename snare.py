@@ -378,7 +378,7 @@ def parse_timeout(timeout):
     return result
 
 
-async def check_tanner_connection():
+async def check_tanner():
     vm = VersionManager()
     with aiohttp.ClientSession() as client:
         req_url = 'http://{}:8090/version'.format(args.tanner)
