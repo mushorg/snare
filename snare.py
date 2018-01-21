@@ -268,7 +268,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             tim = strftime("%d/%b/%Y:%H:%M:%S %z")
             d = {'hostIP': request.headers['Host'], 'stat': response.status, 'req': req, 'user': user,
                  'content_length': response.headers['Content-Length'], 'time': tim}
-            self.logger.info(' ', extra=d)
+            level_dict = {'CRITICAL': 50, 'ERROR': 40, 'WARNING': 30, 'INFO': 20, 'DEBUG': 10, 'NOTSET': 0}
+            self.logger.log(level_dict[args.logger], ' ', extra=d)
 
         response.send_headers()
         if content:
@@ -444,7 +445,7 @@ if __name__ == '__main__':
     parser.add_argument("--auto-update", help="auto update SNARE if new version available ", default=True)
     parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
     parser.add_argument("--server-header", help="set server-header", default='nginx')
-    parser.add_argument("--logger", help="log of time-stamp, URL and source IP", action="store_true")
+    parser.add_argument("--logger", help="log of time-stamp, URL and source IP")
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
@@ -484,8 +485,8 @@ if __name__ == '__main__':
     # log info
     if args.logger:
         info_log_file_name = '/opt/snare/snare.log'
-        logger.Logger.create_logger(info_log_file_name, __package__)
-        print("Info logs will be stored in", info_log_file_name)
+        logger.Logger.create_logger(info_log_file_name, __package__, args.logger)
+        print("Logs will be stored in", info_log_file_name)
 
     drop_privileges()
     print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
