@@ -3,5 +3,5 @@ beautifulsoup4
 cssutils
 gitpython
 netifaces
-yarl
+yarl==0.9.8
 python-magic
