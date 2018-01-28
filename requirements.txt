@@ -4,8 +4,4 @@ cssutils
 gitpython
 netifaces
 yarl==0.9.8
-<<<<<<< HEAD
 python-magic
-=======
-python-magic
->>>>>>> origin
