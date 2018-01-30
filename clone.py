@@ -22,7 +22,7 @@ import os
 import re
 import sys
 from asyncio import Queue
-
+from selenium import webdriver
 import aiohttp
 import cssutils
 import yarl
@@ -195,6 +195,19 @@ class Cloner(object):
                 json.dump(self.meta, mj)
             await session.close()
 
+def clone_error_page(root):
+    root = 'http://'+root 
+    err_url = root + '/status_404'
+    url = yarl.URL(root)
+    target_path = '/opt/snare/pages/{}'.format(url.host)
+    browser = webdriver.Chrome()
+    browser.get(err_url)
+    html_source = browser.page_source
+    print(target_path)
+    with open( target_path + '/err404.html' , 'w' ) as f:
+        print(target_path + '/err404.html')
+        f.write(html_source)
+        f.close()
 
 def main():
     if os.getuid() != 0:
@@ -213,6 +226,7 @@ def main():
         cloner = Cloner(args.target, int(args.max_depth))
         loop.run_until_complete(cloner.get_root_host())
         loop.run_until_complete(cloner.run())
+        clone_error_page(args.target)
     except KeyboardInterrupt:
         pass
 
