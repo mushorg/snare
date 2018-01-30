@@ -170,14 +170,18 @@ class Cloner(object):
                         if not carved_url.is_absolute():
                             carved_url = self.root.join(carved_url)
                         if carved_url.human_repr() not in self.visited_urls:
-                            await self.new_urls.put(carved_url)
+                            await self.new_urls.put((carved_url,level+1))
 
     async def get_root_host(self):
-        with aiohttp.ClientSession() as session:
-            resp = await session.get(self.root)
-            if resp._url_obj.host != self.root.host:
-                self.moved_root = resp._url_obj
-            resp.close()
+        try:
+            with aiohttp.ClientSession() as session:
+                resp = await session.get(self.root)
+                if resp._url_obj.host != self.root.host:
+                    self.moved_root = resp._url_obj
+                resp.close()
+        except aiohttp.errors.ClientError as err:
+            print("Can\'t connect to target host.")
+            exit(-1)
 
     async def run(self):
         session = aiohttp.ClientSession()
