@@ -31,6 +31,7 @@ class Cloner(object):
     def __init__(self, root):
         self.visited_urls = []
         self.root = self.add_scheme(root)
+        self.error_page = self.add_scheme(root + "/error_404")
         if len(self.root.host) < 4:
             sys.exit('invalid taget {}'.format(self.root.host))
         self.target_path = '/opt/snare/pages/{}'.format(self.root.host)
@@ -144,6 +145,8 @@ class Cloner(object):
     @asyncio.coroutine
     def run(self):
         yield from self.new_urls.put(self.root)
+        # Force 404 Page
+        yield from self.new_urls.put(self.error_page)
         return (yield from self.get_body())
 
 
