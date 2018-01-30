@@ -52,18 +52,17 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             directory='/opt/snare/pages/{}'.format(run_args.page_dir)
         )
         super().__init__(debug=debug, keep_alive=keep_alive, access_log=None, **kwargs)
-
-    @asyncio.coroutine
-    def get_dorks(self):
+        
+    async def get_dorks(self):
         dorks = None
         try:
             with aiohttp.Timeout(10.0):
                 with aiohttp.ClientSession() as session:
-                    r = yield from session.get(
+                    r = await session.get(
                         'http://{0}:8090/dorks'.format(self.run_args.tanner)
                     )
                     try:
-                        dorks = yield from r.json()
+                        dorks = await r.json()
                     except json.decoder.JSONDecodeError as e:
                         print(e)
                     finally:
@@ -72,12 +71,11 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             print('Dorks timeout')
         return dorks['response']['dorks'] if dorks else []
 
-    @asyncio.coroutine
-    def submit_slurp(self, data):
+    async def submit_slurp(self, data):
         try:
             with aiohttp.Timeout(10.0):
                 with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
-                    r = yield from session.post(
+                    r = await session.post(
                         'https://{0}:8080/api?auth={1}&chan=snare_test&msg={2}'.format(
                             self.run_args.slurp_host, self.run_args.slurp_auth, data
                         ), data=json.dumps(data)
@@ -86,7 +84,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     r.close()
         except Exception as e:
             print(e)
-
+            
     def create_data(self, request, response_status):
         data = dict(
             method=None,
@@ -111,17 +109,16 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 data['cookies'] = {cookie.split('=')[0]: cookie.split('=')[1] for cookie in header['Cookie'].split('; ')}
         return data
 
-    @asyncio.coroutine
-    def submit_data(self, data):
+    async def submit_data(self, data):
         event_result = None
         try:
             with aiohttp.Timeout(10.0):
                 with aiohttp.ClientSession() as session:
-                    r = yield from session.post(
+                    r = await session.post(
                         'http://{0}:8090/event'.format(self.run_args.tanner), data=json.dumps(data)
                     )
                     try:
-                        event_result = yield from r.json()
+                        event_result = await r.json()
                     except json.decoder.JSONDecodeError as e:
                         print(e, data)
                     finally:
@@ -130,8 +127,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             raise e
         return event_result
 
-    @asyncio.coroutine
-    def handle_html_content(self, content):
+    async def handle_html_content(self, content):
         soup = BeautifulSoup(content, 'html.parser')
         for p_elem in soup.find_all('p'):
             if p_elem.findChildren():
@@ -144,7 +140,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             for idx, word in enumerate(text_list):
                 # Fetch dorks if required
                 if len(self.dorks) <= 0:
-                    self.dorks = yield from self.get_dorks()
+                    self.dorks = await self.get_dorks()
                 word += ' '
                 if idx % 5 == 0:
                     a_tag = soup.new_tag(
@@ -161,13 +157,12 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             p_elem.replace_with(p_new)
         content = soup.encode('utf-8')
         return content
-
-    @asyncio.coroutine
-    def handle_request(self, request, payload):
+   
+    async def handle_request(self, request, payload):
         print('Request path: {0}'.format(request.path))
         data = self.create_data(request, 200)
         if request.method == 'POST':
-            post_data = yield from payload.read()
+            post_data = await payload.read()
             post_data = MultiDict(parse_qsl(post_data.decode('utf-8')))
             print('POST data:')
             for key, val in post_data.items():
@@ -175,11 +170,11 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             data['post_data'] = dict(post_data)
 
         # Submit the event to the TANNER service
-        event_result = yield from self.submit_data(data)
+        event_result = await self.submit_data(data)
 
         # Log the event to slurp service if enabled
         if self.run_args.slurp_enabled:
-            yield from self.submit_slurp(request.path)
+            await self.submit_slurp(request.path)
         response = aiohttp.Response(
             self.writer, status=200, http_version=request.version
         )
@@ -225,7 +220,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     content = fh.read()
                 if content_type:
                     if 'text/html' in content_type:
-                        content = yield from self.handle_html_content(content)
+                        content = await self.handle_html_content(content)
             else:
                 content_type = None
                 content = None
@@ -253,7 +248,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         response.send_headers()
         if content:
             response.write(content)
-        yield from response.write_eof()
+        await response.write_eof()
 
     def handle_error(self, status=500, message=None,
                      payload=None, exc=None, headers=None, reason=None):
@@ -383,21 +378,20 @@ def parse_timeout(timeout):
     return result
 
 
-@asyncio.coroutine
-def check_tanner():
+async def check_tanner():
     vm = VersionManager()
     with aiohttp.ClientSession() as client:
         req_url = 'http://{}:8090/version'.format(args.tanner)
         try:
-            resp = yield from client.get(req_url)
-            result = yield from resp.json()
+            resp = await client.get(req_url)
+            result = await resp.json()
             version = result["version"]
             vm.check_compatibility(version)
         except aiohttp.errors.ClientOSError:
             print("Can't connect to tanner host {}".format(req_url))
             exit(1)
         else:
-            yield from resp.release()
+            await resp.release()
 
 
 if __name__ == '__main__':
