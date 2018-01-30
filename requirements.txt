@@ -5,3 +5,4 @@ gitpython
 netifaces
 yarl
 python-magic
+selenium
