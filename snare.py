@@ -508,4 +508,3 @@ if __name__ == '__main__':
         srv.close()
         loop.run_until_complete(srv.wait_closed())
         loop.close()
-
