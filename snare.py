@@ -18,6 +18,7 @@ import asyncio
 import configparser
 import grp
 import json
+import mimetypes
 import multiprocessing
 import os
 import pwd
@@ -29,7 +30,6 @@ from urllib.parse import urlparse, unquote, parse_qsl
 from versions_manager import VersionManager
 import aiohttp
 import git
-import mimetypes
 import pip
 from aiohttp import MultiDict
 
@@ -41,29 +41,33 @@ except ImportError:
 from bs4 import BeautifulSoup
 import cssutils
 import netifaces as ni
-
+from converter import Converter
 
 class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
-    def __init__(self, run_args, debug=False, keep_alive=75, **kwargs):
+    def __init__(self, meta, run_args, debug=False, keep_alive=75, **kwargs):
         self.dorks = []
+
         self.run_args = run_args
+        self.dir = '/opt/snare/pages/{}'.format(run_args.page_dir)
+
+        self.meta = meta
+
         self.sroute = StaticRoute(
             name=None, prefix='/',
-            directory='/opt/snare/pages/{}'.format(run_args.page_dir)
+            directory=self.dir
         )
         super().__init__(debug=debug, keep_alive=keep_alive, access_log=None, **kwargs)
 
-    @asyncio.coroutine
-    def get_dorks(self):
+    async def get_dorks(self):
         dorks = None
         try:
             with aiohttp.Timeout(10.0):
                 with aiohttp.ClientSession() as session:
-                    r = yield from session.get(
+                    r = await session.get(
                         'http://{0}:8090/dorks'.format(self.run_args.tanner)
                     )
                     try:
-                        dorks = yield from r.json()
+                        dorks = await r.json()
                     except json.decoder.JSONDecodeError as e:
                         print(e)
                     finally:
@@ -72,12 +76,11 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             print('Dorks timeout')
         return dorks['response']['dorks'] if dorks else []
 
-    @asyncio.coroutine
-    def submit_slurp(self, data):
+    async def submit_slurp(self, data):
         try:
             with aiohttp.Timeout(10.0):
                 with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
-                    r = yield from session.post(
+                    r = await session.post(
                         'https://{0}:8080/api?auth={1}&chan=snare_test&msg={2}'.format(
                             self.run_args.slurp_host, self.run_args.slurp_auth, data
                         ), data=json.dumps(data)
@@ -111,17 +114,16 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 data['cookies'] = {cookie.split('=')[0]: cookie.split('=')[1] for cookie in header['Cookie'].split('; ')}
         return data
 
-    @asyncio.coroutine
-    def submit_data(self, data):
+    async def submit_data(self, data):
         event_result = None
         try:
             with aiohttp.Timeout(10.0):
                 with aiohttp.ClientSession() as session:
-                    r = yield from session.post(
+                    r = await session.post(
                         'http://{0}:8090/event'.format(self.run_args.tanner), data=json.dumps(data)
                     )
                     try:
-                        event_result = yield from r.json()
+                        event_result = await r.json()
                     except json.decoder.JSONDecodeError as e:
                         print(e, data)
                     finally:
@@ -130,8 +132,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             raise e
         return event_result
 
-    @asyncio.coroutine
-    def handle_html_content(self, content):
+    async def handle_html_content(self, content):
         soup = BeautifulSoup(content, 'html.parser')
         for p_elem in soup.find_all('p'):
             if p_elem.findChildren():
@@ -144,7 +145,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             for idx, word in enumerate(text_list):
                 # Fetch dorks if required
                 if len(self.dorks) <= 0:
-                    self.dorks = yield from self.get_dorks()
+                    self.dorks = await self.get_dorks()
                 word += ' '
                 if idx % 5 == 0:
                     a_tag = soup.new_tag(
@@ -162,12 +163,11 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         content = soup.encode('utf-8')
         return content
 
-    @asyncio.coroutine
-    def handle_request(self, request, payload):
+    async def handle_request(self, request, payload):
         print('Request path: {0}'.format(request.path))
         data = self.create_data(request, 200)
         if request.method == 'POST':
-            post_data = yield from payload.read()
+            post_data = await payload.read()
             post_data = MultiDict(parse_qsl(post_data.decode('utf-8')))
             print('POST data:')
             for key, val in post_data.items():
@@ -175,63 +175,19 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             data['post_data'] = dict(post_data)
 
         # Submit the event to the TANNER service
-        event_result = yield from self.submit_data(data)
+        event_result = await self.submit_data(data)
 
         # Log the event to slurp service if enabled
         if self.run_args.slurp_enabled:
-            yield from self.submit_slurp(request.path)
-        response = aiohttp.Response(
-            self.writer, status=200, http_version=request.version
-        )
-        content_type = None
-        mimetypes.add_type('text/html','.php')
-        mimetypes.add_type('text/html', '.aspx')
-        base_path = os.path.join('/opt/snare/pages', self.run_args.page_dir)
-        if event_result is not None and ('payload' in event_result['response']['message']['detection'] and event_result['response']['message']['detection']['payload'] is not None):
-            payload_content = event_result['response']['message']['detection']['payload']
-            if type(payload_content) == dict:
-                if payload_content['page'].startswith('/'):
-                    payload_content['page'] = payload_content['page'][1:]
-                page_path = os.path.join(base_path, payload_content['page'])
-                content = '<html><body></body></html>'
-                if os.path.exists(page_path):
-                    content_type = mimetypes.guess_type(page_path)[0]
-                    with open(page_path, encoding='utf-8') as p:
-                        content = p.read()
-                soup = BeautifulSoup(content, 'html.parser')
-                script_tag = soup.new_tag('div')
-                script_tag.append(BeautifulSoup(payload_content['value'], 'html.parser'))
-                soup.body.append(script_tag)
-                content = str(soup).encode()
+            await self.submit_slurp(request.path)
 
-            else:
-                content_type = mimetypes.guess_type(payload_content)[0]
-                content = payload_content.encode('utf-8')
-        else:
-            query = None
-            if request.path == '/':
-                parsed_url = self.run_args.index_page
-            else:
-                parsed_url = urlparse(unquote(request.path))
-                if parsed_url.query:
-                    query = '?' + parsed_url.query
-                parsed_url = parsed_url.path
-                if parsed_url.startswith('/'):
-                    parsed_url = parsed_url[1:]
-            path = os.path.normpath(os.path.join(base_path, parsed_url))
-            if os.path.isfile(path) and path.startswith(base_path):
-                content_type = mimetypes.guess_type(path)[0]
-                with open(path, 'rb') as fh:
-                    content = fh.read()
-                if content_type:
-                    if 'text/html' in content_type:
-                        content = yield from self.handle_html_content(content)
-            else:
-                content_type = None
-                content = None
-                response = aiohttp.Response(
-                    self.writer, status=404, http_version=request.version
-                )
+        content, content_type, headers, status_code = await self.parse_tanner_response(request.path, event_result['response']['message']['detection']) 
+        response = aiohttp.Response(
+            self.writer, status=status_code, http_version=request.version
+        )
+        for name, val in headers.items():
+            response.add_header(name, val)
+        
         response.add_header('Server', self.run_args.server_header)
 
         if 'cookies' in data and 'sess_uuid' in data['cookies']:
@@ -253,7 +209,60 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         response.send_headers()
         if content:
             response.write(content)
-        yield from response.write_eof()
+        await response.write_eof()
+    
+    async def parse_tanner_response(self, requested_name, detection):
+        content_type = None
+        content = None
+        status_code = 200
+        headers = {}
+
+        if detection['type'] == 1:
+            if requested_name == '/':
+                requested_name = self.run_args.index_page
+            try:
+                requested_name = unquote(requested_name)
+                file_name = self.meta[requested_name]['hash']
+                content_type = self.meta[requested_name]['content_type']
+            except KeyError:
+                status_code = 404
+            else:
+                path = os.path.join(self.dir, file_name)
+                if os.path.isfile(path):
+                    with open(path, 'rb') as fh:
+                        content = fh.read()
+                    if content_type:
+                        if 'text/html' in content_type:
+                            content = await self.handle_html_content(content)
+
+        elif detection['type'] == 2:
+            payload_content = detection['payload']
+            if payload_content['page']:
+                try:
+                    file_name = self.meta[payload_content['page']]['hash']
+                    content_type = self.meta[payload_content['page']]['content_type']
+                    page_path = os.path.join(self.dir, file_name)
+                    with open(page_path, encoding='utf-8') as p:
+                        content = p.read()
+                except KeyError:
+                    content = '<html><body></body></html>'
+                    content_type = 'text\html'
+
+                soup = BeautifulSoup(content, 'html.parser')
+                script_tag = soup.new_tag('div')
+                script_tag.append(BeautifulSoup(payload_content['value'], 'html.parser'))
+                soup.body.append(script_tag)
+                content = str(soup).encode()
+            else:
+                content_type = mimetypes.guess_type(payload_content['value'])[0]
+                content = payload_content['value'].encode('utf-8')
+
+            if 'headers' in payload_content:
+                headers =  payload_content['headers']
+        else:
+            status_code = payload_content['status_code']
+
+        return (content, content_type, headers, status_code)
 
     def handle_error(self, status=500, message=None,
                      payload=None, exc=None, headers=None, reason=None):
@@ -383,21 +392,20 @@ def parse_timeout(timeout):
     return result
 
 
-@asyncio.coroutine
-def check_tanner():
+async def check_tanner():
     vm = VersionManager()
     with aiohttp.ClientSession() as client:
         req_url = 'http://{}:8090/version'.format(args.tanner)
         try:
-            resp = yield from client.get(req_url)
-            result = yield from resp.json()
+            resp = await client.get(req_url)
+            result = await resp.json()
             version = result["version"]
             vm.check_compatibility(version)
         except aiohttp.errors.ClientOSError:
             print("Can't connect to tanner host {}".format(req_url))
             exit(1)
         else:
-            yield from resp.release()
+            await resp.release()
 
 
 if __name__ == '__main__':
@@ -429,21 +437,33 @@ if __name__ == '__main__':
     parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
     parser.add_argument("--server-header", help="set server-header", default='nginx')
     args = parser.parse_args()
-
+    base_path = '/opt/snare/'
+    base_page_path = '/opt/snare/pages/'
     config = configparser.ConfigParser()
-    config.read('/opt/snare/' + args.config)
+    config.read(os.path.join(base_path,args.config))
+
 
     if args.list_pages:
         print('Available pages:\n')
-        for page in os.listdir('/opt/snare/pages/'):
+        for page in os.listdir(base_page_path):
             print('\t- {}'.format(page))
         print('\nuse with --page-dir {page_name}\n\n')
         exit()
-    if not os.path.exists('/opt/snare/pages/' + args.page_dir):
+    full_page_path = os.path.join(base_page_path, args.page_dir)
+    if not os.path.exists(full_page_path):
         print("--page-dir: {0} does not exist".format(args.page_dir))
         exit()
-    if not os.path.exists('/opt/snare/pages/' + args.page_dir + "/" + args.index_page):
-        print('can\'t crate meta tag')
+    args.index_page = os.path.join("/", args.index_page)
+    
+    if not os.path.exists(os.path.join(full_page_path, 'meta.json')):
+        conv = Converter()
+        conv.convert(full_page_path)
+        print("pages was converted. Try to clone again for the better result.")
+
+    with open(os.path.join(full_page_path, 'meta.json')) as meta:
+        meta_info = json.load(meta)
+    if not os.path.exists(os.path.join(base_page_path,args.page_dir,os.path.join(meta_info[args.index_page]['hash']))):
+        print('can\'t create meta tag')
     else:
         add_meta_tag(args.page_dir, args.index_page)
     loop = asyncio.get_event_loop()
@@ -460,8 +480,8 @@ if __name__ == '__main__':
     else:
         host_ip = args.host_ip
     future = loop.create_server(
-        lambda: HttpRequestHandler(args, debug=args.debug, keep_alive=75),
-        args.interface, int(args.port))
+        lambda: HttpRequestHandler(meta_info, args, debug=args.debug, keep_alive=75),
+        args.host_ip, int(args.port))
     srv = loop.run_until_complete(future)
 
     drop_privileges()
