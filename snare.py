@@ -488,7 +488,7 @@ if __name__ == '__main__':
         host_ip = args.host_ip
     future = loop.create_server(
         lambda: HttpRequestHandler(meta_info, args, debug=args.debug, keep_alive=75),
-        args.host-ip, int(args.port))
+        args.host_ip, int(args.port))
     srv = loop.run_until_complete(future)
 
     drop_privileges()
