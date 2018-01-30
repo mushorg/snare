@@ -118,7 +118,7 @@ class Cloner(object):
             try:
                 with aiohttp.Timeout(10.0):
                     with aiohttp.ClientSession() as session:
-                        response = yield from session.get(current_url)
+                        response = yield from session.get(current_url, headers={'Accept': 'text/html'})
                         data = yield from response.read()
             except aiohttp.ClientError as client_error:
                 print(client_error)
