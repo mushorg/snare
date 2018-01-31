@@ -225,7 +225,12 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 file_name = self.meta[requested_name]['hash']
                 content_type = self.meta[requested_name]['content_type']
             except KeyError:
-                status_code = 404
+                path = os.path.join(self.dir,'err404.html')
+                content_type = 'text/html'
+                if os.path.isfile(path):
+                    with open(path, 'rb') as fh:
+                        content = fh.read()
+                        content = await self.handle_html_content(content)
             else:
                 path = os.path.join(self.dir, file_name)
                 if os.path.isfile(path):
