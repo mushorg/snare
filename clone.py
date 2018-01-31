@@ -2,10 +2,12 @@
 
 """
 Copyright (C) 2015-2016 MushMush Foundation
+
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -168,14 +170,18 @@ class Cloner(object):
                         if not carved_url.is_absolute():
                             carved_url = self.root.join(carved_url)
                         if carved_url.human_repr() not in self.visited_urls:
-                            await self.new_urls.put(carved_url)
+                            await self.new_urls.put((carved_url,level+1))
 
     async def get_root_host(self):
-        with aiohttp.ClientSession() as session:
-            resp = await session.get(self.root)
-            if resp._url_obj.host != self.root.host:
-                self.moved_root = resp._url_obj
-            resp.close()
+        try:
+            with aiohttp.ClientSession() as session:
+                resp = await session.get(self.root)
+                if resp._url_obj.host != self.root.host:
+                    self.moved_root = resp._url_obj
+                resp.close()
+        except aiohttp.errors.ClientError as err:
+            print("Can\'t connect to target host.")
+            exit(-1)
 
     async def run(self):
         session = aiohttp.ClientSession()
@@ -188,7 +194,6 @@ class Cloner(object):
             with open(os.path.join(self.target_path, 'meta.json'), 'w') as mj:
                 json.dump(self.meta, mj)
             await session.close()
-
 def clone_error_page(root):
     root = 'http://'+root 
     err_url = root + '/status_404'
@@ -202,6 +207,7 @@ def clone_error_page(root):
         print(target_path + '/err404.html')
         f.write(html_source)
         f.close()
+
 
 def main():
     if os.getuid() != 0:
