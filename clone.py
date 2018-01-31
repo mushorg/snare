@@ -2,12 +2,10 @@
 
 """
 Copyright (C) 2015-2016 MushMush Foundation
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -22,7 +20,7 @@ import os
 import re
 import sys
 from asyncio import Queue
-
+from selenium import webdriver
 import aiohttp
 import cssutils
 import yarl
@@ -170,18 +168,14 @@ class Cloner(object):
                         if not carved_url.is_absolute():
                             carved_url = self.root.join(carved_url)
                         if carved_url.human_repr() not in self.visited_urls:
-                            await self.new_urls.put((carved_url,level+1))
+                            await self.new_urls.put(carved_url)
 
     async def get_root_host(self):
-        try:
-            with aiohttp.ClientSession() as session:
-                resp = await session.get(self.root)
-                if resp._url_obj.host != self.root.host:
-                    self.moved_root = resp._url_obj
-                resp.close()
-        except aiohttp.errors.ClientError as err:
-            print("Can\'t connect to target host.")
-            exit(-1)
+        with aiohttp.ClientSession() as session:
+            resp = await session.get(self.root)
+            if resp._url_obj.host != self.root.host:
+                self.moved_root = resp._url_obj
+            resp.close()
 
     async def run(self):
         session = aiohttp.ClientSession()
@@ -195,6 +189,19 @@ class Cloner(object):
                 json.dump(self.meta, mj)
             await session.close()
 
+def clone_error_page(root):
+    root = 'http://'+root 
+    err_url = root + '/status_404'
+    url = yarl.URL(root)
+    target_path = '/opt/snare/pages/{}'.format(url.host)
+    browser = webdriver.Chrome()
+    browser.get(err_url)
+    html_source = browser.page_source
+    print(target_path)
+    with open( target_path + '/err404.html' , 'w' ) as f:
+        print(target_path + '/err404.html')
+        f.write(html_source)
+        f.close()
 
 def main():
     if os.getuid() != 0:
@@ -213,6 +220,7 @@ def main():
         cloner = Cloner(args.target, int(args.max_depth))
         loop.run_until_complete(cloner.get_root_host())
         loop.run_until_complete(cloner.run())
+        clone_error_page(args.target)
     except KeyboardInterrupt:
         pass
 
