@@ -20,7 +20,7 @@ Getting started
 
 1. Get SNARE: `git clone https://github.com/mushorg/snare.git`
 2. Install requirements: `pip3 install -r requirements.txt`
-3. Clone a page: `sudo python3 clone.py --target http://example.com`
+3. Clone a page: `sudo python3 clone.py --target http://example.com --max-depth 1`
 4. Run SNARE: `sudo python3 snare.py --port 8080 --page-dir example.com`
 5. Test: Visit http://localhost:8080/index.html
 6. (Optionally) Have your own [tanner](https://github.com/mushorg/tanner) service running.
