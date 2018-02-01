@@ -202,9 +202,8 @@ def clone_error_page(root):
     browser = webdriver.Chrome()
     browser.get(err_url)
     html_source = browser.page_source
-    print(target_path)
+    print('name:  /err404.html')
     with open( target_path + '/err404.html' , 'w' ) as f:
-        print(target_path + '/err404.html')
         f.write(html_source)
         f.close()
 
