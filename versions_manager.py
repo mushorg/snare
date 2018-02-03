@@ -13,5 +13,5 @@ class VersionManager:
         min_version = self.version_mapper[self.version][0]
         max_version = self.version_mapper[self.version][1]
         if not (StrictVersion(min_version) <= StrictVersion(tanner_version) <= StrictVersion(max_version)):
-            print("Wrong tanner version: {}. Compatible versions are {} - {}".format(tanner_version, min_version, max_version))
+            raise RuntimeError("Wrong tanner version: {}. Compatible versions are {} - {}".format(tanner_version, min_version, max_version))
             exit(1)
