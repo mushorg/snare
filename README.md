@@ -20,9 +20,10 @@ Getting started
 
 1. Get SNARE: `git clone https://github.com/mushorg/snare.git`
 2. Install requirements: `pip3 install -r requirements.txt`
-3. Clone a page: `sudo python3 clone.py --target http://example.com --max-depth 1`
+3. Clone a page: `sudo python3 clone.py --target http://example.com`
 4. Run SNARE: `sudo python3 snare.py --port 8080 --page-dir example.com`
 5. Test: Visit http://localhost:8080/index.html
 6. (Optionally) Have your own [tanner](https://github.com/mushorg/tanner) service running.
+[Note : Cloner clones the whole website, to restrict to a desired depth of cloning add `--maxdepth` parameter]
 
 You obviously want to bind to 0.0.0.0 and port 80 when running in <i>production</i>.
