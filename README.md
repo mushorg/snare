@@ -26,5 +26,4 @@ Getting started
 6. (Optionally) Have your own [tanner](https://github.com/mushorg/tanner) service running.
 
 [Note : Cloner clones the whole website, to restrict to a desired depth of cloning add `--maxdepth` parameter]
-
 You obviously want to bind to 0.0.0.0 and port 80 when running in <i>production</i>.
