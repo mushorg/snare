@@ -11,5 +11,5 @@ Description
 ~~~~~~~~~~~
 
 * **target** -- url of website to be cloned
-* **max--depth** -- maximum depth of the web-pages desired to be cloned
+* **max--depth** -- maximum depth of the web-pages desired to be cloned, default : full depth of the site
 
