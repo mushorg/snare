@@ -206,7 +206,7 @@ def main():
         os.mkdir('/opt/snare/pages')
     loop = asyncio.get_event_loop()
     parser = argparse.ArgumentParser()
-    parser.add_argument("--target", help="domain of the page to be cloned", required=True)
+    parser.add_argument("--target", help="domain of the site to be cloned", required=True)
     parser.add_argument("--max-depth", help="max depth of the cloning", required=False, default=sys.maxsize)
     args = parser.parse_args()
     try:
