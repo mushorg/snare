@@ -216,11 +216,17 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         content = None
         status_code = 200
         headers = {}
-
+        
         if detection['type'] == 1:
+            query_start = requested_name.find('?')
+            if query_start != -1:
+                requested_name = requested_name[0:query_start]
+                    
             if requested_name == '/':
                 requested_name = self.run_args.index_page
             try:
+                if requested_name[len(requested_name)-1] == '/':
+                    requested_name = requested_name[0:len(requested_name)-1]
                 requested_name = unquote(requested_name)
                 file_name = self.meta[requested_name]['hash']
                 content_type = self.meta[requested_name]['content_type']
