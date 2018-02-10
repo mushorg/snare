@@ -28,3 +28,5 @@ Getting started
 [Note : Cloner clones the whole website, to restrict to a desired depth of cloning add `--max-depth` parameter]
 
 You obviously want to bind to 0.0.0.0 and port 80 when running in <i>production</i>.
+
+[See the docs for more info](docs/source/index.rst)

@@ -13,6 +13,7 @@ Contents:
 
    quick-start
    parameters
+   cloner
 
 
 Indices and tables
