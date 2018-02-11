@@ -470,7 +470,7 @@ if __name__ == '__main__':
     if not os.path.exists(os.path.join(base_page_path,args.page_dir,os.path.join(meta_info[args.index_page]['hash']))):
         print('can\'t create meta tag')
     else:
-        add_meta_tag(args.page_dir, args.index_page)
+        add_meta_tag(args.page_dir, meta_info[args.index_page]['hash'])
     loop = asyncio.get_event_loop()
     loop.run_until_complete(check_tanner())
 
