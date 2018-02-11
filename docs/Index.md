@@ -1,4 +1,4 @@
-Welcome to snare's documentation!
+Welcome to SNARE's documentation!
 =================================
 Contents:
 ---------
