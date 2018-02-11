@@ -223,7 +223,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         if detection['type'] == 1:
             query_start = requested_name.find('?')
             if query_start != -1:
-                requested_name = requested_name[0:query_start]
+                requested_name = requested_name[:query_start]
                     
             if requested_name == '/':
                 requested_name = self.run_args.index_page
