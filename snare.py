@@ -32,6 +32,7 @@ import aiohttp
 import git
 import pip
 from aiohttp import MultiDict
+import re
 
 try:
     from aiohttp.web import StaticResource as StaticRoute
@@ -216,6 +217,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         content = None
         status_code = 200
         headers = {}
+        p = re.compile('/+')
+        requested_name = p.sub('/',requested_name)
         
         if detection['type'] == 1:
             query_start = requested_name.find('?')
