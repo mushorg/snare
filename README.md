@@ -29,4 +29,4 @@ Getting started
 
 You obviously want to bind to 0.0.0.0 and port 80 when running in <i>production</i>.
 
-[See the docs for more info](docs/source/index.rst)
+[See the docs for more info](docs/Index.md)
