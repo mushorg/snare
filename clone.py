@@ -22,7 +22,7 @@ import os
 import re
 import sys
 from asyncio import Queue
-from selenium import webdriver
+
 import aiohttp
 import cssutils
 import yarl
@@ -32,7 +32,7 @@ from bs4 import BeautifulSoup
 class Cloner(object):
     def __init__(self, root, max_depth):
         self.visited_urls = []
-        self.root = self.add_scheme(root)
+        self.root, self.error_page  = self.add_scheme(root)
         self.max_depth = max_depth
         self.moved_root = None
         if len(self.root.host) < 4:
@@ -51,7 +51,8 @@ class Cloner(object):
             new_url = yarl.URL(url)
         else:
             new_url = yarl.URL('http://' + url)
-        return new_url
+        err_url = yarl.URL('http://' + url + '/status_404')
+        return new_url, err_url
 
     async def process_link(self, url, level, check_host=False):
         try:
@@ -145,10 +146,11 @@ class Cloner(object):
             content_type = None
             try:
                 with aiohttp.Timeout(10.0):
-                    response = await session.get(current_url)
-                    content_type = response.content_type
-                    data = await response.read()
-
+                    with aiohttp.ClientSession() as session:
+                        response = await session.get(current_url, headers={'Accept': 'text/html'})
+                        content_type = response.content_type
+                        data = await response.read()
+                    
             except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
                 print(client_error)
             else:
@@ -187,6 +189,7 @@ class Cloner(object):
         session = aiohttp.ClientSession()
         try:
             await self.new_urls.put((self.root, 0))
+            await self.new_urls.put((self.error_page,1))
             await self.get_body(session)
         except KeyboardInterrupt:
             raise
@@ -194,18 +197,6 @@ class Cloner(object):
             with open(os.path.join(self.target_path, 'meta.json'), 'w') as mj:
                 json.dump(self.meta, mj)
             await session.close()
-def clone_error_page(root):
-    root = 'http://'+root 
-    err_url = root + '/status_404'
-    url = yarl.URL(root)
-    target_path = '/opt/snare/pages/{}'.format(url.host)
-    browser = webdriver.Chrome()
-    browser.get(err_url)
-    html_source = browser.page_source
-    print('name:  /err404.html')
-    with open( target_path + '/err404.html' , 'w' ) as f:
-        f.write(html_source)
-        f.close()
 
 
 def main():
@@ -225,7 +216,6 @@ def main():
         cloner = Cloner(args.target, int(args.max_depth))
         loop.run_until_complete(cloner.get_root_host())
         loop.run_until_complete(cloner.run())
-        clone_error_page(args.target)
     except KeyboardInterrupt:
         pass
 
