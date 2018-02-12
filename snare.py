@@ -228,13 +228,13 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     content = fh.read()
                 if content_type:
                     if 'text/html' in content_type:
-                        content = yield from self.handle_html_content(content)
+                        content = await self.handle_html_content(content)
             else:
                 error_page = '/opt/snare/pages/'+ args.page_dir + '/error_404'
                 content_type = 'text/html'
                 with open (error_page, 'rb' ) as fh:
                     content = fh.read()
-                content = yield from self.handle_html_content(content)
+                content = await self.handle_html_content(content)
                 response = aiohttp.Response(
                     self.writer, status=404, http_version=request.version
                 )

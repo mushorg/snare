@@ -147,8 +147,8 @@ class Cloner(object):
             try:
                 with aiohttp.Timeout(10.0):
                     with aiohttp.ClientSession() as session:
-                        response = yield from session.get(current_url, headers={'Accept': 'text/html'})
-                        data = yield from response.read()
+                        response = await session.get(current_url, headers={'Accept': 'text/html'})
+                        data = await response.read()
             except aiohttp.ClientError as client_error:
 
                     response = await session.get(current_url)
@@ -177,14 +177,14 @@ class Cloner(object):
                             carved_url = self.root.join(carved_url)
 
                         if carved_url not in self.visited_urls:
-                            yield from self.new_urls.put(carved_url)
+                            await self.new_urls.put(carved_url)
 
     @asyncio.coroutine
     def run(self):
-        yield from self.new_urls.put(self.root)
+        await self.new_urls.put(self.root)
         # Force 404 Page
-        yield from self.new_urls.put(self.error_page)
-        return (yield from self.get_body())
+        await self.new_urls.put(self.error_page)
+        return (await self.get_body())
 
                         if carved_url.human_repr() not in self.visited_urls:
                             await self.new_urls.put((carved_url,level+1))
