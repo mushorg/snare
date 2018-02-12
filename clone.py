@@ -188,7 +188,7 @@ class Cloner(object):
         session = aiohttp.ClientSession()
         try:
             await self.new_urls.put((self.root, 0))
-            await self.new_urls.put((self.error_page,1))
+            await self.new_urls.put((self.error_page,0))
             await self.get_body(session)
         except KeyboardInterrupt:
             raise
