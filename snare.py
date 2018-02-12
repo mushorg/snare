@@ -234,6 +234,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 file_name = self.meta[requested_name]['hash']
                 content_type = self.meta[requested_name]['content_type']
             except KeyError:
+                status_code = 404
                 requested_name = '/status_404'
                 file_name = self.meta[requested_name]['hash']
                 content_type = 'text/html'
