@@ -33,6 +33,7 @@ class Cloner(object):
     def __init__(self, root, max_depth):
         self.visited_urls = []
         self.root = self.add_scheme(root)
+        self.error_page = self.add_scheme(root + "/error_404")
         self.max_depth = max_depth
         self.moved_root = None
         if len(self.root.host) < 4:
@@ -145,6 +146,11 @@ class Cloner(object):
             content_type = None
             try:
                 with aiohttp.Timeout(10.0):
+                    with aiohttp.ClientSession() as session:
+                        response = await session.get(current_url, headers={'Accept': 'text/html'})
+                        data = await response.read()
+            except aiohttp.ClientError as client_error:
+
                     response = await session.get(current_url)
                     content_type = response.content_type
                     data = await response.read()
@@ -169,6 +175,17 @@ class Cloner(object):
                         carved_url = yarl.URL(carved_url)
                         if not carved_url.is_absolute():
                             carved_url = self.root.join(carved_url)
+
+                        if carved_url not in self.visited_urls:
+                            await self.new_urls.put(carved_url)
+
+    @asyncio.coroutine
+    def run(self):
+        await self.new_urls.put(self.root)
+        # Force 404 Page
+        await self.new_urls.put(self.error_page)
+        return (await self.get_body())
+
                         if carved_url.human_repr() not in self.visited_urls:
                             await self.new_urls.put((carved_url,level+1))
 
@@ -194,6 +211,7 @@ class Cloner(object):
             with open(os.path.join(self.target_path, 'meta.json'), 'w') as mj:
                 json.dump(self.meta, mj)
             await session.close()
+
 
 
 def main():
