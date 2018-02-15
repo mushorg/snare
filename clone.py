@@ -146,9 +146,9 @@ class Cloner(object):
             content_type = None
             try:
                 with aiohttp.Timeout(10.0):
-                        response = await session.get(current_url, headers={'Accept': 'text/html'})
-                        content_type = response.content_type
-                        data = await response.read()
+                    response = await session.get(current_url, headers={'Accept': 'text/html'})
+                    content_type = response.content_type
+                    data = await response.read()
                     
             except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
                 print(client_error)
