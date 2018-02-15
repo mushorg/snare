@@ -217,8 +217,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         content = None
         status_code = 200
         headers = {}
-        p = re.compile('/+')
-        requested_name = p.sub('/',requested_name)
+        p = re.compile('/+') # Creating a regex object for the pattern of multiple contiguous forward slashes
+        requested_name = p.sub('/', requested_name) # Substituting all occurrences of the pattern with single forward slash
         
         if detection['type'] == 1:
             query_start = requested_name.find('?')
