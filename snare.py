@@ -90,7 +90,6 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                             self.run_args.slurp_host, self.run_args.slurp_auth, data
                         ), data=json.dumps(data)
                     )
-                    self.logger.info('Ip %s',r)
                     assert r.status == 200
                     r.close()
         except Exception as e:
@@ -239,7 +238,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     content = fh.read()
                 if content_type:
                     if 'text/html' in content_type:
-                        content = yield from self.handle_html_content(content)
+                        content = await self.handle_html_content(content)
             else:
                 content_type = None
                 content = None
@@ -502,18 +501,17 @@ if __name__ == '__main__':
     parser.add_argument("--auto-update", help="auto update SNARE if new version available ", default=True)
     parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
     parser.add_argument("--server-header", help="set server-header", default='nginx')
+    parser.add_argument("--logger", help="log of time-stamp, URL and source IP")
     args = parser.parse_args()
     base_path = '/opt/snare/'
     base_page_path = '/opt/snare/pages/'
     config = configparser.ConfigParser()
     config.read(os.path.join(base_path,args.config))
 
-
-    # if args.config:
-        # TannerConfig.set_config(args.config)
-    debug_log_file_name = "/opt/snare/snare.log"
-    error_log_file_name = "/opt/snare/snare.err"
-    logger.Logger.create_logger(debug_log_file_name, error_log_file_name, __package__)
+    if args.logger:
+        debug_log_file_name = "/opt/snare/snare.log"
+        error_log_file_name = "/opt/snare/snare.err"
+        logger.Logger.create_logger(debug_log_file_name, error_log_file_name, __package__)
 
     if args.list_pages:
         print('Available pages:\n')
