@@ -224,9 +224,9 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         content = None
         status_code = 200
         headers = {}
-        p = re.compile('/+')
-        requested_name = p.sub('/', requested_name)
-
+        p = re.compile('/+') # Creating a regex object for the pattern of multiple contiguous forward slashes
+        requested_name = p.sub('/', requested_name) # Substituting all occurrences of the pattern with single forward slash
+        
         if detection['type'] == 1:
             query_start = requested_name.find('?')
             if query_start != -1:
@@ -236,12 +236,20 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 requested_name = self.run_args.index_page
             try:
                 if requested_name[-1] == '/':
-                    requested_name = requested_name[:-1]
+                    requested_name = requested_name[:-1]  
                 requested_name = unquote(requested_name)
                 file_name = self.meta[requested_name]['hash']
                 content_type = self.meta[requested_name]['content_type']
             except KeyError:
                 status_code = 404
+                requested_name = '/status_404'
+                file_name = self.meta[requested_name]['hash']
+                content_type = 'text/html'
+                path = os.path.join(self.dir, file_name)
+                with open(path, 'rb') as fh:
+                    content = fh.read()
+                content = await self.handle_html_content(content)
+                
             else:
                 path = os.path.join(self.dir, file_name)
                 if os.path.isfile(path):
