@@ -32,7 +32,7 @@ from bs4 import BeautifulSoup
 class Cloner(object):
     def __init__(self, root, max_depth):
         self.visited_urls = []
-        self.root = self.add_scheme(root)
+        self.root, self.error_page  = self.add_scheme(root)
         self.max_depth = max_depth
         self.moved_root = None
         if len(self.root.host) < 4:
@@ -51,7 +51,8 @@ class Cloner(object):
             new_url = yarl.URL(url)
         else:
             new_url = yarl.URL('http://' + url)
-        return new_url
+        err_url = yarl.URL('http://' + url + '/status_404')
+        return new_url, err_url
 
     async def process_link(self, url, level, check_host=False):
         try:
@@ -145,10 +146,10 @@ class Cloner(object):
             content_type = None
             try:
                 with aiohttp.Timeout(10.0):
-                    response = await session.get(current_url)
+                    response = await session.get(current_url, headers={'Accept': 'text/html'})
                     content_type = response.content_type
                     data = await response.read()
-
+                    
             except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
                 print(client_error)
             else:
@@ -187,6 +188,7 @@ class Cloner(object):
         session = aiohttp.ClientSession()
         try:
             await self.new_urls.put((self.root, 0))
+            await self.new_urls.put((self.error_page,0))
             await self.get_body(session)
         except KeyboardInterrupt:
             raise
