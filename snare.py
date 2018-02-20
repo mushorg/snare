@@ -194,57 +194,6 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         for name, val in headers.items():
             response.add_header(name, val)
 
-        content_type = None
-        mimetypes.add_type('text/html','.php')
-        mimetypes.add_type('text/html', '.aspx')
-        base_path = os.path.join('/opt/snare/pages', self.run_args.page_dir)
-        if event_result is not None and ('payload' in event_result['response']['message']['detection'] and event_result['response']['message']['detection']['payload'] is not None):
-            payload_content = event_result['response']['message']['detection']['payload']
-            if type(payload_content) == dict:
-                if payload_content['page'].startswith('/'):
-                    payload_content['page'] = payload_content['page'][1:]
-                page_path = os.path.join(base_path, payload_content['page'])
-                content = '<html><body></body></html>'
-                if os.path.exists(page_path):
-                    content_type = mimetypes.guess_type(page_path)[0]
-                    with open(page_path, encoding='utf-8') as p:
-                        content = p.read()
-                soup = BeautifulSoup(content, 'html.parser')
-                script_tag = soup.new_tag('div')
-                script_tag.append(BeautifulSoup(payload_content['value'], 'html.parser'))
-                soup.body.append(script_tag)
-                content = str(soup).encode()
-
-            else:
-                content_type = mimetypes.guess_type(payload_content)[0]
-                content = payload_content.encode('utf-8')
-        else:
-            query = None
-            if request.path == '/':
-                parsed_url = self.run_args.index_page
-                self.logger.info('Requested url:' + parsed_url)
-            else:
-                parsed_url = urlparse(unquote(request.path))
-                self.logger.info('Requested url:' + parsed_url)
-                if parsed_url.query:
-                    query = '?' + parsed_url.query
-                parsed_url = parsed_url.path
-                if parsed_url.startswith('/'):
-                    parsed_url = parsed_url[1:]
-            path = os.path.normpath(os.path.join(base_path, parsed_url))
-            if os.path.isfile(path) and path.startswith(base_path):
-                content_type = mimetypes.guess_type(path)[0]
-                with open(path, 'rb') as fh:
-                    content = fh.read()
-                if content_type:
-                    if 'text/html' in content_type:
-                        content = await self.handle_html_content(content)
-            else:
-                content_type = None
-                content = None
-                response = aiohttp.Response(
-                    self.writer, status=404, http_version=request.version
-                )
         response.add_header('Server', self.run_args.server_header)
 
         if 'cookies' in data and 'sess_uuid' in data['cookies']:
