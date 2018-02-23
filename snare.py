@@ -458,9 +458,8 @@ if __name__ == '__main__':
     config.read(os.path.join(base_path,args.config))
 
     if args.logger:
-        debug_log_file_name = "/opt/snare/snare.log"
-        error_log_file_name = "/opt/snare/snare.err"
-        logger.Logger.create_logger(debug_log_file_name, error_log_file_name, __package__)
+        log_file_name = "/opt/snare/snare.log"
+        logger.Logger.create_logger(log_file_name, __package__,args.logger)
 
     if args.list_pages:
         print('Available pages:\n')

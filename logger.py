@@ -10,27 +10,21 @@ class LevelFilter(logging.Filter):
 
 class Logger:
     @staticmethod
-    def create_logger(debug_filename, err_filename, logger_name):
-
-
+    def create_logger(log_filename, logger_name, level_name):
         logger = logging.getLogger(logger_name)
-        logger.setLevel(logging.DEBUG)
+        logging_levels = {'CRITICAL': 50, 'ERROR': 40, 'WARNING': 30, 'INFO': 20, 'DEBUG': 10, 'NOTSET': 0}
+        logger.setLevel(logging_levels[level_name])
         logger.propagate = False
         formatter = logging.Formatter(fmt='%(asctime)s %(levelname)s:%(name)s:%(funcName)s: %(message)s',
-                                      datefmt='%Y-%m-%d %H:%M')
+                                      datefmt='%Y-%m-%d %H:%M:%S')
 
-        # ERROR log to 'snare.err'
-        error_log_handler = logging.handlers.RotatingFileHandler(err_filename, encoding='utf-8')
-        error_log_handler.setLevel(logging.ERROR)
-        error_log_handler.setFormatter(formatter)
-        logger.addHandler(error_log_handler)
 
-        # DEBUG log to 'snare.log'
-        debug_log_handler = logging.handlers.RotatingFileHandler(debug_filename, encoding='utf-8')
-        debug_log_handler.setLevel(logging.DEBUG)
-        debug_log_handler.setFormatter(formatter)
+        # Log to 'snare.log'
+        log_handler = logging.handlers.RotatingFileHandler(log_filename, encoding='utf-8')
+        log_handler.setLevel(logging_levels[level_name])
+        log_handler.setFormatter(formatter)
         max_level_filter = LevelFilter(logging.ERROR)
-        debug_log_handler.addFilter(max_level_filter)
-        logger.addHandler(debug_log_handler)
+        log_handler.addFilter(max_level_filter)
+        logger.addHandler(log_handler)
 
         return logger
