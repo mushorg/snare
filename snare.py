@@ -46,6 +46,7 @@ import cssutils
 import netifaces as ni
 from converter import Converter
 
+
 class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
     def __init__(self, meta, run_args, debug=False, keep_alive=75, **kwargs):
         self.dorks = []
@@ -116,7 +117,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             data['headers'] = header
             data['path'] = request.path
             if ('Cookie' in header):
-                data['cookies'] = {cookie.split('=')[0]: cookie.split('=')[1] for cookie in header['Cookie'].split('; ')}
+                data['cookies'] = {cookie.split('=')[0]: cookie.split(
+                    '=')[1] for cookie in header['Cookie'].split('; ')}
         return data
 
     async def submit_data(self, data):
@@ -223,7 +225,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         status_code = 200
         headers = {}
         p = re.compile('/+')
-        requested_name = p.sub('/',requested_name)
+        requested_name = p.sub('/', requested_name)
 
         if detection['type'] == 1:
             query_start = requested_name.find('?')
@@ -254,7 +256,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             if payload_content['page']:
                 try:
                     file_name = self.meta[payload_content['page']]['hash']
-                    content_type = self.meta[payload_content['page']]['content_type']
+                    content_type = self.meta[payload_content['page']
+                                             ]['content_type']
                     page_path = os.path.join(self.dir, file_name)
                     with open(page_path, encoding='utf-8') as p:
                         content = p.read()
@@ -264,15 +267,17 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
                 soup = BeautifulSoup(content, 'html.parser')
                 script_tag = soup.new_tag('div')
-                script_tag.append(BeautifulSoup(payload_content['value'], 'html.parser'))
+                script_tag.append(BeautifulSoup(
+                    payload_content['value'], 'html.parser'))
                 soup.body.append(script_tag)
                 content = str(soup).encode()
             else:
-                content_type = mimetypes.guess_type(payload_content['value'])[0]
+                content_type = mimetypes.guess_type(
+                    payload_content['value'])[0]
                 content = payload_content['value'].encode('utf-8')
 
             if 'headers' in payload_content:
-                headers =  payload_content['headers']
+                headers = payload_content['headers']
         else:
             status_code = payload_content['status_code']
 
@@ -331,7 +336,8 @@ def drop_privileges():
     os.setuid(wanted_user.pw_uid)
     new_user = pwd.getpwuid(os.getuid())
     new_group = grp.getgrgid(os.getgid())
-    print('privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name))
+    print('privileges dropped, running as "{}:{}"'.format(
+        new_user.pw_name, new_group.gr_name))
 
 
 def add_meta_tag(page_dir, index_page):
@@ -347,13 +353,13 @@ def add_meta_tag(page_dir, index_page):
     soup = BeautifulSoup(main_page, 'html.parser')
 
     if (google_content and
-                soup.find("meta", attrs={"name": "google-site-verification"}) is None):
+            soup.find("meta", attrs={"name": "google-site-verification"}) is None):
         google_meta = soup.new_tag('meta')
         google_meta.attrs['name'] = 'google-site-verification'
         google_meta.attrs['content'] = google_content
         soup.head.append(google_meta)
     if (bing_content and
-                soup.find("meta", attrs={"name": "msvalidate.01"}) is None):
+            soup.find("meta", attrs={"name": "msvalidate.01"}) is None):
         bing_meta = soup.new_tag('meta')
         bing_meta.attrs['name'] = 'msvalidate.01'
         bing_meta.attrs['content'] = bing_content
@@ -375,13 +381,15 @@ def compare_version_info(timeout):
             print('timeout fetching the repository version')
         else:
             if diff_list:
-                print('you are running an outdated version, SNARE will be updated and restarted')
+                print(
+                    'you are running an outdated version, SNARE will be updated and restarted')
                 repo.git.reset('--hard')
                 repo.heads.master.checkout()
                 repo.git.clean('-xdf')
                 repo.remotes.origin.pull()
                 pip.main(['install', '-r', 'requirements.txt'])
-                os.execv(sys.executable, [sys.executable, __file__] + sys.argv[1:])
+                os.execv(sys.executable, [
+                         sys.executable, __file__] + sys.argv[1:])
                 return
             else:
                 print('you are running the latest version')
@@ -434,33 +442,53 @@ if __name__ == '__main__':
     snare_uuid = snare_setup()
     parser = argparse.ArgumentParser()
     page_group = parser.add_mutually_exclusive_group(required=True)
-    page_group.add_argument("--page-dir", help="name of the folder to be served")
-    page_group.add_argument("--list-pages", help="list available pages", action='store_true')
-    parser.add_argument("--index-page", help="file name of the index page", default='index.html')
+    page_group.add_argument(
+        "--page-dir", help="name of the folder to be served")
+    page_group.add_argument(
+        "--list-pages", help="list available pages", action='store_true')
+    parser.add_argument(
+        "--index-page", help="file name of the index page", default='index.html')
     parser.add_argument("--port", help="port to listen on", default='8080')
     parser.add_argument("--interface", help="interface to bind to")
-    parser.add_argument("--host-ip", help="host ip to bind to", default='localhost')
-    parser.add_argument("--debug", help="run web server in debug mode", default=False)
-    parser.add_argument("--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
-    parser.add_argument("--skip-check-version", help="skip check for update", action='store_true')
-    parser.add_argument("--slurp-enabled", help="enable nsq logging", action='store_true')
-    parser.add_argument("--slurp-host", help="nsq logging host", default='slurp.mushmush.org')
-    parser.add_argument("--slurp-auth", help="nsq logging auth", default='slurp')
-    parser.add_argument("--config", help="snare config file", default='snare.cfg')
-    parser.add_argument("--auto-update", help="auto update SNARE if new version available ", default=True)
-    parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
-    parser.add_argument("--server-header", help="set server-header", default='nginx')
-    parser.add_argument("--logger", help="log of time-stamp, URL and source IP")
+    parser.add_argument(
+        "--host-ip", help="host ip to bind to", default='localhost')
+    parser.add_argument(
+        "--debug", help="run web server in debug mode", default=False)
+    parser.add_argument(
+        "--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
+    parser.add_argument("--skip-check-version",
+                        help="skip check for update", action='store_true')
+    parser.add_argument("--slurp-enabled",
+                        help="enable nsq logging", action='store_true')
+    parser.add_argument("--slurp-host", help="nsq logging host",
+                        default='slurp.mushmush.org')
+    parser.add_argument(
+        "--slurp-auth", help="nsq logging auth", default='slurp')
+    parser.add_argument(
+        "--config", help="snare config file", default='snare.cfg')
+    parser.add_argument(
+        "--auto-update", help="auto update SNARE if new version available ", default=True)
+    parser.add_argument("--update-timeout",
+                        help="update snare every timeout ", default='24H')
+    parser.add_argument("--server-header",
+                        help="set server-header", default='nginx')
+    parser.add_argument(
+        "--logger_level", help="log of time-stamp, URL and source IP")
+    parser.add_argument(
+        "--log_file", help="path of the log file", default="/opt/snare/snare.log")
     args = parser.parse_args()
     base_path = '/opt/snare/'
     base_page_path = '/opt/snare/pages/'
     config = configparser.ConfigParser()
-    config.read(os.path.join(base_path,args.config))
+    config.read(os.path.join(base_path, args.config))
 
-    if args.logger:
-        log_file_name = "/opt/snare/snare.log"
-        logger.Logger.create_logger(log_file_name, __package__,args.logger)
-
+    if args.logger_level:
+        if args.log_file:
+            log_file_name = args.log_file + "/snare.log"
+        else:
+            log_file_name = "/opt/snare/snare.log"
+        logger.Logger.create_logger(log_file_name, __package__, args.logger_level)
+        print("Log will be stored in", log_file_name)
     if args.list_pages:
         print('Available pages:\n')
         for page in os.listdir(base_page_path):
@@ -480,7 +508,8 @@ if __name__ == '__main__':
 
     with open(os.path.join(full_page_path, 'meta.json')) as meta:
         meta_info = json.load(meta)
-    if not os.path.exists(os.path.join(base_page_path,args.page_dir,os.path.join(meta_info[args.index_page]['hash']))):
+    if not os.path.exists(os.path.join(base_page_path, args.page_dir,
+                                       os.path.join(meta_info[args.index_page]['hash']))):
         print('can\'t create meta tag')
     else:
         add_meta_tag(args.page_dir, meta_info[args.index_page]['hash'])
@@ -491,19 +520,22 @@ if __name__ == '__main__':
     compare_version_fut = None
     if args.auto_update is True:
         timeout = parse_timeout(args.update_timeout)
-        compare_version_fut = loop.run_in_executor(pool, compare_version_info, timeout)
+        compare_version_fut = loop.run_in_executor(
+            pool, compare_version_info, timeout)
 
     if args.host_ip == 'localhost' and args.interface:
         host_ip = ni.ifaddresses(args.interface)[2][0]['addr']
     else:
         host_ip = args.host_ip
     future = loop.create_server(
-        lambda: HttpRequestHandler(meta_info, args, debug=args.debug, keep_alive=75),
+        lambda: HttpRequestHandler(
+            meta_info, args, debug=args.debug, keep_alive=75),
         args.host_ip, int(args.port))
     srv = loop.run_until_complete(future)
 
     drop_privileges()
-    print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
+    print('serving on {0} with uuid {1}'.format(
+        srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
     try:
         loop.run_forever()
     except (KeyboardInterrupt, TypeError) as e:
