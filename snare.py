@@ -473,9 +473,9 @@ if __name__ == '__main__':
     parser.add_argument("--server-header",
                         help="set server-header", default='nginx')
     parser.add_argument(
-        "--logger_level", help="log of time-stamp, URL and source IP")
+        "--logger_level", help="set the logging level", default='INFO')
     parser.add_argument(
-        "--log_file", help="path of the log file", default="/opt/snare/snare.log")
+        "--log_file", help="path to the log file")
     args = parser.parse_args()
     base_path = '/opt/snare/'
     base_page_path = '/opt/snare/pages/'
@@ -484,10 +484,11 @@ if __name__ == '__main__':
 
     if args.logger_level:
         if args.log_file:
-            log_file_name = args.log_file + "/snare.log"
+            log_file_name = args.log_file + "snare.log"
         else:
             log_file_name = "/opt/snare/snare.log"
-        logger.Logger.create_logger(log_file_name, __package__, args.logger_level)
+        logger.Logger.create_logger(
+            log_file_name, __package__, args.logger_level)
         print("Log will be stored in", log_file_name)
     if args.list_pages:
         print('Available pages:\n')
