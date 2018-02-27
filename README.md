@@ -1,6 +1,6 @@
 SNARE
 =====
-[![Documentation Status](https://readthedocs.org/projects/snare/badge/?version=latest](https://snare.readthedocs.io/en/latest/)
+[![Documentation Status](https://readthedocs.org/projects/snare/badge/?version=latest)](http://snare.readthedocs.io/en/latest/?badge=latest)
 
 <b><i>Super Next generation Advanced Reactive honEypot</b></i>
 
