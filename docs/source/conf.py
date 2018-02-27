@@ -19,14 +19,14 @@
 
 # -- Project information -----------------------------------------------------
 
-project = u'snare'
-copyright = u'2018, viswak'
-author = u'viswak'
+project = 'snare'
+copyright = '2016, mushorg'
+author = 'mushorg'
 
 # The short X.Y version
-version = u''
+version = '0.2'
 # The full version, including alpha/beta/rc tags
-release = u''
+release = '0.2'
 
 
 # -- General configuration ---------------------------------------------------
@@ -63,7 +63,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = [u'_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -128,7 +128,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'snare.tex', u'snare Documentation',
+    (master_doc, 'snare.tex', 'snare Documentation',
      u'viswak', 'manual'),
 ]
 
@@ -149,7 +149,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'snare', u'snare Documentation',
+    (master_doc, 'snare', 'snare Documentation',
      author, 'snare', 'One line description of project.',
      'Miscellaneous'),
 ]
