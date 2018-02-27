@@ -1,6 +1,7 @@
 SNARE
 =====
 [![Documentation Status](https://readthedocs.org/projects/snare/badge/?version=latest)](http://snare.readthedocs.io/en/latest/?badge=latest)
+[![Build Status](https://travis-ci.org/mushorg/snare.svg?branch=master)](https://travis-ci.org/mushorg/snare)
 
 <b><i>Super Next generation Advanced Reactive honEypot</b></i>
 
