@@ -372,7 +372,7 @@ def add_meta_tag(page_dir, index_page):
 
 
 def compare_version_info(timeout):
-    while True:
+    while False:
         repo = git.Repo(os.getcwd())
         try:
             rem = repo.remote()

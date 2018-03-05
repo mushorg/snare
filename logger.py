@@ -15,7 +15,6 @@ class Logger:
     @staticmethod
     def create_logger(debug_filename, err_filename, logger_name, logger_level):
         logger = logging.getLogger(logger_name)
-        logger.setLevel(logging.DEBUG)
         formatter = logging.Formatter(
 			fmt='%(asctime)s %(levelname)s:%(name)s:%(funcName)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 		
@@ -34,4 +33,21 @@ class Logger:
         logger.addHandler(debug_log_handler)
 		
         return logger
+    
+    @staticmethod
+    def create_clone_logger(err_filename, logger_name):
+        logger = logging.getLogger(logger_name)
+        formatter = logging.Formatter(
+			fmt='%(asctime)s %(levelname)s:%(name)s:%(funcName)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+        # ERROR log to 'clone.err'
+        error_log_handler = logging.handlers.RotatingFileHandler(err_filename, encoding='utf-8')
+        error_log_handler.setLevel(logging.ERROR)
+        error_log_handler.setFormatter(formatter)
+        logger.addHandler(error_log_handler)
+        
+    
+    
+    
+    
+    
 	
