@@ -43,7 +43,7 @@ class Cloner(object):
 
         if not os.path.exists(self.target_path):
             os.mkdir(self.target_path)
-
+            
         self.new_urls = Queue()
         self.meta = {}
         self.logger = logging.getLogger(__name__)
@@ -215,12 +215,10 @@ def main():
     parser.add_argument("--max-depth", help="max depth of the cloning", required=False, default=sys.maxsize)
     parser.add_argument("--log_path", help="path to the error log file")
     args = parser.parse_args()
-	
     if args.log_path:
         log_err = args.log_path + "clone.err"
     else:
-        log_err = "/opt/snare/clone.err"
-		
+        log_err = "/opt/snare/clone.err"	
     logger.Logger.create_clone_logger(log_err, __package__)
     print("Error logs will be stored in {}\n".format(log_err))
     try:

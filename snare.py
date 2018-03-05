@@ -372,7 +372,7 @@ def add_meta_tag(page_dir, index_page):
 
 
 def compare_version_info(timeout):
-    while False:
+    while True:
         repo = git.Repo(os.getcwd())
         try:
             rem = repo.remote()
@@ -464,14 +464,13 @@ if __name__ == '__main__':
     base_page_path = '/opt/snare/pages/'
     config = configparser.ConfigParser()
     config.read(os.path.join(base_path,args.config))
-
+	
     if args.log_path:
         log_debug = args.log_path + "snare.log"
         log_err = args.log_path + "snare.err"
     else:
         log_debug = "/opt/snare/snare.log"
-        log_err = "/opt/snare/snare.err"   
-            
+        log_err = "/opt/snare/snare.err"           
     logger.Logger.create_logger(log_debug, log_err, __package__, args.log_level)
 
     if args.list_pages:
