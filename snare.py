@@ -458,7 +458,6 @@ if __name__ == '__main__':
     parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
     parser.add_argument("--server-header", help="set server-header", default='nginx')
     parser.add_argument("--log_path", help="path to the log file")
-    parser.add_argument("--log_level", help="set level of logging", default='INFO')
     args = parser.parse_args()
     base_path = '/opt/snare/'
     base_page_path = '/opt/snare/pages/'
@@ -471,7 +470,7 @@ if __name__ == '__main__':
     else:
         log_debug = "/opt/snare/snare.log"
         log_err = "/opt/snare/snare.err"           
-    logger.Logger.create_logger(log_debug, log_err, __package__, args.log_level)
+    logger.Logger.create_logger(log_debug, log_err, __package__)
 
     if args.list_pages:
         print('Available pages:\n')

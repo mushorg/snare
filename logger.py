@@ -13,7 +13,7 @@ class LevelFilter(logging.Filter):
 class Logger:
 	
     @staticmethod
-    def create_logger(debug_filename, err_filename, logger_name, logger_level):
+    def create_logger(debug_filename, err_filename, logger_name):
         logger = logging.getLogger(logger_name)
         logger.setLevel(logging.DEBUG)
         logger.propagate = False
@@ -28,7 +28,7 @@ class Logger:
 		
         # DEBUG log to 'snare.log'
         debug_log_handler = logging.handlers.RotatingFileHandler(debug_filename, encoding='utf-8')
-        debug_log_handler.setLevel(logger_level)
+        debug_log_handler.setLevel(logging.DEBUG)
         debug_log_handler.setFormatter(formatter)
         max_level_filter = LevelFilter(logging.ERROR)
         debug_log_handler.addFilter(max_level_filter)
