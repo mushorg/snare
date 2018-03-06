@@ -517,6 +517,7 @@ if __name__ == '__main__':
     print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
     print("Debug logs will be stored in", log_debug)
     print("Error logs will be stored in", log_err)
+    print("(Press CTRL+C to quit)")
     try:
         loop.run_forever()
     except (KeyboardInterrupt, TypeError) as e:
