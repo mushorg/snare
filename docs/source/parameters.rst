@@ -25,4 +25,4 @@ Description
 * **config** -- snare config file
 * **auto--update** -- auto update SNARE if new version available
 * **update--timeout** -- update SNARE every timeout (possible labels are: **D** -- day, **H** -- hours, **M** -- minutes)
-* **server-header** -- set server header, default: nginx
+* **server--header** -- set server header, default: nginx
