@@ -27,7 +27,7 @@ Getting started
 - This was tested with a recent Ubuntu based Linux.
 
 #### Steps to install
-1. Get SNARE: `git clone https://github.com/mushorg/snare.git`
+1. Get SNARE: `git clone https://github.com/mushorg/snare.git` and `cd snare`
 2. Install requirements: `pip3 install -r requirements.txt`
 3. Clone a page: `sudo python3 clone.py --target http://example.com`
 4. Run SNARE: `sudo python3 snare.py --port 8080 --page-dir example.com`
