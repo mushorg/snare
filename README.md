@@ -11,7 +11,7 @@ SNARE is a web application honeypot sensor attracting all sort of maliciousness 
 
 Documentation
 --------------
-The build of the documentations [source](https://github.com/mushorg/snare/tree/master/docs/source) can be found [here](http://snare.readthedocs.io).
+The documentation can be found [here](http://snare.readthedocs.io).
 
 Basic Concepts
 --------------
@@ -26,7 +26,7 @@ Getting started
 - You need Python3. We tested primarily with >=3.4
 - This was tested with a recent Ubuntu based Linux.
 
-#### Steps to install
+#### Steps to setup
 1. Get SNARE: `git clone https://github.com/mushorg/snare.git` and `cd snare`
 2. Install requirements: `pip3 install -r requirements.txt`
 3. Clone a page: `sudo python3 clone.py --target http://example.com`
