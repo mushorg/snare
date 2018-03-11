@@ -457,19 +457,15 @@ if __name__ == '__main__':
     parser.add_argument("--auto-update", help="auto update SNARE if new version available ", default=True)
     parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
     parser.add_argument("--server-header", help="set server-header", default='nginx')
-    parser.add_argument("--log_path", help="path to the log file")
+    parser.add_argument("--log-dir", help="path to directory of the log file", default='/opt/snare/')
     args = parser.parse_args()
     base_path = '/opt/snare/'
     base_page_path = '/opt/snare/pages/'
     config = configparser.ConfigParser()
     config.read(os.path.join(base_path,args.config))
 	
-    if args.log_path:
-        log_debug = args.log_path + "snare.log"
-        log_err = args.log_path + "snare.err"
-    else:
-        log_debug = "/opt/snare/snare.log"
-        log_err = "/opt/snare/snare.err"           
+    log_debug = args.log_dir + "snare.log"
+    log_err = args.log_dir + "snare.err"      
     logger.Logger.create_logger(log_debug, log_err, __package__)
 
     if args.list_pages:
