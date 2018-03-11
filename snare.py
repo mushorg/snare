@@ -134,7 +134,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     finally:
                         r.release()
         except Exception as e:
-            self.logger.error('Exception occured while submitting data: {}'.format(e))
+            raise e
         return event_result
 
     async def handle_html_content(self, content):
