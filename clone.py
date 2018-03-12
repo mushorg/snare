@@ -27,6 +27,8 @@ import aiohttp
 import cssutils
 import yarl
 from bs4 import BeautifulSoup
+import logger
+import logging
 
 
 class Cloner(object):
@@ -41,9 +43,10 @@ class Cloner(object):
 
         if not os.path.exists(self.target_path):
             os.mkdir(self.target_path)
-
+            
         self.new_urls = Queue()
         self.meta = {}
+        self.logger = logging.getLogger(__name__)
 
     @staticmethod
     def add_scheme(url):
@@ -82,7 +85,7 @@ class Cloner(object):
         try:
             res = url.relative().human_repr()
         except ValueError:
-            print(url)
+            self.logger.error(url)
         return res
 
     async def replace_links(self, data, level):
@@ -151,7 +154,7 @@ class Cloner(object):
                     data = await response.read()
                     
             except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
-                print(client_error)
+                self.logger.error(client_error)
             else:
                 await response.release()
             if data is not None:
@@ -181,7 +184,7 @@ class Cloner(object):
                     self.moved_root = resp._url_obj
                 resp.close()
         except aiohttp.errors.ClientError as err:
-            print("Can\'t connect to target host.")
+            self.logger.error("Can\'t connect to target host.")
             exit(-1)
 
     async def run(self):
@@ -210,7 +213,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", help="domain of the site to be cloned", required=True)
     parser.add_argument("--max-depth", help="max depth of the cloning", required=False, default=sys.maxsize)
+    parser.add_argument("--log_path", help="path to the error log file")
     args = parser.parse_args()
+    if args.log_path:
+        log_err = args.log_path + "clone.err"
+    else:
+        log_err = "/opt/snare/clone.err"	
+    logger.Logger.create_clone_logger(log_err, __package__)
+    print("Error logs will be stored in {}\n".format(log_err))
     try:
         cloner = Cloner(args.target, int(args.max_depth))
         loop.run_until_complete(cloner.get_root_host())
@@ -220,4 +230,12 @@ def main():
 
 
 if __name__ == '__main__':
+    print("""
+    ______ __      ______ _   ____________
+   / ____// /     / __  // | / / ____/ __ \\
+  / /    / /     / / / //  |/ / __/ / /_/ /
+ / /___ / /____ / /_/ // /|  / /___/ _, _/
+/_____//______//_____//_/ |_/_____/_/ |_|
+    
+    """)
     main()
