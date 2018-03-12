@@ -33,6 +33,8 @@ import git
 import pip
 from aiohttp import MultiDict
 import re
+import logging
+import logger
 
 try:
     from aiohttp.web import StaticResource as StaticRoute
@@ -53,6 +55,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         self.dir = '/opt/snare/pages/{}'.format(run_args.page_dir)
 
         self.meta = meta
+        
+        self.logger = logging.getLogger(__name__)
 
         self.sroute = StaticRoute(
             name=None, prefix='/',
@@ -71,11 +75,11 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     try:
                         dorks = await r.json()
                     except json.decoder.JSONDecodeError as e:
-                        print(e)
+                        self.logger.error('Error getting dorks: %s', e)
                     finally:
                         await r.release()
         except asyncio.TimeoutError:
-            print('Dorks timeout')
+            self.logger.info('Dorks timeout')
         return dorks['response']['dorks'] if dorks else []
 
     async def submit_slurp(self, data):
@@ -90,7 +94,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     assert r.status == 200
                     r.close()
         except Exception as e:
-            print(e)
+            self.logger.error('Error submitting slurp: %s', e)
 
     def create_data(self, request, response_status):
         data = dict(
@@ -127,7 +131,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     try:
                         event_result = await r.json()
                     except json.decoder.JSONDecodeError as e:
-                        print(e, data)
+                        self.logger.error('Error submitting data: {} {}'.format(e, data))
                     finally:
                         await r.release()
         except Exception as e:
@@ -167,14 +171,14 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         return content
 
     async def handle_request(self, request, payload):
-        print('Request path: {0}'.format(request.path))
+        self.logger.info('Request path: {0}'.format(request.path))
         data = self.create_data(request, 200)
         if request.method == 'POST':
             post_data = await payload.read()
             post_data = MultiDict(parse_qsl(post_data.decode('utf-8')))
-            print('POST data:')
+            self.logger.info('POST data:')
             for key, val in post_data.items():
-                print('\t- {0}: {1}'.format(key, val))
+                self.logger.info('\t- {0}: {1}'.format(key, val))
             data['post_data'] = dict(post_data)
 
         # Submit the event to the TANNER service
@@ -456,12 +460,17 @@ if __name__ == '__main__':
     parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
     parser.add_argument("--server-header", help="set server-header", default='nignx/1.3.8')
     parser.add_argument("--no-dorks", help="disable the use of dorks", action='store_true')
+    parser.add_argument("--log-dir", help="path to directory of the log file", default='/opt/snare/')
 
     args = parser.parse_args()
     base_path = '/opt/snare/'
     base_page_path = '/opt/snare/pages/'
     config = configparser.ConfigParser()
     config.read(os.path.join(base_path, args.config))
+	
+    log_debug = args.log_dir + "snare.log"
+    log_err = args.log_dir + "snare.err"      
+    logger.Logger.create_logger(log_debug, log_err, __package__)
 
     if args.list_pages:
         print('Available pages:\n')
@@ -507,6 +516,9 @@ if __name__ == '__main__':
 
     drop_privileges()
     print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
+    print("Debug logs will be stored in", log_debug)
+    print("Error logs will be stored in", log_err)
+    print("(Press CTRL+C to quit)")
     try:
         loop.run_forever()
     except (KeyboardInterrupt, TypeError) as e:
