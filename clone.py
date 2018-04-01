@@ -32,7 +32,7 @@ import logging
 
 
 class Cloner(object):
-    def __init__(self, root, max_depth):
+    def __init__(self, root, max_depth, css_validate):
         self.visited_urls = []
         self.root, self.error_page  = self.add_scheme(root)
         self.max_depth = max_depth
@@ -42,8 +42,8 @@ class Cloner(object):
         self.target_path = '/opt/snare/pages/{}'.format(self.root.host)
 
         if not os.path.exists(self.target_path):
-            os.mkdir(self.target_path)
-            
+            os.mkdir(self.target_path)    
+        self.css_validate = css_validate
         self.new_urls = Queue()
         self.meta = {}
         self.logger = logging.getLogger(__name__)
@@ -165,8 +165,11 @@ class Cloner(object):
                     data = str(soup).encode()
                 with open(os.path.join(self.target_path, hash_name), 'wb') as index_fh:
                     index_fh.write(data)
-                if content_type == 'text/css':
-                    css = cssutils.parseString(data)
+                if content_type == 'text/css':                       
+                    if self.css_validate == "False":
+                        css = cssutils.parseString(data, validate=False)
+                    else:
+                        css = cssutils.parseString(data)                       
                     for carved_url in cssutils.getUrls(css):
                         if carved_url.startswith('data'):
                             continue
@@ -214,15 +217,16 @@ def main():
     parser.add_argument("--target", help="domain of the site to be cloned", required=True)
     parser.add_argument("--max-depth", help="max depth of the cloning", required=False, default=sys.maxsize)
     parser.add_argument("--log_path", help="path to the error log file")
+    parser.add_argument("--css-validate", help="set css validation", required=False, default=True)
     args = parser.parse_args()
     if args.log_path:
         log_err = args.log_path + "clone.err"
     else:
-        log_err = "/opt/snare/clone.err"	
+        log_err = "/opt/snare/clone.err"    
     logger.Logger.create_clone_logger(log_err, __package__)
     print("Error logs will be stored in {}\n".format(log_err))
     try:
-        cloner = Cloner(args.target, int(args.max_depth))
+        cloner = Cloner(args.target, int(args.max_depth), args.css_validate)
         loop.run_until_complete(cloner.get_root_host())
         loop.run_until_complete(cloner.run())
     except KeyboardInterrupt:
