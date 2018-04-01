@@ -217,7 +217,7 @@ def main():
     parser.add_argument("--target", help="domain of the site to be cloned", required=True)
     parser.add_argument("--max-depth", help="max depth of the cloning", required=False, default=sys.maxsize)
     parser.add_argument("--log_path", help="path to the error log file")
-    parser.add_argument("--css-validate", help="set css validation", required=False, default=True)
+    parser.add_argument("--css-validate", help="set whether css validation is required", required=False, default=None)
     args = parser.parse_args()
     if args.log_path:
         log_err = args.log_path + "clone.err"
