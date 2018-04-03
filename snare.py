@@ -74,7 +74,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                         print(e)
                     finally:
                         await r.release()
-        except:
+        except asyncio.TimeoutError:
             print('Dorks timeout')
         return dorks['response']['dorks'] if dorks else []
 
