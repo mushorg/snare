@@ -72,7 +72,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     except json.decoder.JSONDecodeError as e:
                         print(e)
                     finally:
-                        r.release()
+                        await r.release()
         except:
             print('Dorks timeout')
         return dorks['response']['dorks'] if dorks else []
@@ -128,7 +128,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     except json.decoder.JSONDecodeError as e:
                         print(e, data)
                     finally:
-                        r.release()
+                        await r.release()
         except Exception as e:
             raise e
         return event_result
@@ -269,17 +269,19 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             if 'headers' in payload_content:
                 headers =  payload_content['headers']
         else:
+            payload_content = detection['payload']
             status_code = payload_content['status_code']
 
         return (content, content_type, headers, status_code)
 
-    def handle_error(self, status=500, message=None,
+    async def handle_error(self, status=500, message=None,
                      payload=None, exc=None, headers=None, reason=None):
-        super().handle_error(status, message, payload, exc, headers, reason)
 
         data = self.create_data(message, status)
         data['error'] = exc
-        self.submit_data(data)
+        await self.submit_data(data)
+        super().handle_error(status, message, payload, exc, headers, reason)
+
 
 
 def create_initial_config():
