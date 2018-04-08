@@ -166,10 +166,7 @@ class Cloner(object):
                 with open(os.path.join(self.target_path, hash_name), 'wb') as index_fh:
                     index_fh.write(data)
                 if content_type == 'text/css':                       
-                    if self.css_validate == "False":
-                        css = cssutils.parseString(data, validate=False)
-                    else:
-                        css = cssutils.parseString(data)                       
+                    css = cssutils.parseString(data, validate=self.css_validate)                   
                     for carved_url in cssutils.getUrls(css):
                         if carved_url.startswith('data'):
                             continue
@@ -202,7 +199,14 @@ class Cloner(object):
             with open(os.path.join(self.target_path, 'meta.json'), 'w') as mj:
                 json.dump(self.meta, mj)
             await session.close()
-
+            
+def str_to_bool(v):
+    if v.lower() == 'true':
+        return True
+    elif v.lower() == 'false':
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected')
 
 def main():
     if os.getuid() != 0:
@@ -217,7 +221,7 @@ def main():
     parser.add_argument("--target", help="domain of the site to be cloned", required=True)
     parser.add_argument("--max-depth", help="max depth of the cloning", required=False, default=sys.maxsize)
     parser.add_argument("--log_path", help="path to the error log file")
-    parser.add_argument("--css-validate", help="set whether css validation is required", required=False, default=None)
+    parser.add_argument("--css-validate", help="set whether css validation is required", type=str_to_bool, default=None)
     args = parser.parse_args()
     if args.log_path:
         log_err = args.log_path + "clone.err"
