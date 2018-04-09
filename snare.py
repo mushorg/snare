@@ -277,13 +277,12 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         return (content, content_type, headers, status_code)
 
     async def handle_error(self, status=500, message=None,
-                     payload=None, exc=None, headers=None, reason=None):
+                           payload=None, exc=None, headers=None, reason=None):
 
         data = self.create_data(message, status)
         data['error'] = exc
         await self.submit_data(data)
         super().handle_error(status, message, payload, exc, headers, reason)
-
 
 
 def create_initial_config():
