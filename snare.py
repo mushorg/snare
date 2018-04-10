@@ -257,7 +257,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                         content = p.read()
                 except KeyError:
                     content = '<html><body></body></html>'
-                    content_type = 'text\html'
+                    content_type = r'text\html'
 
                 soup = BeautifulSoup(content, 'html.parser')
                 script_tag = soup.new_tag('div')
@@ -419,7 +419,7 @@ async def check_tanner():
 
 
 if __name__ == '__main__':
-    print("""
+    print(r"""
    _____ _   _____    ____  ______
   / ___// | / /   |  / __ \/ ____/
   \__ \/  |/ / /| | / /_/ / __/
