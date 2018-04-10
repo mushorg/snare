@@ -471,8 +471,8 @@ if __name__ == '__main__':
 
     with open(os.path.join(full_page_path, 'meta.json')) as meta:
         meta_info = json.load(meta)
-    if not os.path.exists
-    (os.path.join(base_page_path, args.page_dir, os.path.join(meta_info[args.index_page]['hash']))):
+    if not os.path.exists(os.path.join(base_page_path, args.page_dir,
+                                       os.path.join(meta_info[args.index_page]['hash']))):
         print('can\'t create meta tag')
     else:
         add_meta_tag(args.page_dir, meta_info[args.index_page]['hash'])
