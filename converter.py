@@ -27,5 +27,5 @@ class Converter:
             shutil.copyfile(fn, os.path.join(path, hash_name))
             os.remove(fn)
 
-        with open(os.path.join(path, 'meta.json'), 'w')  as mj:
+        with open(os.path.join(path, 'meta.json'), 'w') as mj:
             json.dump(self.meta, mj)

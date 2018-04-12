@@ -5,3 +5,4 @@ gitpython
 netifaces
 yarl==0.9.8
 python-magic
+pycodestyle
