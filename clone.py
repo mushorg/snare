@@ -152,7 +152,7 @@ class Cloner(object):
                     response = await session.get(current_url, headers={'Accept': 'text/html'})
                     content_type = response.content_type
                     data = await response.read()
-                    
+
             except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
                 self.logger.error(client_error)
             else:
@@ -165,8 +165,8 @@ class Cloner(object):
                     data = str(soup).encode()
                 with open(os.path.join(self.target_path, hash_name), 'wb') as index_fh:
                     index_fh.write(data)
-                if content_type == 'text/css':                   
-                    css = cssutils.parseString(data, validate=self.css_validate)                   
+                if content_type == 'text/css':                  
+                    css = cssutils.parseString(data, validate=self.css_validate)             
                     for carved_url in cssutils.getUrls(css):
                         if carved_url.startswith('data'):
                             continue
@@ -199,7 +199,8 @@ class Cloner(object):
             with open(os.path.join(self.target_path, 'meta.json'), 'w') as mj:
                 json.dump(self.meta, mj)
             await session.close()
-            
+
+
 def str_to_bool(v):
     if v.lower() == 'true':
         return True
@@ -207,6 +208,7 @@ def str_to_bool(v):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected')
+
 
 def main():
     if os.getuid() != 0:
@@ -226,7 +228,7 @@ def main():
     if args.log_path:
         log_err = args.log_path + "clone.err"
     else:
-        log_err = "/opt/snare/clone.err"    
+        log_err = "/opt/snare/clone.err"
     logger.Logger.create_clone_logger(log_err, __package__)
     print("Error logs will be stored in {}\n".format(log_err))
     try:
@@ -244,6 +246,6 @@ if __name__ == '__main__':
   / /    / /     / / / //  |/ / __/ / /_/ /
  / /___ / /____ / /_/ // /|  / /___/ _, _/
 /_____//______//_____//_/ |_/_____/_/ |_|
-    
+
     """)
     main()

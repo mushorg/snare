@@ -227,7 +227,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         p = re.compile('/+')
         # Substituting all occurrences of the pattern with single forward slash
         requested_name = p.sub('/', requested_name)
-        
+
         if detection['type'] == 1:
             query_start = requested_name.find('?')
             if query_start != -1:
@@ -250,7 +250,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 with open(path, 'rb') as fh:
                     content = fh.read()
                 content = await self.handle_html_content(content)
-                
+
             else:
                 path = os.path.join(self.dir, file_name)
                 if os.path.isfile(path):
@@ -466,7 +466,7 @@ if __name__ == '__main__':
     base_page_path = '/opt/snare/pages/'
     config = configparser.ConfigParser()
     config.read(os.path.join(base_path, args.config))
-    
+
     log_debug = args.log_dir + "snare.log"
     log_err = args.log_dir + "snare.err"
     logger.Logger.create_logger(log_debug, log_err, __package__)
