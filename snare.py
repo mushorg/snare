@@ -55,7 +55,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         self.dir = '/opt/snare/pages/{}'.format(run_args.page_dir)
 
         self.meta = meta
-        
+
         self.logger = logging.getLogger(__name__)
 
         self.sroute = StaticRoute(
