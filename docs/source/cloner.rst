@@ -12,4 +12,3 @@ Description
 
 * **target** -- url of website to be cloned
 * **max--depth** -- maximum depth of the web-pages desired to be cloned (optional), default: full depth of the site 
-* **css--validate -- set whether css validation is required (optional), default: None
