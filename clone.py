@@ -165,7 +165,7 @@ class Cloner(object):
                     data = str(soup).encode()
                 with open(os.path.join(self.target_path, hash_name), 'wb') as index_fh:
                     index_fh.write(data)
-                if content_type == 'text/css':    
+                if content_type == 'text/css':
                     css = cssutils.parseString(data, validate=self.css_validate)
                     for carved_url in cssutils.getUrls(css):
                         if carved_url.startswith('data'):
