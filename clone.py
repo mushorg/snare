@@ -34,7 +34,7 @@ import logging
 class Cloner(object):
     def __init__(self, root, max_depth, css_validate):
         self.visited_urls = []
-        self.root, self.error_page  = self.add_scheme(root)
+        self.root, self.error_page = self.add_scheme(root)
         self.max_depth = max_depth
         self.moved_root = None
         if len(self.root.host) < 4:
@@ -42,7 +42,7 @@ class Cloner(object):
         self.target_path = '/opt/snare/pages/{}'.format(self.root.host)
 
         if not os.path.exists(self.target_path):
-            os.mkdir(self.target_path)    
+            os.mkdir(self.target_path)
         self.css_validate = css_validate
         self.new_urls = Queue()
         self.meta = {}
@@ -165,7 +165,7 @@ class Cloner(object):
                     data = str(soup).encode()
                 with open(os.path.join(self.target_path, hash_name), 'wb') as index_fh:
                     index_fh.write(data)
-                if content_type == 'text/css':                       
+                if content_type == 'text/css':                   
                     css = cssutils.parseString(data, validate=self.css_validate)                   
                     for carved_url in cssutils.getUrls(css):
                         if carved_url.startswith('data'):
@@ -191,7 +191,7 @@ class Cloner(object):
         session = aiohttp.ClientSession()
         try:
             await self.new_urls.put((self.root, 0))
-            await self.new_urls.put((self.error_page,0))
+            await self.new_urls.put((self.error_page, 0))
             await self.get_body(session)
         except KeyboardInterrupt:
             raise

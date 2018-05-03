@@ -223,8 +223,10 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         content = None
         status_code = 200
         headers = {}
-        p = re.compile('/+') # Creating a regex object for the pattern of multiple contiguous forward slashes
-        requested_name = p.sub('/', requested_name) # Substituting all occurrences of the pattern with single forward slash
+        # Creating a regex object for the pattern of multiple contiguous forward slashes
+        p = re.compile('/+')
+        # Substituting all occurrences of the pattern with single forward slash
+        requested_name = p.sub('/', requested_name)
         
         if detection['type'] == 1:
             query_start = requested_name.find('?')
@@ -235,7 +237,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 requested_name = self.run_args.index_page
             try:
                 if requested_name[-1] == '/':
-                    requested_name = requested_name[:-1]  
+                    requested_name = requested_name[:-1]
                 requested_name = unquote(requested_name)
                 file_name = self.meta[requested_name]['hash']
                 content_type = self.meta[requested_name]['content_type']
@@ -464,9 +466,9 @@ if __name__ == '__main__':
     base_page_path = '/opt/snare/pages/'
     config = configparser.ConfigParser()
     config.read(os.path.join(base_path, args.config))
-	
+    
     log_debug = args.log_dir + "snare.log"
-    log_err = args.log_dir + "snare.err"      
+    log_err = args.log_dir + "snare.err"
     logger.Logger.create_logger(log_debug, log_err, __package__)
 
     if args.list_pages:
