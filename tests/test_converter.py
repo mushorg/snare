@@ -9,7 +9,7 @@ from converter import Converter
 class TestConverter(unittest.TestCase):
 
     def setUp(self):
-        self.content = '<html><body>sample</body></html>'
+        self.content = '<html><body> </body></html>'
         self.page_path = '/tmp/test/'
         if not os.path.exists('/tmp/test'):
             os.mkdir('/tmp/test')
