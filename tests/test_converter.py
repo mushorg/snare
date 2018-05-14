@@ -34,8 +34,8 @@ class TestConverter(unittest.TestCase):
         self.hname1 = s[index: index + 32]
         index = s.index('"depth/page.html"') + len('"depth/page.html"') + 12
         self.hname2 = s[index: index + 32]
-        assert(os.path.exists(os.path.join(self.page_path, self.hname1)) and
-               os.path.exists(os.path.join(self.page_path, self.hname2)))
+        assert(os.path.exists(self.page_path + self.hname1) and
+               os.path.exists(self.page_path + self.hname2))
 
     def tearDown(self):
         shutil.rmtree('/tmp/test/depth')
