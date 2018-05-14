@@ -1,8 +1,10 @@
 import unittest
-import os, sys
+import os
+import sys
 import shutil
 import hashlib
 from converter import Converter
+
 
 class TestConverter(unittest.TestCase):
 
@@ -29,11 +31,11 @@ class TestConverter(unittest.TestCase):
         s = f.read()
         f.close()
         index = s.index('"index.html"') + len('"index.html"') + 12
-        self.hname1 = s[index : index + 32]
+        self.hname1 = s[index: index + 32]
         index = s.index('"depth/page.html"') + len('"depth/page.html"') + 12
-        self.hname2 = s[index : index + 32]
+        self.hname2 = s[index: index + 32]
         assert(os.path.exists(os.path.join(self.page_path, self.hname1)) and
-              os.path.exists(os.path.join(self.page_path, self.hname2)))
+               os.path.exists(os.path.join(self.page_path, self.hname2)))
 
     def tearDown(self):
         shutil.rmtree('/tmp/test/depth')
