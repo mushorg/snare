@@ -28,7 +28,7 @@ class TestGetDorks(unittest.TestCase):
                 self.data = await self.handler.get_dorks()
             self.loop.run_until_complete(test())
         except aiohttp.errors.ClientOSError:
-            self.fail("Test failed")
+            self.fail("test failed")
 
     def tearDonw(self):
         shutil.rmtree("/opt/snare/pages/test")
