@@ -20,7 +20,6 @@ class TestGetDorks(unittest.TestCase):
         self.handler = HttpRequestHandler(self.meta, self.args)
         self.data = []
         self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(None)
 
     def test_get_dorks(self):
         self.handler.run_args.tanner = "tanner.mushmush.org"
@@ -29,7 +28,7 @@ class TestGetDorks(unittest.TestCase):
                 self.data = await self.handler.get_dorks()
             self.loop.run_until_complete(test())
         except aiohttp.errors.ClientOSError:
-            self.fail("failed to get dorks from default tanner")
+            self.fail("Test failed")
 
     def tearDonw(self):
         shutil.rmtree("/opt/snare/pages/test")
