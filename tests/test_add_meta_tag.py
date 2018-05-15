@@ -9,12 +9,8 @@ import configparser
 class TestAddMetaTag(unittest.TestCase):
 
     def setUp(self):
-        if not os.path.exists("/opt/snare"):
-            os.mkdir("/opt/snare")
-        if not os.path.exists("/opt/snare/pages"):
-            os.mkdir("/opt/snare/pages")
         if not os.path.exists("/opt/snare/pages/test"):
-            os.mkdir("/opt/snare/pages/test")
+            os.makedirs("/opt/snare/pages/test")
         self.content = '<html><head>title</head><body>sample</body></html>'
         self.page_dir = "test"
         self.index_page = "index.html"
@@ -26,7 +22,7 @@ class TestAddMetaTag(unittest.TestCase):
         snare.config = configparser.ConfigParser()
         snare.config['WEB-TOOLS'] = dict(google='test google content', bing='test bing content')
         snare.add_meta_tag(self.page_dir, self.index_page)
-        with open(os.path.join(self.main_page_path, 'index.html'), 'r') as main:
+        with open(os.path.join(self.main_page_path, 'index.html')) as main:
             main_page = main.read()
         soup = BeautifulSoup(main_page, 'html.parser')
         assert(soup.find("meta", attrs={"name": "google-site-verification"}) and
