@@ -14,7 +14,7 @@ class TestConverter(unittest.TestCase):
             os.makedirs('/tmp/test/depth')
         self.hname1 = ""
         self.hname2 = ""
-        with open(os.path.join(self.page_path, 'index.html'),   'w') as f:
+        with open(os.path.join(self.page_path, 'index.html'), 'w') as f:
             f.write(self.content)
         with open(os.path.join(self.page_path, 'depth/page.html'), 'w') as f:
             f.write(self.content)
@@ -22,7 +22,7 @@ class TestConverter(unittest.TestCase):
 
     def test_converter(self):
         self.cnv.convert(self.page_path)
-        with open(os.path.join(self.page_path, 'meta.json'), 'r') as f:
+        with open(os.path.join(self.page_path, 'meta.json')) as f:
             s = f.read()
             s = json.loads(s)
         self.hname1 = s['index.html']['hash']
