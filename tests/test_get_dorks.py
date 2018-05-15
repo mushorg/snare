@@ -14,7 +14,7 @@ class TestGetDorks(unittest.TestCase):
         run_args.add_argument("--tanner")
         run_args.add_argument("--page-dir")
         if not os.path.exists("/opt/snare/pages/test"):
-            os.mkdirs("/opt/snare/pages/test")
+            os.makedirs("/opt/snare/pages/test")
         self.args = run_args.parse_args(['--tanner', 'test'])
         self.args = run_args.parse_args(['--page-dir', 'test'])
         self.handler = HttpRequestHandler(self.meta, self.args)
