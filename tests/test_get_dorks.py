@@ -10,11 +10,11 @@ from snare import HttpRequestHandler
 class TestGetDorks(unittest.TestCase):
     def setUp(self):
         self.meta = {}
-        run_args = argparse.ArgumentParser();
+        run_args = argparse.ArgumentParser()
         run_args.add_argument("--tanner")
         run_args.add_argument("--page-dir")
         if not os.path.exists("/opt/snare/pages/test"):
-            os.mkdir("/opt/snare/pages/test")
+            os.makedirs("/opt/snare/pages/test")
         self.args = run_args.parse_args(['--tanner', 'test'])
         self.args = run_args.parse_args(['--page-dir', 'test'])
         self.handler = HttpRequestHandler(self.meta, self.args)
