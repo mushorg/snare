@@ -44,6 +44,7 @@ import cssutils
 import netifaces as ni
 from converter import Converter
 
+
 class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
     def __init__(self, meta, run_args, debug=False, keep_alive=75, **kwargs):
         self.dorks = []
@@ -72,8 +73,8 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     except json.decoder.JSONDecodeError as e:
                         print(e)
                     finally:
-                        r.release()
-        except:
+                        await r.release()
+        except asyncio.TimeoutError:
             print('Dorks timeout')
         return dorks['response']['dorks'] if dorks else []
 
@@ -112,7 +113,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             data['headers'] = header
             data['path'] = request.path
             if ('Cookie' in header):
-                data['cookies'] = {cookie.split('=')[0]: cookie.split('=')[1] for cookie in header['Cookie'].split('; ')}
+                data['cookies'] = {cookie.split('=')[0]: cookie.split('=')[1] for cookie in header['Cookie'].split(';')}
         return data
 
     async def submit_data(self, data):
@@ -128,7 +129,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     except json.decoder.JSONDecodeError as e:
                         print(e, data)
                     finally:
-                        r.release()
+                        await r.release()
         except Exception as e:
             raise e
         return event_result
@@ -183,13 +184,14 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         if self.run_args.slurp_enabled:
             await self.submit_slurp(request.path)
 
-        content, content_type, headers, status_code = await self.parse_tanner_response(request.path, event_result['response']['message']['detection']) 
+        content, content_type, headers, status_code = await self.parse_tanner_response(
+            request.path, event_result['response']['message']['detection'])
         response = aiohttp.Response(
             self.writer, status=status_code, http_version=request.version
         )
         for name, val in headers.items():
             response.add_header(name, val)
-        
+
         response.add_header('Server', self.run_args.server_header)
 
         if 'cookies' in data and 'sess_uuid' in data['cookies']:
@@ -212,20 +214,20 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         if content:
             response.write(content)
         await response.write_eof()
-    
+
     async def parse_tanner_response(self, requested_name, detection):
         content_type = None
         content = None
         status_code = 200
         headers = {}
         p = re.compile('/+')
-        requested_name = p.sub('/',requested_name)
-        
+        requested_name = p.sub('/', requested_name)
+
         if detection['type'] == 1:
             query_start = requested_name.find('?')
             if query_start != -1:
                 requested_name = requested_name[:query_start]
-                    
+
             if requested_name == '/':
                 requested_name = self.run_args.index_page
             try:
@@ -256,7 +258,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                         content = p.read()
                 except KeyError:
                     content = '<html><body></body></html>'
-                    content_type = 'text\html'
+                    content_type = r'text\html'
 
                 soup = BeautifulSoup(content, 'html.parser')
                 script_tag = soup.new_tag('div')
@@ -268,19 +270,20 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 content = payload_content['value'].encode('utf-8')
 
             if 'headers' in payload_content:
-                headers =  payload_content['headers']
+                headers = payload_content['headers']
         else:
+            payload_content = detection['payload']
             status_code = payload_content['status_code']
 
         return (content, content_type, headers, status_code)
 
-    def handle_error(self, status=500, message=None,
-                     payload=None, exc=None, headers=None, reason=None):
-        super().handle_error(status, message, payload, exc, headers, reason)
+    async def handle_error(self, status=500, message=None,
+                           payload=None, exc=None, headers=None, reason=None):
 
         data = self.create_data(message, status)
         data['error'] = exc
-        self.submit_data(data)
+        await self.submit_data(data)
+        super().handle_error(status, message, payload, exc, headers, reason)
 
 
 def create_initial_config():
@@ -342,14 +345,12 @@ def add_meta_tag(page_dir, index_page):
         main_page = main.read()
     soup = BeautifulSoup(main_page, 'html.parser')
 
-    if (google_content and
-                soup.find("meta", attrs={"name": "google-site-verification"}) is None):
+    if (google_content and soup.find("meta", attrs={"name": "google-site-verification"}) is None):
         google_meta = soup.new_tag('meta')
         google_meta.attrs['name'] = 'google-site-verification'
         google_meta.attrs['content'] = google_content
         soup.head.append(google_meta)
-    if (bing_content and
-                soup.find("meta", attrs={"name": "msvalidate.01"}) is None):
+    if (bing_content and soup.find("meta", attrs={"name": "msvalidate.01"}) is None):
         bing_meta = soup.new_tag('meta')
         bing_meta.attrs['name'] = 'msvalidate.01'
         bing_meta.attrs['content'] = bing_content
@@ -419,7 +420,7 @@ async def check_tanner():
 
 
 if __name__ == '__main__':
-    print("""
+    print(r"""
    _____ _   _____    ____  ______
   / ___// | / /   |  / __ \/ ____/
   \__ \/  |/ / /| | / /_/ / __/
@@ -445,14 +446,14 @@ if __name__ == '__main__':
     parser.add_argument("--config", help="snare config file", default='snare.cfg')
     parser.add_argument("--auto-update", help="auto update SNARE if new version available ", default=True)
     parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
-    parser.add_argument("--server-header", help="set server-header", default='nginx')
+    parser.add_argument("--server-header", help="set server-header", default='nignx/1.3.8')
     parser.add_argument("--no-dorks", help="disable the use of dorks", action='store_true')
+
     args = parser.parse_args()
     base_path = '/opt/snare/'
     base_page_path = '/opt/snare/pages/'
     config = configparser.ConfigParser()
-    config.read(os.path.join(base_path,args.config))
-
+    config.read(os.path.join(base_path, args.config))
 
     if args.list_pages:
         print('Available pages:\n')
@@ -465,7 +466,7 @@ if __name__ == '__main__':
         print("--page-dir: {0} does not exist".format(args.page_dir))
         exit()
     args.index_page = os.path.join("/", args.index_page)
-    
+
     if not os.path.exists(os.path.join(full_page_path, 'meta.json')):
         conv = Converter()
         conv.convert(full_page_path)
@@ -473,7 +474,8 @@ if __name__ == '__main__':
 
     with open(os.path.join(full_page_path, 'meta.json')) as meta:
         meta_info = json.load(meta)
-    if not os.path.exists(os.path.join(base_page_path,args.page_dir,os.path.join(meta_info[args.index_page]['hash']))):
+    if not os.path.exists(os.path.join(base_page_path, args.page_dir,
+                                       os.path.join(meta_info[args.index_page]['hash']))):
         print('can\'t create meta tag')
     else:
         add_meta_tag(args.page_dir, meta_info[args.index_page]['hash'])
