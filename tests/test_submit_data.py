@@ -14,6 +14,7 @@ class AsyncMock(Mock):  # custom function defined to mock asyncio coroutines
 
     def __call__(self, *args, **kwargs):
         sup = super(AsyncMock, self)
+
         async def coro():
             return sup.__call__(*args, **kwargs)
         return coro()
