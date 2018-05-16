@@ -167,6 +167,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
     async def handle_request(self, request, payload):
         print('Request path: {0}'.format(request.path))
+        print(type(request))
         data = self.create_data(request, 200)
         if request.method == 'POST':
             post_data = await payload.read()

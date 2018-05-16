@@ -23,7 +23,7 @@ class TestConverter(unittest.TestCase):
     def test_converter(self):
         self.cnv.convert(self.page_path)
         with open(os.path.join(self.page_path, 'meta.json')) as f:
-            s = json.loads(f.read())
+            s = json.load(f)
         self.hname1 = s['index.html']['hash']
         self.hname2 = s['depth/page.html']['hash']
         assert(os.path.exists(self.page_path + self.hname1) and
