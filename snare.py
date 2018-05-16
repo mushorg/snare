@@ -136,7 +136,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
     async def handle_html_content(self, content):
         soup = BeautifulSoup(content, 'html.parser')
-        if self.run_args.no_dorks != True:
+        if self.run_args.no_dorks is not True:
             for p_elem in soup.find_all('p'):
                 if p_elem.findChildren():
                     continue
