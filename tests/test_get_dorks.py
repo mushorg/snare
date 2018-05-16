@@ -27,7 +27,7 @@ class TestGetDorks(unittest.TestCase):
             self.data = await self.handler.get_dorks()
         self.loop.run_until_complete(test())
         self.assertEquals(self.data, [])
-        
+
     def test_get_dorks_fail(self):
         self.handler = HttpRequestHandler(self.meta, self.args)
         self.handler.run_args.tanner = "random.random.org"
