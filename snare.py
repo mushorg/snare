@@ -136,32 +136,33 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
     async def handle_html_content(self, content):
         soup = BeautifulSoup(content, 'html.parser')
-        for p_elem in soup.find_all('p'):
-            if p_elem.findChildren():
-                continue
-            css = None
-            if 'style' in p_elem.attrs:
-                css = cssutils.parseStyle(p_elem.attrs['style'])
-            text_list = p_elem.text.split()
-            p_new = soup.new_tag('p', style=css.cssText if css else None)
-            for idx, word in enumerate(text_list):
-                # Fetch dorks if required
-                if len(self.dorks) <= 0:
-                    self.dorks = await self.get_dorks()
-                word += ' '
-                if idx % 5 == 0:
-                    a_tag = soup.new_tag(
-                        'a',
-                        href=self.dorks.pop(),
-                        style='color:{color};text-decoration:none;cursor:text;'.format(
-                            color=css.color if css and 'color' in css.keys() else '#000000'
+        if self.run_args.no_dorks != True:
+            for p_elem in soup.find_all('p'):
+                if p_elem.findChildren():
+                    continue
+                css = None
+                if 'style' in p_elem.attrs:
+                    css = cssutils.parseStyle(p_elem.attrs['style'])
+                text_list = p_elem.text.split()
+                p_new = soup.new_tag('p', style=css.cssText if css else None)
+                for idx, word in enumerate(text_list):
+                    # Fetch dorks if required
+                    if len(self.dorks) <= 0:
+                        self.dorks = await self.get_dorks()
+                    word += ' '
+                    if idx % 5 == 0:
+                        a_tag = soup.new_tag(
+                            'a',
+                            href=self.dorks.pop(),
+                            style='color:{color};text-decoration:none;cursor:text;'.format(
+                                color=css.color if css and 'color' in css.keys() else '#000000'
+                            )
                         )
-                    )
-                    a_tag.string = word
-                    p_new.append(a_tag)
-                else:
-                    p_new.append(soup.new_string(word))
-            p_elem.replace_with(p_new)
+                        a_tag.string = word
+                        p_new.append(a_tag)
+                    else:
+                        p_new.append(soup.new_string(word))
+                p_elem.replace_with(p_new)
         content = soup.encode('utf-8')
         return content
 
@@ -446,6 +447,8 @@ if __name__ == '__main__':
     parser.add_argument("--auto-update", help="auto update SNARE if new version available ", default=True)
     parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
     parser.add_argument("--server-header", help="set server-header", default='nignx/1.3.8')
+    parser.add_argument("--no-dorks", help="disable the use of dorks", action='store_true')
+
     args = parser.parse_args()
     base_path = '/opt/snare/'
     base_page_path = '/opt/snare/pages/'
