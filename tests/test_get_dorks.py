@@ -17,7 +17,6 @@ class TestGetDorks(unittest.TestCase):
             os.makedirs("/opt/snare/pages/test")
         self.args = run_args.parse_args(['--tanner', 'test'])
         self.args = run_args.parse_args(['--page-dir', 'test'])
-        self.data = []
         self.loop = asyncio.new_event_loop()
 
     def test_get_dorks(self):
