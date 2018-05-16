@@ -178,6 +178,7 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
         # Submit the event to the TANNER service
         event_result = await self.submit_data(data)
+        print(type(event_result))
 
         # Log the event to slurp service if enabled
         if self.run_args.slurp_enabled:
