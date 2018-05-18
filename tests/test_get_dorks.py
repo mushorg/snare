@@ -6,8 +6,8 @@ import aiohttp
 import shutil
 import yarl
 import os
-from snare import HttpRequestHandler
 from utils.asyncmock import AsyncMock
+from snare import HttpRequestHandler
 
 
 class TestGetDorks(unittest.TestCase):
