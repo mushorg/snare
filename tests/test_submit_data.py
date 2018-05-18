@@ -18,7 +18,10 @@ class TestSubmitData(unittest.TestCase):
         run_args.add_argument("--tanner")
         run_args.add_argument("--page-dir")
         if not os.path.exists("/opt/snare/pages/test"):
+            self.path_exists = False
             os.makedirs("/opt/snare/pages/test")
+        else:
+            self.path_exists = True
         self.args = run_args.parse_args(['--tanner', 'test'])
         self.args = run_args.parse_args(['--page-dir', 'test'])
         self.loop = asyncio.new_event_loop()
@@ -65,4 +68,5 @@ class TestSubmitData(unittest.TestCase):
             self.loop.run_until_complete(test())
 
     def tearDown(self):
-        shutil.rmtree("/opt/snare/pages/test")
+        if not self.path_exists:
+            shutil.rmtree("/opt/snare/pages/test")
