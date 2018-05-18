@@ -5,20 +5,8 @@ import argparse
 import aiohttp
 import shutil
 import os
+from utils.asyncmock import AsyncMock
 from snare import HttpRequestHandler
-
-
-class AsyncMock(Mock):  # custom function defined to mock asyncio coroutines
-
-    def __call__(self, *args, **kwargs):
-        sup = super(AsyncMock, self)
-
-        async def coro():
-            return sup.__call__(*args, **kwargs)
-        return coro()
-
-    def __await__(self):
-        return self().__await__()
 
 
 class TestHandleError(unittest.TestCase):
@@ -47,11 +35,11 @@ class TestHandleError(unittest.TestCase):
             error=self.exc
         )
         aiohttp.server.ServerHttpProtocol.handle_error = Mock()
-
-    def test_create_error_data(self):
         self.handler = HttpRequestHandler(self.meta, self.args)
         self.handler.create_data = Mock(return_value=self.data)
         self.handler.submit_data = AsyncMock()
+
+    def test_create_error_data(self):
 
         async def test():
             await self.handler.handle_error(
@@ -60,9 +48,6 @@ class TestHandleError(unittest.TestCase):
         self.handler.create_data.assert_called_with(self.message, self.status)
 
     def test_submit_error_data(self):
-        self.handler = HttpRequestHandler(self.meta, self.args)
-        self.handler.create_data = Mock(return_value=self.data)
-        self.handler.submit_data = AsyncMock()
 
         async def test():
             await self.handler.handle_error(
@@ -71,9 +56,6 @@ class TestHandleError(unittest.TestCase):
         self.handler.submit_data.assert_called_with(self.data)
 
     def test_handle_error_data(self):
-        self.handler = HttpRequestHandler(self.meta, self.args)
-        self.handler.create_data = Mock(return_value=self.data)
-        self.handler.submit_data = AsyncMock()
 
         async def test():
             await self.handler.handle_error(

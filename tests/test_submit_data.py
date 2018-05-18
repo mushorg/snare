@@ -7,20 +7,8 @@ import shutil
 import os
 import json
 import yarl
+from utils.asyncmock import AsyncMock
 from snare import HttpRequestHandler
-
-
-class AsyncMock(Mock):  # custom function defined to mock asyncio coroutines
-
-    def __call__(self, *args, **kwargs):
-        sup = super(AsyncMock, self)
-
-        async def coro():
-            return sup.__call__(*args, **kwargs)
-        return coro()
-
-    def __await__(self):
-        return self().__await__()
 
 
 class TestSubmitData(unittest.TestCase):
@@ -47,10 +35,10 @@ class TestSubmitData(unittest.TestCase):
         aiohttp.ClientSession.post = AsyncMock(
             return_value=aiohttp.ClientResponse(url=yarl.URL("http://www.example.com"), method="GET")
                                               )
-
-    def test_post_data(self):
         self.handler = HttpRequestHandler(self.meta, self.args)
         self.handler.run_args.tanner = "tanner.mushmush.org"
+
+    def test_post_data(self):
         aiohttp.ClientResponse.json = AsyncMock(return_value=dict(detection={'type': 1}, sess_uuid="test_uuid"))
 
         async def test():
@@ -61,8 +49,6 @@ class TestSubmitData(unittest.TestCase):
         )
 
     def test_event_result(self):
-        self.handler = HttpRequestHandler(self.meta, self.args)
-        self.handler.run_args.tanner = "tanner.mushmush.org"
         aiohttp.ClientResponse.json = AsyncMock(return_value=dict(detection={'type': 1}, sess_uuid="test_uuid"))
 
         async def test():
@@ -71,8 +57,6 @@ class TestSubmitData(unittest.TestCase):
         self.assertEquals(self.result, dict(detection={'type': 1}, sess_uuid="test_uuid"))
 
     def test_event_result_exception(self):
-        self.handler = HttpRequestHandler(self.meta, self.args)
-        self.handler.run_args.tanner = "tanner.mushmush.org"
         aiohttp.ClientResponse.json = AsyncMock(side_effect=Exception())
 
         async def test():

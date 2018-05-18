@@ -7,20 +7,7 @@ import shutil
 import yarl
 import os
 from snare import HttpRequestHandler
-
-
-class AsyncMock(Mock):  # custom function defined to mock asyncio coroutines
-
-    def __call__(self, *args, **kwargs):
-        sup = super(AsyncMock, self)
-
-        async def coro():
-            return sup.__call__(*args, **kwargs)
-        return coro()
-
-    def __await__(self):
-        return self().__await__()
-
+from utils.asyncmock import AsyncMock
 
 class TestGetDorks(unittest.TestCase):
     def setUp(self):
@@ -37,10 +24,10 @@ class TestGetDorks(unittest.TestCase):
         aiohttp.ClientSession.get = AsyncMock(
             return_value=aiohttp.ClientResponse(url=yarl.URL("http://www.example.com"), method="GET")
                                              )
-
-    def test_get_dorks(self):
         self.handler = HttpRequestHandler(self.meta, self.args)
         self.handler.run_args.tanner = "tanner.mushmush.org"
+
+    def test_get_dorks(self):
         aiohttp.ClientResponse.json = AsyncMock(return_value=dict(response={'dorks': "test_dorks"}))
 
         async def test():
@@ -49,8 +36,6 @@ class TestGetDorks(unittest.TestCase):
         aiohttp.ClientSession.get.assert_called_with('http://tanner.mushmush.org:8090/dorks')
 
     def test_return_dorks(self):
-        self.handler = HttpRequestHandler(self.meta, self.args)
-        self.handler.run_args.tanner = "tanner.mushmush.org"
         aiohttp.ClientResponse.json = AsyncMock(return_value=self.dorks)
 
         async def test():
@@ -59,8 +44,6 @@ class TestGetDorks(unittest.TestCase):
         self.assertEquals(self.data, self.dorks['response']['dorks'])
 
     def test_return_dorks_exception(self):
-        self.handler = HttpRequestHandler(self.meta, self.args)
-        self.handler.run_args.tanner = "tanner.mushmush.org"
         aiohttp.ClientResponse.json = AsyncMock(side_effect=Exception())
 
         async def test():

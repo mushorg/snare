@@ -1,0 +1,3 @@
+aiohttp.streams.EmptyStreamReader  --- payload object
+b'user_name=af&user_passwd=asdf'    --- payload.read()  
+aiohttp.protocol.RawRequestMessage   --- Raw request request
