@@ -10,7 +10,10 @@ class TestAddMetaTag(unittest.TestCase):
 
     def setUp(self):
         if not os.path.exists("/opt/snare/pages/test"):
+            self.path_exists = False
             os.makedirs("/opt/snare/pages/test")
+        else:
+            self.path_exists = True
         self.content = '<html><head>title</head><body>sample</body></html>'
         self.page_dir = "test"
         self.index_page = "index.html"
@@ -29,4 +32,7 @@ class TestAddMetaTag(unittest.TestCase):
                soup.find("meta", attrs={"name": "msvalidate.01"}))
 
     def tearDown(self):
-        shutil.rmtree("/opt/snare/pages/test")
+        if not self.path_exists:
+            shutil.rmtree("/opt/snare/pages/test")
+        else:
+            os.remove("/opt/snare/pages/test/index.html")
