@@ -16,7 +16,11 @@ class TestHandleError(unittest.TestCase):
         run_args.add_argument("--tanner")
         run_args.add_argument("--page-dir")
         if not os.path.exists("/opt/snare/pages/test"):
+            self.path_exists = False
             os.makedirs("/opt/snare/pages/test")
+        else:
+            self.path_exists = True
+
         self.args = run_args.parse_args(['--page-dir', 'test'])
         self.loop = asyncio.new_event_loop()
         self.status = 500
@@ -65,4 +69,5 @@ class TestHandleError(unittest.TestCase):
             self.status, self.message, self.payload, self.exc, self.headers, self.reason)
 
     def tearDown(self):
-        shutil.rmtree("/opt/snare/pages/test")
+        if not self.path_exists:
+            shutil.rmtree("/opt/snare/pages/test")
