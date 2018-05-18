@@ -9,6 +9,7 @@ import os
 from snare import HttpRequestHandler
 from utils.asyncmock import AsyncMock
 
+
 class TestGetDorks(unittest.TestCase):
     def setUp(self):
         self.meta = {}
