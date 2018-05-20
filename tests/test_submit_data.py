@@ -21,7 +21,7 @@ class TestSubmitData(unittest.TestCase):
         self.main_page_path = generate_unique_path()
         os.makedirs(self.main_page_path)
         self.args = run_args.parse_args(['--tanner', 'test'])
-        self.args = run_args.parse_args(['--page-dir', 'test'])
+        self.args = run_args.parse_args(['--page-dir', self.main_page_path[-9:]])
         self.loop = asyncio.new_event_loop()
         self.data = {
             'method': 'GET', 'path': '/',
