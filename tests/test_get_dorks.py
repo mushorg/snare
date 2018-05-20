@@ -8,6 +8,7 @@ import yarl
 import os
 from utils.asyncmock import AsyncMock
 from snare import HttpRequestHandler
+from utils.page_path_generator import generate_unique_path
 
 
 class TestGetDorks(unittest.TestCase):
@@ -16,11 +17,8 @@ class TestGetDorks(unittest.TestCase):
         run_args = argparse.ArgumentParser()
         run_args.add_argument("--tanner")
         run_args.add_argument("--page-dir")
-        if not os.path.exists("/opt/snare/pages/test"):
-            self.path_exists = False
-            os.makedirs("/opt/snare/pages/test")
-        else:
-            self.path_exists = True
+        self.main_page_path = generate_unique_path()
+        os.makedirs(self.main_page_path)
         self.args = run_args.parse_args(['--tanner', 'test'])
         self.args = run_args.parse_args(['--page-dir', 'test'])
         self.dorks = dict(response={'dorks': "test_dorks"})
@@ -56,5 +54,4 @@ class TestGetDorks(unittest.TestCase):
             self.loop.run_until_complete(test())
 
     def tearDown(self):
-        if not self.path_exists:
-            shutil.rmtree("/opt/snare/pages/test")
+        shutil.rmtree(self.main_page_path)

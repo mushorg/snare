@@ -4,20 +4,18 @@ from bs4 import BeautifulSoup
 import snare
 import shutil
 import configparser
+from utils.page_path_generator import generate_unique_path
 
 
 class TestAddMetaTag(unittest.TestCase):
 
     def setUp(self):
-        if not os.path.exists("/opt/snare/pages/test"):
-            self.path_exists = False
-            os.makedirs("/opt/snare/pages/test")
-        else:
-            self.path_exists = True
+        self.main_page_path = generate_unique_path()
+        os.makedirs(self.main_page_path)
         self.content = '<html><head>title</head><body>sample</body></html>'
-        self.page_dir = "test"
+        self.page_dir = self.main_page_path[-9:]
+        print(self.main_page_path)
         self.index_page = "index.html"
-        self.main_page_path = '/opt/snare/pages/test'
         with open(os.path.join(self.main_page_path, 'index.html'), 'w') as f:
             f.write(self.content)
 
@@ -32,7 +30,4 @@ class TestAddMetaTag(unittest.TestCase):
                soup.find("meta", attrs={"name": "msvalidate.01"}))
 
     def tearDown(self):
-        if not self.path_exists:
-            shutil.rmtree("/opt/snare/pages/test")
-        else:
-            os.remove("/opt/snare/pages/test/index.html")
+        shutil.rmtree(self.main_page_path)
