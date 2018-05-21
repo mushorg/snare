@@ -13,8 +13,7 @@ class TestAddMetaTag(unittest.TestCase):
         self.main_page_path = generate_unique_path()
         os.makedirs(self.main_page_path)
         self.content = '<html><head>title</head><body>sample</body></html>'
-        self.page_dir = self.main_page_path[-9:]
-        print(self.main_page_path)
+        self.page_dir = self.main_page_path.rsplit('/')[-1]
         self.index_page = "index.html"
         with open(os.path.join(self.main_page_path, 'index.html'), 'w') as f:
             f.write(self.content)
