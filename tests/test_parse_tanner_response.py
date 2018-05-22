@@ -46,11 +46,9 @@ class TestParseTannerResponse(unittest.TestCase):
             (self.res1, self.res2,
              self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
         self.loop.run_until_complete(test())
-        self.assertEquals(self.res1, self.page_content)
-        self.assertEquals(self.res2, self.content_type)
-        self.assertEquals(self.res3, {})
-        self.assertEquals(self.res4, 200)
-        self.handler.handle_html_content.assert_called_with(self.call_content)
+        real_result = [self.res1, self.res2, self.res3, self.res4]
+        expected_result = [self.page_content, self.content_type, {}, 200]
+        self.assertCountEqual(real_result, expected_result)
 
     def test_parse_type_two(self):
         self.detection = {
@@ -66,10 +64,9 @@ class TestParseTannerResponse(unittest.TestCase):
             (self.res1, self.res2,
              self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
         self.loop.run_until_complete(test())
-        self.assertEquals(self.res1, self.expected_content)
-        self.assertEquals(self.res2, self.content_type)
-        self.assertEquals(self.res3, {})
-        self.assertEquals(self.res4, 200)
+        real_result = [self.res1, self.res2, self.res3, self.res4]
+        expected_result = [self.expected_content, self.content_type, {}, 200]
+        self.assertCountEqual(real_result, expected_result)
 
     def test_parse_type_three(self):
         self.detection = {
@@ -86,10 +83,20 @@ class TestParseTannerResponse(unittest.TestCase):
             (self.res1, self.res2,
              self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
         self.loop.run_until_complete(test())
-        self.assertEquals(self.res1, self.expected_content)
-        self.assertEquals(self.res2, None)
-        self.assertEquals(self.res3, {})
-        self.assertEquals(self.res4, 200)
+        real_result = [self.res1, self.res2, self.res3, self.res4]
+        expected_result = [self.expected_content, None, {}, 200]
+        self.assertCountEqual(real_result, expected_result)
+
+    def test_call_handle_html(self):
+        self.detection = {"type": 1}
+        self.call_content = b'<html><body></body></html>'
+        self.expected_content = self.page_content
+
+        async def test():
+            (self.res1, self.res2,
+             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+        self.loop.run_until_complete(test())
+        self.handler.handle_html_content.assert_called_with(self.call_content)
 
     def test_parse_exception(self):
         self.detection = {}
