@@ -16,10 +16,13 @@ from versions_manager import VersionManager
 import aiohttp
 import git
 import pip
-from aiohttp import MultiDict
+from aiohttp import web
 import re
 import logging
 import logger
+import multidict
+import aiohttp_jinja2
+import jinja2
 
 try:
     from aiohttp.web import StaticResource as StaticRoute
@@ -30,9 +33,9 @@ from bs4 import BeautifulSoup
 import cssutils
 import netifaces as ni
 from converter import Converter
+from middlewares import SnareMiddleware
 
-
-class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
+class HttpRequestHandler():
     def __init__(self, meta, run_args, snare_uuid, debug=False, keep_alive=75, **kwargs):
         self.dorks = []
 
@@ -48,37 +51,34 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             name=None, prefix='/',
             directory=self.dir
         )
-        super().__init__(debug=debug, keep_alive=keep_alive, access_log=None, **kwargs)
 
     async def get_dorks(self):
         dorks = None
         try:
-            with aiohttp.Timeout(10.0):
-                with aiohttp.ClientSession() as session:
-                    r = await session.get(
-                        'http://{0}:8090/dorks'.format(self.run_args.tanner)
-                    )
-                    try:
-                        dorks = await r.json()
-                    except json.decoder.JSONDecodeError as e:
-                        self.logger.error('Error getting dorks: %s', e)
-                    finally:
-                        await r.release()
+            async with aiohttp.ClientSession() as session:
+                r = await session.get(
+                    'http://{0}:8090/dorks'.format(self.run_args.tanner), timeout=10.0
+                )
+                try:
+                    dorks = await r.json()
+                except json.decoder.JSONDecodeError as e:
+                    self.logger.error('Error getting dorks: %s', e)
+                finally:
+                    await r.release()
         except asyncio.TimeoutError:
             self.logger.info('Dorks timeout')
         return dorks['response']['dorks'] if dorks else []
 
     async def submit_slurp(self, data):
         try:
-            with aiohttp.Timeout(10.0):
-                with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
-                    r = await session.post(
-                        'https://{0}:8080/api?auth={1}&chan=snare_test&msg={2}'.format(
-                            self.run_args.slurp_host, self.run_args.slurp_auth, data
-                        ), data=json.dumps(data)
-                    )
-                    assert r.status == 200
-                    r.close()
+            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+                r = await session.post(
+                    'https://{0}:8080/api?auth={1}&chan=snare_test&msg={2}'.format(
+                        self.run_args.slurp_host, self.run_args.slurp_auth, data
+                    ), data=json.dumps(data), timeout=10.0
+                )
+                assert r.status == 200
+                r.close()
         except Exception as e:
             self.logger.error('Error submitting slurp: %s', e)
 
@@ -91,13 +91,13 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
             peer=None,
             status=response_status
         )
-        if self.transport:
+        if request.transport:
             peer = dict(
-                ip=self.transport.get_extra_info('peername')[0],
-                port=self.transport.get_extra_info('peername')[1]
+                ip=request.transport.get_extra_info('peername')[0],
+                port=request.transport.get_extra_info('peername')[1]
             )
             data['peer'] = peer
-        if request:
+        if request.path:
             header = {key: value for (key, value) in request.headers.items()}
             data['method'] = request.method
             data['headers'] = header
@@ -109,17 +109,17 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
     async def submit_data(self, data):
         event_result = None
         try:
-            with aiohttp.Timeout(10.0):
-                with aiohttp.ClientSession() as session:
-                    r = await session.post(
-                        'http://{0}:8090/event'.format(self.run_args.tanner), data=json.dumps(data)
-                    )
-                    try:
-                        event_result = await r.json()
-                    except json.decoder.JSONDecodeError as e:
-                        self.logger.error('Error submitting data: {} {}'.format(e, data))
-                    finally:
-                        await r.release()
+            async with aiohttp.ClientSession() as session:
+                r = await session.post(
+                    'http://{0}:8090/event'.format(self.run_args.tanner), data=json.dumps(data),
+					timeout=10.0
+                )
+                try:
+                    event_result = await r.json()
+                except json.decoder.JSONDecodeError as e:
+                    self.logger.error('Error submitting data: {} {}'.format(e, data))
+                finally:
+                    await r.release()
         except Exception as e:
             raise e
         return event_result
@@ -155,12 +155,11 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         content = soup.encode('utf-8')
         return content
 
-    async def handle_request(self, request, payload):
+    async def handle_request(self, request):
         self.logger.info('Request path: {0}'.format(request.path))
         data = self.create_data(request, 200)
         if request.method == 'POST':
-            post_data = await payload.read()
-            post_data = MultiDict(parse_qsl(post_data.decode('utf-8')))
+            post_data = await request.post()
             self.logger.info('POST data:')
             for key, val in post_data.items():
                 self.logger.info('\t- {0}: {1}'.format(key, val))
@@ -175,13 +174,13 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
         content, content_type, headers, status_code = await self.parse_tanner_response(
             request.path, event_result['response']['message']['detection'])
-        response = aiohttp.Response(
-            self.writer, status=status_code, http_version=request.version
-        )
-        for name, val in headers.items():
-            response.add_header(name, val)
 
-        response.add_header('Server', self.run_args.server_header)
+        response_headers = multidict.CIMultiDict()
+        
+        for name, val in headers.items():
+            response_headers.add(name, val)
+
+        response_headers.add('Server', self.run_args.server_header)
 
         if 'cookies' in data and 'sess_uuid' in data['cookies']:
             previous_sess_uuid = data['cookies']['sess_uuid']
@@ -191,18 +190,16 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
         if event_result is not None and ('sess_uuid' in event_result['response']['message']):
             cur_sess_id = event_result['response']['message']['sess_uuid']
             if previous_sess_uuid is None or not previous_sess_uuid.strip() or previous_sess_uuid != cur_sess_id:
-                response.add_header('Set-Cookie', 'sess_uuid=' + cur_sess_id)
+                response_headers.add('Set-Cookie', 'sess_uuid=' + cur_sess_id)
 
         if not content_type:
-            response.add_header('Content-Type', 'text/plain')
+            response_content_type = 'text/plain'
         else:
-            response.add_header('Content-Type', content_type)
-        if content:
-            response.add_header('Content-Length', str(len(content)))
-        response.send_headers()
-        if content:
-            response.write(content)
-        await response.write_eof()
+            response_content_type = content_type
+        response = web.Response(
+            body=content, status=status_code, headers=response_headers, content_type=response_content_type
+        )
+        return response
 
     async def parse_tanner_response(self, requested_name, detection):
         content_type = None
@@ -227,13 +224,6 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                 content_type = self.meta[requested_name]['content_type']
             except KeyError:
                 status_code = 404
-                requested_name = '/status_404'
-                file_name = self.meta[requested_name]['hash']
-                content_type = 'text/html'
-                path = os.path.join(self.dir, file_name)
-                with open(path, 'rb') as fh:
-                    content = fh.read()
-                content = await self.handle_html_content(content)
                 
             else:
                 path = os.path.join(self.dir, file_name)
@@ -274,11 +264,12 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
 
         return (content, content_type, headers, status_code)
 
-    async def handle_error(self, status=500, message=None,
-                           payload=None, exc=None, headers=None, reason=None):
-
-        data = self.create_data(message, status)
-        data['error'] = exc
-        await self.submit_data(data)
-        super().handle_error(status, message, payload, exc, headers, reason)
-
+    def start(self):
+        app = web.Application()
+        app.add_routes([web.route('*', '/{tail:.*}', self.handle_request)])
+        aiohttp_jinja2.setup(
+            app, loader=jinja2.FileSystemLoader(self.dir)
+        )
+        middleware = SnareMiddleware(self.meta['/status_404']['hash'])
+        middleware.setup_middlewares(app)
+        web.run_app(app, host=self.run_args.host_ip)

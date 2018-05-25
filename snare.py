@@ -31,7 +31,6 @@ from versions_manager import VersionManager
 import aiohttp
 import git
 import pip
-from aiohttp import MultiDict
 import re
 import logging
 import logger
@@ -167,14 +166,14 @@ def parse_timeout(timeout):
 
 async def check_tanner():
     vm = VersionManager()
-    with aiohttp.ClientSession() as client:
+    async with aiohttp.ClientSession() as client:
         req_url = 'http://{}:8090/version'.format(args.tanner)
         try:
             resp = await client.get(req_url)
             result = await resp.json()
             version = result["version"]
             vm.check_compatibility(version)
-        except aiohttp.errors.ClientOSError:
+        except aiohttp.ClientOSError:
             print("Can't connect to tanner host {}".format(req_url))
             exit(1)
         else:
@@ -254,26 +253,17 @@ if __name__ == '__main__':
         compare_version_fut = loop.run_in_executor(pool, compare_version_info, timeout)
 
     if args.host_ip == 'localhost' and args.interface:
-        host_ip = ni.ifaddresses(args.interface)[2][0]['addr']
-    else:
-        host_ip = args.host_ip
-    future = loop.create_server(
-        lambda: HttpRequestHandler(meta_info, args, snare_uuid, debug=args.debug, keep_alive=75),
-        args.host_ip, int(args.port))
-    srv = loop.run_until_complete(future)
+        args.host_ip = ni.ifaddresses(args.interface)[2][0]['addr']
 
+    app = HttpRequestHandler(meta_info, args, snare_uuid, debug=args.debug, keep_alive=75)
     drop_privileges()
-    print('serving on {0} with uuid {1}'.format(srv.sockets[0].getsockname()[:2], snare_uuid.decode('utf-8')))
+    print('serving with uuid {0}'.format(snare_uuid.decode('utf-8')))
     print("Debug logs will be stored in", log_debug)
     print("Error logs will be stored in", log_err)
-    print("(Press CTRL+C to quit)")
     try:
-        loop.run_forever()
+        app.start()
     except (KeyboardInterrupt, TypeError) as e:
         print(e)
     finally:
         if compare_version_fut:
             compare_version_fut.cancel()
-        srv.close()
-        loop.run_until_complete(srv.wait_closed())
-        loop.close()
