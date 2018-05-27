@@ -12,14 +12,12 @@ import time
 import uuid
 from concurrent.futures import ProcessPoolExecutor
 from urllib.parse import urlparse, unquote, parse_qsl
-from versions_manager import VersionManager
 import aiohttp
 import git
 import pip
 from aiohttp import web
 import re
 import logging
-import logger
 import multidict
 import aiohttp_jinja2
 import jinja2
@@ -32,7 +30,6 @@ except ImportError:
 from bs4 import BeautifulSoup
 import cssutils
 import netifaces as ni
-from converter import Converter
 from middlewares import SnareMiddleware
 from tanner_handler import TannerHandler
 
