@@ -273,4 +273,4 @@ class HttpRequestHandler():
         )
         middleware = SnareMiddleware(self.meta['/status_404']['hash'])
         middleware.setup_middlewares(app)
-        web.run_app(app, host=self.run_args.host_ip)
+        web.run_app(app, host=self.run_args.host_ip, port=self.run_args.port)
