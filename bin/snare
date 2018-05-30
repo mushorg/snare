@@ -39,13 +39,13 @@ except ImportError:
 from bs4 import BeautifulSoup
 import cssutils
 import netifaces as ni
-from server import HttpRequestHandler
-from startup import StartUp
-from utils.logger import Logger
-from utils.tag_adder import add_meta_tag
-from utils.timeout_parser import parse_timeout
-from utils.converter import Converter
-from utils.versions_manager import VersionManager
+from snare import server
+from snare.startup import StartUp
+from snare.utils.logger import Logger
+from snare.utils.tag_adder import add_meta_tag
+from snare.utils.timeout_parser import parse_timeout
+from snare.utils.converter import Converter
+from snare.utils.versions_manager import VersionManager
 
 if __name__ == '__main__':
     print(r"""
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     if args.host_ip == 'localhost' and args.interface:
         args.host_ip = ni.ifaddresses(args.interface)[2][0]['addr']
 
-    app = HttpRequestHandler(meta_info, args, snare_uuid, debug=args.debug, keep_alive=75)
+    app = server.HttpRequestHandler(meta_info, args, snare_uuid, debug=args.debug, keep_alive=75)
     startup.drop_privileges()
     print('serving with uuid {0}'.format(snare_uuid.decode('utf-8')))
     print("Debug logs will be stored in", log_debug)

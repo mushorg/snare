@@ -30,8 +30,8 @@ except ImportError:
 from bs4 import BeautifulSoup
 import cssutils
 import netifaces as ni
-from middlewares import SnareMiddleware
-from tanner_handler import TannerHandler
+from snare.middlewares import SnareMiddleware
+from snare.tanner_handler import TannerHandler
 
 class HttpRequestHandler():
     def __init__(self, meta, run_args, snare_uuid, debug=False, keep_alive=75, **kwargs):

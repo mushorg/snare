@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 import json
 import logging
-from html_handler import HtmlHandler
+from snare.html_handler import HtmlHandler
 import re
 import os
 from bs4 import BeautifulSoup

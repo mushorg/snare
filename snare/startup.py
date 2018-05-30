@@ -4,7 +4,7 @@ import pwd
 import os
 import aiohttp
 import grp
-from utils.versions_manager import VersionManager
+from snare.utils.versions_manager import VersionManager
 
 class StartUp():
 	def __init__(self, args):
