@@ -29,7 +29,7 @@ class HttpRequestHandler():
         self.run_args = run_args
         self.dir = '/opt/snare/pages/{}'.format(run_args.page_dir)
         self.meta = meta
-        self.snare_uuid = snare_uuid        
+        self.snare_uuid = snare_uuid
         self.logger = logging.getLogger(__name__)
         self.sroute = StaticRoute(
             name=None, prefix='/',
@@ -71,7 +71,7 @@ class HttpRequestHandler():
             request.path, event_result['response']['message']['detection'])
 
         response_headers = multidict.CIMultiDict()
-        
+
         for name, val in headers.items():
             response_headers.add(name, val)
 
