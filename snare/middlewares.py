@@ -32,7 +32,7 @@ class SnareMiddleware():
 
     def setup_middlewares(self, app):
         error_middleware = self.create_error_middleware({
-           404: self.handle_404,
-           500: self.handle_500
+            404: self.handle_404,
+            500: self.handle_500
         })
         app.middlewares.append(error_middleware)

@@ -1,24 +1,11 @@
-import asyncio
+import logging
 import json
-import mimetypes
-import os
-import sys
-import time
-from urllib.parse import unquote
 import aiohttp
 from aiohttp import web
-import logging
+from aiohttp.web import StaticResource as StaticRoute
 import multidict
 import aiohttp_jinja2
 import jinja2
-
-try:
-    from aiohttp.web import StaticResource as StaticRoute
-except ImportError:
-    from aiohttp.web import StaticResource
-
-from bs4 import BeautifulSoup
-import cssutils
 from snare.middlewares import SnareMiddleware
 from snare.tanner_handler import TannerHandler
 
@@ -64,7 +51,7 @@ class HttpRequestHandler():
 
         # Log the event to slurp service if enabled
         if self.run_args.slurp_enabled:
-            await self.tanner_handler.submit_slurp(request.path)
+            await self.submit_slurp(request.path)
 
         content, content_type, headers, status_code = await self.tanner_handler.parse_tanner_response(
             request.path, event_result['response']['message']['detection'])

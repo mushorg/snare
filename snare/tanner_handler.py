@@ -1,13 +1,12 @@
-import asyncio
-import aiohttp
+import re
+import os
+from urllib.parse import unquote
 import mimetypes
 import json
 import logging
-from snare.html_handler import HtmlHandler
-import re
-import os
+import aiohttp
 from bs4 import BeautifulSoup
-from urllib.parse import unquote
+from snare.html_handler import HtmlHandler
 
 
 class TannerHandler():
