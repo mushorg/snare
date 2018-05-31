@@ -1,23 +1,13 @@
-import argparse
 import asyncio
-import configparser
-import grp
 import json
 import mimetypes
-import multiprocessing
 import os
-import pwd
 import sys
 import time
-import uuid
-from concurrent.futures import ProcessPoolExecutor
-from urllib.parse import urlparse, unquote, parse_qsl
+from urllib.parse import unquote
 from versions_manager import VersionManager
 import aiohttp
-import git
-import pip
 from aiohttp import web
-import re
 import logging
 import logger
 import multidict
@@ -31,8 +21,6 @@ except ImportError:
 
 from bs4 import BeautifulSoup
 import cssutils
-import netifaces as ni
-from converter import Converter
 from middlewares import SnareMiddleware
 
 class HttpRequestHandler():
