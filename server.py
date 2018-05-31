@@ -36,7 +36,7 @@ class HttpRequestHandler():
             directory=self.dir
         )
         self.tanner_handler = TannerHandler(run_args, meta, snare_uuid)
-           
+
     async def submit_slurp(self, data):
         try:
             async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
@@ -65,7 +65,7 @@ class HttpRequestHandler():
 
         # Log the event to slurp service if enabled
         if self.run_args.slurp_enabled:
-            await self.submit_slurp(request.path)
+            await self.tanner_handler.submit_slurp(request.path)
 
         content, content_type, headers, status_code = await self.tanner_handler.parse_tanner_response(
             request.path, event_result['response']['message']['detection'])
