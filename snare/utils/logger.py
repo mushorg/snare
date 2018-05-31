@@ -1,6 +1,7 @@
 import logging
 import logging.handlers
 
+
 class LevelFilter(logging.Filter):
     """Filters (lets through) all messages with level < LEVEL"""
 
@@ -10,6 +11,7 @@ class LevelFilter(logging.Filter):
     def filter(self, record):
         return record.levelno < self.level
     # "<" instead of "<=": since logger.setLevel is inclusive, this should be exclusive
+
 
 class Logger:
 
@@ -49,4 +51,3 @@ class Logger:
         error_log_handler.setLevel(logging.ERROR)
         error_log_handler.setFormatter(formatter)
         logger.addHandler(error_log_handler)
-        
