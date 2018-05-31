@@ -27,7 +27,7 @@ import aiohttp
 import cssutils
 import yarl
 from bs4 import BeautifulSoup
-from snare.utils import logger
+import logger
 import logging
 
 

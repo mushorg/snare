@@ -17,35 +17,104 @@ import argparse
 import asyncio
 import configparser
 import json
-import mimetypes
 import multiprocessing
 import os
 import sys
 import time
 import uuid
 from concurrent.futures import ProcessPoolExecutor
-from urllib.parse import urlparse, unquote, parse_qsl
+from urllib.parse import unquote
 import aiohttp
 import git
 import pip
-import re
 import logging
-
-try:
-    from aiohttp.web import StaticResource as StaticRoute
-except ImportError:
-    from aiohttp.web import StaticResource
-
-from bs4 import BeautifulSoup
-import cssutils
+import pwd
+import grp
 import netifaces as ni
-from snare import server
-from snare.startup import StartUp
+from snare.server import HttpRequestHandler
 from snare.utils.logger import Logger
-from snare.utils.tag_adder import add_meta_tag
-from snare.utils.timeout_parser import parse_timeout
-from snare.utils.converter import Converter
-from snare.utils.versions_manager import VersionManager
+from snare.utils.snare_helper import SnareHelper
+
+def create_initial_config():
+    cfg = configparser.ConfigParser()
+    cfg['WEB-TOOLS'] = dict(google='', bing='')
+    with open('/opt/snare/snare.cfg', 'w') as configfile:
+        cfg.write(configfile)
+
+def snare_setup():
+    if os.getuid() != 0:
+        print('Snare has to be started as root!')
+        sys.exit(1)
+    # Create folders
+    if not os.path.exists('/opt/snare'):
+        os.mkdir('/opt/snare')
+    if not os.path.exists('/opt/snare/pages'):
+        os.mkdir('/opt/snare/pages')
+    # Write pid to pid file
+    with open('/opt/snare/snare.pid', 'wb') as pid_fh:
+        pid_fh.write(str(os.getpid()).encode('utf-8'))
+    # Config file
+    if not os.path.exists('/opt/snare/snare.cfg'):
+        create_initial_config()
+    # Read or create the sensor id
+    uuid_file_path = '/opt/snare/snare.uuid'
+    if os.path.exists(uuid_file_path):
+        with open(uuid_file_path, 'rb') as uuid_fh:
+            snare_uuid = uuid_fh.read()
+        return snare_uuid
+    else:
+        with open(uuid_file_path, 'wb') as uuid_fh:
+            snare_uuid = str(uuid.uuid4()).encode('utf-8')
+            uuid_fh.write(snare_uuid)
+        return snare_uuid
+
+def drop_privileges():
+    uid_name = 'nobody'
+    wanted_user = pwd.getpwnam(uid_name)
+    gid_name = grp.getgrgid(wanted_user.pw_gid).gr_name
+    wanted_group = grp.getgrnam(gid_name)
+    os.setgid(wanted_group.gr_gid)
+    os.setuid(wanted_user.pw_uid)
+    new_user = pwd.getpwuid(os.getuid())
+    new_group = grp.getgrgid(os.getgid())
+    print('privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name))
+
+def compare_version_info(timeout):
+    while True:
+        repo = git.Repo(os.getcwd())
+        try:
+            rem = repo.remote()
+            res = rem.fetch()
+            diff_list = res[0].commit.diff(repo.heads.master)
+        except TimeoutError:
+            print('timeout fetching the repository version')
+        else:
+            if diff_list:
+                print('you are running an outdated version, SNARE will be updated and restarted')
+                repo.git.reset('--hard')
+                repo.heads.master.checkout()
+                repo.git.clean('-xdf')
+                repo.remotes.origin.pull()
+                pip.main(['install', '-r', 'requirements.txt'])
+                os.execv(sys.executable, [sys.executable, __file__] + sys.argv[1:])
+                return
+            else:
+                print('you are running the latest version')
+            time.sleep(timeout)
+
+async def check_tanner():
+    async with aiohttp.ClientSession() as client:
+        req_url = 'http://{}:8090/version'.format(args.tanner)
+        try:
+            resp = await client.get(req_url)
+            result = await resp.json()
+            version = result["version"]
+            helper.check_compatibility(version)
+        except aiohttp.ClientOSError:
+            print("Can't connect to tanner host {}".format(req_url))
+            exit(1)
+        else:
+            await resp.release()
 
 if __name__ == '__main__':
     print(r"""
@@ -79,11 +148,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
     base_path = '/opt/snare/'
     base_page_path = '/opt/snare/pages/'
-    startup = StartUp(args)
-    snare_uuid = startup.snare_setup()
+    snare_uuid = snare_setup()
     config = configparser.ConfigParser()
     config.read(os.path.join(base_path, args.config))
-    
+    helper = SnareHelper(args)
     log_debug = args.log_dir + "snare.log"
     log_err = args.log_dir + "snare.err"      
     Logger.create_logger(log_debug, log_err, __package__)
@@ -101,8 +169,7 @@ if __name__ == '__main__':
     args.index_page = os.path.join("/", args.index_page)
 
     if not os.path.exists(os.path.join(full_page_path, 'meta.json')):
-        conv = Converter()
-        conv.convert(full_page_path)
+        helper.convert()
         print("pages was converted. Try to clone again for the better result.")
 
     with open(os.path.join(full_page_path, 'meta.json')) as meta:
@@ -111,21 +178,21 @@ if __name__ == '__main__':
                                        os.path.join(meta_info[args.index_page]['hash']))):
         print('can\'t create meta tag')
     else:
-        add_meta_tag(args.page_dir, meta_info[args.index_page]['hash'], config)
+        helper.add_meta_tag(meta_info[args.index_page]['hash'], config)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(startup.check_tanner())
+    loop.run_until_complete(check_tanner())
 
     pool = ProcessPoolExecutor(max_workers=multiprocessing.cpu_count())
     compare_version_fut = None
     if args.auto_update is True:
-        timeout = startup.parse_timeout(args.update_timeout)
-        compare_version_fut = loop.run_in_executor(pool, startup.compare_version_info, timeout)
+        timeout = helper.parse_timeout()
+        compare_version_fut = loop.run_in_executor(pool, compare_version_info, timeout)
 
     if args.host_ip == 'localhost' and args.interface:
         args.host_ip = ni.ifaddresses(args.interface)[2][0]['addr']
 
-    app = server.HttpRequestHandler(meta_info, args, snare_uuid, debug=args.debug, keep_alive=75)
-    startup.drop_privileges()
+    app = HttpRequestHandler(meta_info, args, snare_uuid, debug=args.debug, keep_alive=75)
+    drop_privileges()
     print('serving with uuid {0}'.format(snare_uuid.decode('utf-8')))
     print("Debug logs will be stored in", log_debug)
     print("Error logs will be stored in", log_err)

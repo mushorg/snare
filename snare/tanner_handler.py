@@ -1,5 +1,6 @@
 import asyncio
 import aiohttp
+import mimetypes
 import json
 import logging
 from snare.html_handler import HtmlHandler
@@ -17,19 +18,6 @@ class TannerHandler():
         self.snare_uuid = snare_uuid
         self.html_handler = HtmlHandler(run_args.no_dorks, run_args.tanner)
         self.logger = logging.getLogger(__name__)
-
-    async def submit_slurp(self, data):
-        try:
-            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
-                r = await session.post(
-                    'https://{0}:8080/api?auth={1}&chan=snare_test&msg={2}'.format(
-                        self.run_args.slurp_host, self.run_args.slurp_auth, data
-                    ), data=json.dumps(data), timeout=10.0
-                )
-                assert r.status == 200
-                r.close()
-        except Exception as e:
-            self.logger.error('Error submitting slurp: %s', e)
 
     def create_data(self, request, response_status):
         data = dict(

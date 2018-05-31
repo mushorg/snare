@@ -1,22 +1,12 @@
-import argparse
 import asyncio
-import configparser
-import grp
 import json
 import mimetypes
-import multiprocessing
 import os
-import pwd
 import sys
 import time
-import uuid
-from concurrent.futures import ProcessPoolExecutor
-from urllib.parse import urlparse, unquote, parse_qsl
+from urllib.parse import unquote
 import aiohttp
-import git
-import pip
 from aiohttp import web
-import re
 import logging
 import multidict
 import aiohttp_jinja2
@@ -29,7 +19,6 @@ except ImportError:
 
 from bs4 import BeautifulSoup
 import cssutils
-import netifaces as ni
 from snare.middlewares import SnareMiddleware
 from snare.tanner_handler import TannerHandler
 
@@ -38,13 +27,26 @@ class HttpRequestHandler():
         self.run_args = run_args
         self.dir = '/opt/snare/pages/{}'.format(run_args.page_dir)
         self.meta = meta
-        self.snare_uuid = snare_uuid        
+        self.snare_uuid = snare_uuid
         self.logger = logging.getLogger(__name__)
         self.sroute = StaticRoute(
             name=None, prefix='/',
             directory=self.dir
         )
         self.tanner_handler = TannerHandler(run_args, meta, snare_uuid)
+
+    async def submit_slurp(self, data):
+        try:
+            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+                r = await session.post(
+                    'https://{0}:8080/api?auth={1}&chan=snare_test&msg={2}'.format(
+                        self.run_args.slurp_host, self.run_args.slurp_auth, data
+                    ), data=json.dumps(data), timeout=10.0
+                )
+                assert r.status == 200
+                r.close()
+        except Exception as e:
+            self.logger.error('Error submitting slurp: %s', e)
 
     async def handle_request(self, request):
         self.logger.info('Request path: {0}'.format(request.path))
@@ -67,7 +69,7 @@ class HttpRequestHandler():
             request.path, event_result['response']['message']['detection'])
 
         response_headers = multidict.CIMultiDict()
-        
+
         for name, val in headers.items():
             response_headers.add(name, val)
 
