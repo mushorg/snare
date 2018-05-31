@@ -4,6 +4,7 @@ import hashlib
 import mimetypes
 import json
 import shutil
+import argparse
 from distutils.version import StrictVersion
 from bs4 import BeautifulSoup
 
@@ -93,3 +94,11 @@ def parse_timeout(timeout):
         result = int(timeout[:-1])
         result *= timeouts_coeff[form]
     return result
+
+def str_to_bool(v):
+    if v.lower() == 'true':
+        return True
+    elif v.lower() == 'false':
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected')

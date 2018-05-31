@@ -15,6 +15,8 @@ GNU General Public License for more details.
 """
 import argparse
 import asyncio
+import pwd
+import grp
 import configparser
 import json
 import multiprocessing
@@ -23,17 +25,14 @@ import sys
 import time
 import uuid
 from concurrent.futures import ProcessPoolExecutor
-from urllib.parse import unquote
 import aiohttp
 import git
 import pip
-import logging
-import pwd
-import grp
 import netifaces as ni
 from snare.server import HttpRequestHandler
 from snare.utils.logger import Logger
-from snare.utils.snare_helper import SnareHelper
+from snare.utils import snare_helpers
+from snare.utils.snare_helpers import str_to_bool
 
 
 def create_initial_config():
@@ -108,13 +107,14 @@ def compare_version_info(timeout):
 
 
 async def check_tanner():
+    vm = snare_helpers.VersionManager()
     async with aiohttp.ClientSession() as client:
         req_url = 'http://{}:8090/version'.format(args.tanner)
         try:
             resp = await client.get(req_url)
             result = await resp.json()
             version = result["version"]
-            helper.check_compatibility(version)
+            vm.check_compatibility(version)
         except aiohttp.ClientOSError:
             print("Can't connect to tanner host {}".format(req_url))
             exit(1)
@@ -148,7 +148,7 @@ if __name__ == '__main__':
     parser.add_argument("--auto-update", help="auto update SNARE if new version available ", default=True)
     parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
     parser.add_argument("--server-header", help="set server-header", default='nignx/1.3.8')
-    parser.add_argument("--no-dorks", help="disable the use of dorks", action='store_true')
+    parser.add_argument("--no-dorks", help="disable the use of dorks", type=str_to_bool,  default=True)
     parser.add_argument("--log-dir", help="path to directory of the log file", default='/opt/snare/')
     args = parser.parse_args()
     base_path = '/opt/snare/'
@@ -156,11 +156,9 @@ if __name__ == '__main__':
     snare_uuid = snare_setup()
     config = configparser.ConfigParser()
     config.read(os.path.join(base_path, args.config))
-    helper = SnareHelper(args)
     log_debug = args.log_dir + "snare.log"
     log_err = args.log_dir + "snare.err"
     Logger.create_logger(log_debug, log_err, __package__)
-
     if args.list_pages:
         print('Available pages:\n')
         for page in os.listdir(base_page_path):
@@ -174,7 +172,8 @@ if __name__ == '__main__':
     args.index_page = os.path.join("/", args.index_page)
 
     if not os.path.exists(os.path.join(full_page_path, 'meta.json')):
-        helper.convert()
+        conv = snare_helpers.Converter()
+        conv.convert(full_page_path)
         print("pages was converted. Try to clone again for the better result.")
 
     with open(os.path.join(full_page_path, 'meta.json')) as meta:
@@ -183,14 +182,14 @@ if __name__ == '__main__':
                                        os.path.join(meta_info[args.index_page]['hash']))):
         print('can\'t create meta tag')
     else:
-        helper.add_meta_tag(meta_info[args.index_page]['hash'], config)
+        snare_helpers.add_meta_tag(args.page_dir, meta_info[args.index_page]['hash'], config)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(check_tanner())
 
     pool = ProcessPoolExecutor(max_workers=multiprocessing.cpu_count())
     compare_version_fut = None
     if args.auto_update is True:
-        timeout = helper.parse_timeout()
+        timeout = snare_helpers.parse_timeout(args.update_timeout)
         compare_version_fut = loop.run_in_executor(pool, compare_version_info, timeout)
 
     if args.host_ip == 'localhost' and args.interface:

@@ -1,40 +1,20 @@
-#!/usr/bin/env python3
-
-"""
-Copyright (C) 2015-2016 MushMush Foundation
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-"""
-
-import argparse
+import os
+import sys
+import logging
 import asyncio
+from asyncio import Queue
 import hashlib
 import json
-import os
 import re
-import sys
-from asyncio import Queue
-
 import aiohttp
 import cssutils
 import yarl
 from bs4 import BeautifulSoup
-import logger
-import logging
-
 
 class Cloner(object):
     def __init__(self, root, max_depth, css_validate):
         self.visited_urls = []
-        self.root, self.error_page  = self.add_scheme(root)
+        self.root, self.error_page = self.add_scheme(root)
         self.max_depth = max_depth
         self.moved_root = None
         if len(self.root.host) < 4:
@@ -42,7 +22,7 @@ class Cloner(object):
         self.target_path = '/opt/snare/pages/{}'.format(self.root.host)
 
         if not os.path.exists(self.target_path):
-            os.mkdir(self.target_path)    
+            os.mkdir(self.target_path)
         self.css_validate = css_validate
         self.new_urls = Queue()
         self.meta = {}
@@ -148,11 +128,10 @@ class Cloner(object):
             data = None
             content_type = None
             try:
-                with aiohttp.Timeout(10.0):
-                    response = await session.get(current_url, headers={'Accept': 'text/html'})
-                    content_type = response.content_type
-                    data = await response.read()
-                    
+                response = await session.get(current_url, headers={'Accept': 'text/html'}, timeout=10.0)
+                content_type = response.content_type
+                data = await response.read()
+
             except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
                 self.logger.error(client_error)
             else:
@@ -165,8 +144,8 @@ class Cloner(object):
                     data = str(soup).encode()
                 with open(os.path.join(self.target_path, hash_name), 'wb') as index_fh:
                     index_fh.write(data)
-                if content_type == 'text/css':                       
-                    css = cssutils.parseString(data, validate=self.css_validate)                   
+                if content_type == 'text/css':
+                    css = cssutils.parseString(data, validate=self.css_validate)
                     for carved_url in cssutils.getUrls(css):
                         if carved_url.startswith('data'):
                             continue
@@ -178,20 +157,20 @@ class Cloner(object):
 
     async def get_root_host(self):
         try:
-            with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession() as session:
                 resp = await session.get(self.root)
-                if resp._url_obj.host != self.root.host:
+                if resp.host != self.root.host:
                     self.moved_root = resp._url_obj
                 resp.close()
-        except aiohttp.errors.ClientError as err:
-            self.logger.error("Can\'t connect to target host.")
+        except aiohttp.ClientError as err:
+            self.logger.error("Can\'t connect to target host: %s", err)
             exit(-1)
 
     async def run(self):
         session = aiohttp.ClientSession()
         try:
             await self.new_urls.put((self.root, 0))
-            await self.new_urls.put((self.error_page,0))
+            await self.new_urls.put((self.error_page, 0))
             await self.get_body(session)
         except KeyboardInterrupt:
             raise
@@ -199,51 +178,3 @@ class Cloner(object):
             with open(os.path.join(self.target_path, 'meta.json'), 'w') as mj:
                 json.dump(self.meta, mj)
             await session.close()
-            
-def str_to_bool(v):
-    if v.lower() == 'true':
-        return True
-    elif v.lower() == 'false':
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected')
-
-def main():
-    if os.getuid() != 0:
-        print('Clone has to be run as root!')
-        sys.exit(1)
-    if not os.path.exists('/opt/snare'):
-        os.mkdir('/opt/snare')
-    if not os.path.exists('/opt/snare/pages'):
-        os.mkdir('/opt/snare/pages')
-    loop = asyncio.get_event_loop()
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--target", help="domain of the site to be cloned", required=True)
-    parser.add_argument("--max-depth", help="max depth of the cloning", required=False, default=sys.maxsize)
-    parser.add_argument("--log_path", help="path to the error log file")
-    parser.add_argument("--css-validate", help="set whether css validation is required", type=str_to_bool, default=None)
-    args = parser.parse_args()
-    if args.log_path:
-        log_err = args.log_path + "clone.err"
-    else:
-        log_err = "/opt/snare/clone.err"    
-    logger.Logger.create_clone_logger(log_err, __package__)
-    print("Error logs will be stored in {}\n".format(log_err))
-    try:
-        cloner = Cloner(args.target, int(args.max_depth), args.css_validate)
-        loop.run_until_complete(cloner.get_root_host())
-        loop.run_until_complete(cloner.run())
-    except KeyboardInterrupt:
-        pass
-
-
-if __name__ == '__main__':
-    print("""
-    ______ __      ______ _   ____________
-   / ____// /     / __  // | / / ____/ __ \\
-  / /    / /     / / / //  |/ / __/ / /_/ /
- / /___ / /____ / /_/ // /|  / /___/ _, _/
-/_____//______//_____//_/ |_/_____/_/ |_|
-    
-    """)
-    main()
