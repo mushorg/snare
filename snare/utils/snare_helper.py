@@ -2,6 +2,7 @@ from distutils.version import StrictVersion
 from bs4 import BeautifulSoup
 import os
 
+
 class SnareHelper:
     def __init__(self, args):
         self.version = "0.2.0"
@@ -19,6 +20,7 @@ class SnareHelper:
         if not (StrictVersion(min_version) <= StrictVersion(tanner_version) <= StrictVersion(max_version)):
             raise RuntimeError("Wrong tanner version: {}. Compatible versions are {} - {}"
                                .format(tanner_version, min_version, max_version))
+
     def convert(self):
         files_to_convert = []
         for (dirpath, dirnames, filenames) in walk(self.path):

@@ -22,6 +22,7 @@ import cssutils
 from snare.middlewares import SnareMiddleware
 from snare.tanner_handler import TannerHandler
 
+
 class HttpRequestHandler():
     def __init__(self, meta, run_args, snare_uuid, debug=False, keep_alive=75, **kwargs):
         self.run_args = run_args

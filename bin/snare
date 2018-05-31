@@ -35,11 +35,13 @@ from snare.server import HttpRequestHandler
 from snare.utils.logger import Logger
 from snare.utils.snare_helper import SnareHelper
 
+
 def create_initial_config():
     cfg = configparser.ConfigParser()
     cfg['WEB-TOOLS'] = dict(google='', bing='')
     with open('/opt/snare/snare.cfg', 'w') as configfile:
         cfg.write(configfile)
+
 
 def snare_setup():
     if os.getuid() != 0:
@@ -68,6 +70,7 @@ def snare_setup():
             uuid_fh.write(snare_uuid)
         return snare_uuid
 
+
 def drop_privileges():
     uid_name = 'nobody'
     wanted_user = pwd.getpwnam(uid_name)
@@ -78,6 +81,7 @@ def drop_privileges():
     new_user = pwd.getpwuid(os.getuid())
     new_group = grp.getgrgid(os.getgid())
     print('privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name))
+
 
 def compare_version_info(timeout):
     while True:
@@ -101,6 +105,7 @@ def compare_version_info(timeout):
             else:
                 print('you are running the latest version')
             time.sleep(timeout)
+
 
 async def check_tanner():
     async with aiohttp.ClientSession() as client:
@@ -153,7 +158,7 @@ if __name__ == '__main__':
     config.read(os.path.join(base_path, args.config))
     helper = SnareHelper(args)
     log_debug = args.log_dir + "snare.log"
-    log_err = args.log_dir + "snare.err"      
+    log_err = args.log_dir + "snare.err"
     Logger.create_logger(log_debug, log_err, __package__)
 
     if args.list_pages:
