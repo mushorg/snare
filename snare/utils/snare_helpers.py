@@ -95,6 +95,7 @@ def parse_timeout(timeout):
         result *= timeouts_coeff[form]
     return result
 
+
 def str_to_bool(v):
     if v.lower() == 'true':
         return True

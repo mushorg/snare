@@ -11,6 +11,7 @@ import cssutils
 import yarl
 from bs4 import BeautifulSoup
 
+
 class Cloner(object):
     def __init__(self, root, max_depth, css_validate):
         self.visited_urls = []
