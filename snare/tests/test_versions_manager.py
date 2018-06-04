@@ -1,5 +1,5 @@
 import unittest
-from versions_manager import VersionManager
+from snare.utils.snare_helpers import VersionManager
 
 
 class TestVersion(unittest.TestCase):

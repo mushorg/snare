@@ -1,10 +1,10 @@
 import unittest
 import os
-from bs4 import BeautifulSoup
-import snare
 import shutil
 import configparser
-from utils.page_path_generator import generate_unique_path
+from bs4 import BeautifulSoup
+from snare.utils.snare_helpers import add_meta_tag
+from snare.utils.page_path_generator import generate_unique_path
 
 
 class TestAddMetaTag(unittest.TestCase):
@@ -19,9 +19,9 @@ class TestAddMetaTag(unittest.TestCase):
             f.write(self.content)
 
     def test_add_meta_tag(self):
-        snare.config = configparser.ConfigParser()
-        snare.config['WEB-TOOLS'] = dict(google='test google content', bing='test bing content')
-        snare.add_meta_tag(self.page_dir, self.index_page)
+        config = configparser.ConfigParser()
+        config['WEB-TOOLS'] = dict(google='test google content', bing='test bing content')
+        add_meta_tag(self.page_dir, self.index_page, config)
         with open(os.path.join(self.main_page_path, 'index.html')) as main:
             main_page = main.read()
         soup = BeautifulSoup(main_page, 'html.parser')

@@ -1,9 +1,8 @@
 import unittest
 import os
-import sys
 import shutil
 import json
-from converter import Converter
+from snare.utils.snare_helpers import Converter
 
 
 class TestConverter(unittest.TestCase):
