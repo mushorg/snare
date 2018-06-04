@@ -35,7 +35,7 @@ class TestSubmitData(unittest.TestCase):
         aiohttp.ClientSession.post = AsyncMock(
             return_value=aiohttp.ClientResponse(
                 url=yarl.URL("http://www.example.com"), method="GET", writer=None, continue100=1,
-                timer=None, request_info=None, auto_decompress=None, traces=None, loop=self.loop,
+                timer=None, request_info=None, traces=None, loop=self.loop,
                 session=None
             )
                                               )
