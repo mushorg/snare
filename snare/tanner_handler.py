@@ -93,6 +93,7 @@ class TannerHandler():
                         content = fh.read()
                     if content_type:
                         if 'text/html' in content_type:
+                            print("calling")
                             content = await self.html_handler.handle_content(content)
 
         elif detection['type'] == 2:
