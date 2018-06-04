@@ -1,33 +1,35 @@
 import unittest
 from unittest.mock import Mock
-from unittest.mock import call
 import asyncio
 import argparse
-import aiohttp
 import shutil
 import os
-import json
-import yarl
-from aiohttp.protocol import HttpVersion
-from utils.asyncmock import AsyncMock
-from snare import HttpRequestHandler
-from utils.page_path_generator import generate_unique_path
+import aiohttp
+from aiohttp.http_parser import RawRequestMessage
+from aiohttp import HttpVersion
+from aiohttp import web
+from yarl import URL
+from snare.server import HttpRequestHandler
+from snare.utils.asyncmock import AsyncMock
+from snare.utils.page_path_generator import generate_unique_path
 
 
 class TestHandleRequest(unittest.TestCase):
     def setUp(self):
-        self.meta = {}
+        meta = {}
         run_args = argparse.ArgumentParser()
         run_args.add_argument("--tanner")
         run_args.add_argument("--page-dir")
         self.main_page_path = generate_unique_path()
         os.makedirs(self.main_page_path)
         self.page_dir = self.main_page_path.rsplit('/')[-1]
-        self.args = run_args.parse_args(['--page-dir', self.page_dir])
-        self.loop = asyncio.new_event_loop()
-        self.handler = HttpRequestHandler(self.meta, self.args)
-        self.handler.run_args.server_header = "test_server"
-        self.handler.run_args.slurp_enabled = True
+        args = run_args.parse_args(['--page-dir', self.page_dir])
+        uuid = ('9c10172f-7ce2-4fb4-b1c6-abc70141db56').encode('utf-8')
+        args.tanner = 'tanner.mushmush.org'
+        args.no_dorks = True
+        args.server_header = "test_server"
+        args.slurp_enabled = True
+        self.handler = HttpRequestHandler(meta, args, uuid)
         self.data = {
             'method': 'GET', 'path': '/',
             'headers': {
@@ -37,64 +39,59 @@ class TestHandleRequest(unittest.TestCase):
                 'sess_uuid': 'prev_test_uuid'
             }
         }
+        self.loop = asyncio.new_event_loop()
         self.content = '<html><body></body></html>'
         self.content_type = 'test_type'
-        self.event_result = dict(response=dict(message=dict(detection={'type': 1}, sess_uuid="test_uuid")))
-        self.request = aiohttp.protocol.RawRequestMessage(
+        event_result = dict(response=dict(message=dict(detection={'type': 1}, sess_uuid="test_uuid")))
+        RequestHandler = Mock()
+        protocol = RequestHandler()
+        message = RawRequestMessage(
             method='POST', path='/', version=HttpVersion(major=1, minor=1), headers=self.data['headers'],
-            raw_headers=None, should_close=None, compression=None)
-        self.handler.create_data = Mock(return_value=self.data)
-        self.handler.submit_data = AsyncMock(return_value=self.event_result)
+            raw_headers=None, should_close=None, compression=None, upgrade=None, chunked=None,
+            url=URL('http://test_url/')
+        )
+        self.request = web.Request(
+            message=message, payload=None, protocol=protocol, payload_writer=None,
+            task='POST', loop=self.loop
+        )
+        self.handler.tanner_handler.create_data = Mock(return_value=self.data)
+        self.handler.tanner_handler.submit_data = AsyncMock(return_value=event_result)
         self.handler.submit_slurp = AsyncMock()
-        self.payload = aiohttp.streams.EmptyStreamReader()
-        aiohttp.Response.add_header = Mock()
-        aiohttp.Response.write = Mock()
-        aiohttp.Response.send_headers = Mock()
-        aiohttp.Response.write_eof = AsyncMock()
+        web.Response.add_header = Mock()
+        web.Response.write = Mock()
+        web.Response.send_headers = Mock()
+        web.Response.write_eof = AsyncMock()
         aiohttp.streams.EmptyStreamReader.read = AsyncMock(return_value=b'con1=test1&con2=test2')
-        self.handler.parse_tanner_response = AsyncMock(
+        self.handler.tanner_handler.parse_tanner_response = AsyncMock(
             return_value=(self.content, self.content_type, self.data['headers'], self.data['headers']['status']))
 
     def test_create_request_data(self):
 
         async def test():
-            await self.handler.handle_request(self.request, self.payload)
+            await self.handler.handle_request(self.request)
         self.loop.run_until_complete(test())
-        self.handler.create_data.assert_called_with(self.request, 200)
+        self.handler.tanner_handler.create_data.assert_called_with(self.request, 200)
 
     def test_submit_request_data(self):
 
         async def test():
-            await self.handler.handle_request(self.request, self.payload)
+            await self.handler.handle_request(self.request)
         self.loop.run_until_complete(test())
-        self.handler.submit_data.assert_called_with(self.data)
+        self.handler.tanner_handler.submit_data.assert_called_with(self.data)
 
     def test_submit_request_slurp(self):
 
         async def test():
-            await self.handler.handle_request(self.request, self.payload)
+            await self.handler.handle_request(self.request)
         self.loop.run_until_complete(test())
         self.handler.submit_slurp.assert_called_with(self.request.path)
 
     def test_parse_response(self):
 
         async def test():
-            await self.handler.handle_request(self.request, self.payload)
+            await self.handler.handle_request(self.request)
         self.loop.run_until_complete(test())
-        self.handler.parse_tanner_response.assert_called_with(self.request.path, {'type': 1})
-
-    def test_handle_response(self):
-        calls = [call('Host', 'test_host'), call('status', 200), call('Server', 'test_server'),
-                 call('Set-Cookie', 'sess_uuid=test_uuid'), call('Content-Type', 'test_type'),
-                 call('Content-Length', str(len(self.content)))]
-
-        async def test():
-            await self.handler.handle_request(self.request, self.payload)
-        self.loop.run_until_complete(test())
-        aiohttp.Response.add_header.assert_has_calls(calls, any_order=True)
-        aiohttp.Response.send_headers.assert_called_with()
-        aiohttp.Response.write.assert_called_with(self.content)
-        aiohttp.Response.write_eof.assert_called_with()
+        self.handler.tanner_handler.parse_tanner_response.assert_called_with(self.request.path, {'type': 1})
 
     def tearDown(self):
         shutil.rmtree(self.main_page_path)

@@ -1,8 +1,9 @@
-aiohttp<2.0
+aiohttp
+aiohttp_jinja2
+yarl
 beautifulsoup4
 cssutils
 gitpython
 netifaces
-yarl==0.9.8
 python-magic
 pycodestyle

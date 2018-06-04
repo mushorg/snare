@@ -1,27 +1,26 @@
 import unittest
-from unittest.mock import Mock
 import asyncio
 import argparse
-import aiohttp
 import shutil
 import os
 import json
 import yarl
-from utils.asyncmock import AsyncMock
-from snare import HttpRequestHandler
-from utils.page_path_generator import generate_unique_path
+import aiohttp
+from snare.utils.asyncmock import AsyncMock
+from snare.tanner_handler import TannerHandler
+from snare.utils.page_path_generator import generate_unique_path
 
 
 class TestSubmitData(unittest.TestCase):
     def setUp(self):
-        self.meta = {}
+        meta = {}
         run_args = argparse.ArgumentParser()
         run_args.add_argument("--tanner")
         run_args.add_argument("--page-dir")
         self.main_page_path = generate_unique_path()
         os.makedirs(self.main_page_path)
-        self.page_dir = self.main_page_path.rsplit('/')[-1]
-        self.args = run_args.parse_args(['--page-dir', self.page_dir])
+        page_dir = self.main_page_path.rsplit('/')[-1]
+        args = run_args.parse_args(['--page-dir', page_dir])
         self.loop = asyncio.new_event_loop()
         self.data = {
             'method': 'GET', 'path': '/',
@@ -34,10 +33,17 @@ class TestSubmitData(unittest.TestCase):
             }
         }
         aiohttp.ClientSession.post = AsyncMock(
-            return_value=aiohttp.ClientResponse(url=yarl.URL("http://www.example.com"), method="GET")
+            return_value=aiohttp.ClientResponse(
+                url=yarl.URL("http://www.example.com"), method="GET", writer=None, continue100=1,
+                timer=None, request_info=None, traces=None, loop=self.loop,
+                session=None
+            )
                                               )
-        self.handler = HttpRequestHandler(self.meta, self.args)
-        self.handler.run_args.tanner = "tanner.mushmush.org"
+        uuid = "test_uuid"
+        args.tanner = "tanner.mushmush.org"
+        args.no_dorks = True
+        self.handler = TannerHandler(args, meta, uuid)
+        self.result = None
 
     def test_post_data(self):
         aiohttp.ClientResponse.json = AsyncMock(return_value=dict(detection={'type': 1}, sess_uuid="test_uuid"))
@@ -46,7 +52,7 @@ class TestSubmitData(unittest.TestCase):
             self.result = await self.handler.submit_data(self.data)
         self.loop.run_until_complete(test())
         aiohttp.ClientSession.post.assert_called_with(
-            'http://tanner.mushmush.org:8090/event', data=json.dumps(self.data)
+            'http://tanner.mushmush.org:8090/event', data=json.dumps(self.data), timeout=10.0
         )
 
     def test_event_result(self):
