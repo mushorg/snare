@@ -149,15 +149,19 @@ class HttpRequestHandler(aiohttp.server.ServerHttpProtocol):
                     # Fetch dorks if required
                     if len(self.dorks) <= 0:
                         self.dorks = await self.get_dorks()
+
                     word += ' '
                     if idx % 5 == 0:
-                        a_tag = soup.new_tag(
-                            'a',
-                            href=self.dorks.pop(),
-                            style='color:{color};text-decoration:none;cursor:text;'.format(
-                                color=css.color if css and 'color' in css.keys() else '#000000'
+                        try:
+                            a_tag = soup.new_tag(
+                                'a',
+                                href=self.dorks.pop(),
+                                style='color:{color};text-decoration:none;cursor:text;'.format(
+                                    color=css.color if css and 'color' in css.keys() else '#000000'
+                                )
                             )
-                        )
+                        except IndexError:
+                            continue
                         a_tag.string = word
                         p_new.append(a_tag)
                     else:
