@@ -84,14 +84,14 @@ class TestHandleRequest(unittest.TestCase):
         self.handler.parse_tanner_response.assert_called_with(self.request.path, {'type': 1})
 
     def test_handle_response(self):
-        calls = [call('status', 200), call('Host', 'test_host'), call('Server', 'test_server'),
+        calls = [call('Host', 'test_host'), call('status', 200), call('Server', 'test_server'),
                  call('Set-Cookie', 'sess_uuid=test_uuid'), call('Content-Type', 'test_type'),
                  call('Content-Length', str(len(self.content)))]
 
         async def test():
             await self.handler.handle_request(self.request, self.payload)
         self.loop.run_until_complete(test())
-        aiohttp.Response.add_header.assert_has_calls(calls)
+        aiohttp.Response.add_header.assert_has_calls(calls, any_order=True)
         aiohttp.Response.send_headers.assert_called_with()
         aiohttp.Response.write.assert_called_with(self.content)
         aiohttp.Response.write_eof.assert_called_with()
