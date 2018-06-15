@@ -84,7 +84,7 @@ class TestHandleRequest(unittest.TestCase):
         self.handler.parse_tanner_response.assert_called_with(self.request.path, {'type': 1})
 
     def test_handle_response(self):
-        calls = [call('Host', 'test_host'), call('status', 200), call('Server', 'test_server'),
+        calls = [call('status', 200), call('Host', 'test_host'), call('Server', 'test_server'),
                  call('Set-Cookie', 'sess_uuid=test_uuid'), call('Content-Type', 'test_type'),
                  call('Content-Length', str(len(self.content)))]
 
