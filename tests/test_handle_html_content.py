@@ -65,8 +65,8 @@ class TestHandleHtmlContent(unittest.TestCase):
         self.handler.get_dorks = AsyncMock(return_value=[])
 
         async def test():
-            self.return_content = await self.handler.handle_html_content(self.content)
-        with self.assertRaises(IndexError):
+            self.return_content = await self.handler.handle_html_content(None)
+        with self.assertRaises(TypeError):
             self.loop.run_until_complete(test())
 
     def tearDown(self):

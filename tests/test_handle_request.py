@@ -91,7 +91,7 @@ class TestHandleRequest(unittest.TestCase):
         async def test():
             await self.handler.handle_request(self.request, self.payload)
         self.loop.run_until_complete(test())
-        aiohttp.Response.add_header.assert_has_calls(calls)
+        aiohttp.Response.add_header.assert_has_calls(calls, any_order=True)
         aiohttp.Response.send_headers.assert_called_with()
         aiohttp.Response.write.assert_called_with(self.content)
         aiohttp.Response.write_eof.assert_called_with()
