@@ -45,7 +45,7 @@ class TestCreateData(unittest.TestCase):
         self.response_status = "test_status"
         self.data = None
         self.expected_data = {
-            'method': 'POST', 'path': '/',
+            'method': 'POST', 'path': 'http://test_url/',
                               'headers': {'Host': 'test_host', 'status': 200,
                                           'Cookie': 'sess_uuid=prev_test_uuid; test_cookie=test'},
                               'uuid': '9c10172f-7ce2-4fb4-b1c6-abc70141db56',
