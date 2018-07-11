@@ -37,7 +37,7 @@ class TannerHandler():
             header = {key: value for (key, value) in request.headers.items()}
             data['method'] = request.method
             data['headers'] = header
-            data['path'] = request.path
+            data['path'] = request.path_qs
             if ('Cookie' in header):
                 data['cookies'] = {
                     cookie.split('=')[0]: cookie.split('=')[1] for cookie in header['Cookie'].split(';')

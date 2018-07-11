@@ -84,14 +84,14 @@ class TestHandleRequest(unittest.TestCase):
         async def test():
             await self.handler.handle_request(self.request)
         self.loop.run_until_complete(test())
-        self.handler.submit_slurp.assert_called_with(self.request.path)
+        self.handler.submit_slurp.assert_called_with(self.request.path_qs)
 
     def test_parse_response(self):
 
         async def test():
             await self.handler.handle_request(self.request)
         self.loop.run_until_complete(test())
-        self.handler.tanner_handler.parse_tanner_response.assert_called_with(self.request.path, {'type': 1})
+        self.handler.tanner_handler.parse_tanner_response.assert_called_with(self.request.path_qs, {'type': 1})
 
     def tearDown(self):
         shutil.rmtree(self.main_page_path)

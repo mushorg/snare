@@ -37,7 +37,7 @@ class HttpRequestHandler():
             self.logger.error('Error submitting slurp: %s', e)
 
     async def handle_request(self, request):
-        self.logger.info('Request path: {0}'.format(request.path))
+        self.logger.info('Request path: {0}'.format(request.path_qs))
         data = self.tanner_handler.create_data(request, 200)
         if request.method == 'POST':
             post_data = await request.post()
@@ -51,10 +51,10 @@ class HttpRequestHandler():
 
         # Log the event to slurp service if enabled
         if self.run_args.slurp_enabled:
-            await self.submit_slurp(request.path)
+            await self.submit_slurp(request.path_qs)
 
         content, content_type, headers, status_code = await self.tanner_handler.parse_tanner_response(
-            request.path, event_result['response']['message']['detection'])
+            request.path_qs, event_result['response']['message']['detection'])
 
         response_headers = multidict.CIMultiDict()
 
