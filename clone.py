@@ -149,7 +149,7 @@ class Cloner(object):
                     content_type = response.content_type
                     data = await response.read()
 
-            except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
+            except (ValueError,aiohttp.ClientError, asyncio.TimeoutError) as client_error:
                 print(client_error)
             else:
                 await response.release()
