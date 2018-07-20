@@ -3,7 +3,7 @@ from setuptools import find_packages
 from distutils.core import setup
 
 setup(name='Snare',
-      version='0.2.0',
+      version='0.3.0',
       description='Super Next generation Advanced Reactive honEypot',
       author='MushMush Foundation',
       author_email='glastopf@public.honeynet.org',

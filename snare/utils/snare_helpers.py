@@ -11,10 +11,11 @@ from bs4 import BeautifulSoup
 
 class VersionManager:
     def __init__(self):
-        self.version = "0.2.0"
+        self.version = "0.3.0"
         self.version_mapper = {
             "0.1.0": ["0.1.0", "0.4.0"],
-            "0.2.0": ["0.5.0", "0.5.0"]
+            "0.2.0": ["0.5.0", "0.5.0"],
+            "0.3.0": ["0.6.0", "0.6.0"]
         }
 
     def check_compatibility(self, tanner_version):
