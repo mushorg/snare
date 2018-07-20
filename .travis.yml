@@ -5,5 +5,5 @@ python:
 install: "pip install -r requirements.txt"
 # command to run tests
 script:
-    - nosetests -w ./tests -vv
+    - nosetests -w snare/tests -vv
     - pycodestyle . --max-line-length=120
