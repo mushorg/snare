@@ -14,16 +14,23 @@ Getting started
 """""""""""""""
 
  You need Python3. We tested primarily with >=3.4
+ 
  This was tested with a recent Ubuntu based Linux.
 
 Steps to setup
 1. Get SNARE: `git clone https://github.com/mushorg/snare.git` and `cd snare`
+
 2. Install requirements: `pip3 install -r requirements.txt`
+
 3. Setup snare: `sudo python3 setup.py install`
-3. Clone a page: `sudo clone --target http://example.com`
-4. Run SNARE: `sudo snare --port 8080 --page-dir example.com` (See :doc:`parameters` description for more info)
-5. Test: Visit http://localhost:8080/index.html
-6. (Optionally) Have your own [tanner](https://github.com/mushorg/tanner) service running.
+
+4. Clone a page: `sudo clone --target http://example.com`
+
+5. Run SNARE: `sudo snare --port 8080 --page-dir example.com` (See :doc:`parameters` description for more info)
+
+6. Test: Visit http://localhost:8080/index.html
+
+7. (Optionally) Have your own [tanner](https://github.com/mushorg/tanner) service running.
 
 [Note : Cloner clones the whole website, to restrict to a desired depth of cloning add `--max-depth` parameter]
 
