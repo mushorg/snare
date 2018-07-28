@@ -1,6 +1,6 @@
 Snare command line parameters
 =============================
-snare.py [**--page-dir** *folder* ] [**--list-pages**]
+snare [**--page-dir** *folder* ] [**--list-pages**]
 [**--index-page** *filename*] [**--port** *port*]
 [**--interface** *ip_addr*] [**--debug** ]
 [**--tanner** *tanner_ip**] [**--skip-check-version**]
