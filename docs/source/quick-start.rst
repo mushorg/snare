@@ -31,7 +31,9 @@ Getting started
 
 6. Test: Visit http://localhost:8080/index.html
 
-7. (Optionally) Have your own [tanner](https://github.com/mushorg/tanner) service running.
+7. (Optionally) Have your own tanner_ service running.
+
+.. _tanner: https://github.com/mushorg/tanner
 
 [Note : Cloner clones the whole website, to restrict to a desired depth of cloning add ``--max-depth`` parameter]
 
