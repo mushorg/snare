@@ -5,7 +5,7 @@ Cloner clones the website that we require to be served by snare.
 
 Cloner command line parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-clone.py [**--target** *website_url* ] [**--max-depth** *clone_depth*]
+clone [**--target** *website_url* ] [**--max-depth** *clone_depth*]
 
 Description
 ~~~~~~~~~~~

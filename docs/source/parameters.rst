@@ -1,6 +1,7 @@
 Snare command line parameters
 =============================
-snare.py [**--page-dir** *folder* ] [**--list-pages**]
+snare [**--page-dir** *folder* ] [**--list-pages**]
+[**--host-ip**]
 [**--index-page** *filename*] [**--port** *port*]
 [**--interface** *ip_addr*] [**--debug** ]
 [**--tanner** *tanner_ip**] [**--skip-check-version**]
@@ -13,6 +14,7 @@ Description
 
 * **page--dir** -- name of the folder to be served
 * **list--pages** -- list available pages
+* **host--ip** -- host ip to bind to, default: localhost
 * **index--page** -- file name of the index page, default: index.html
 * **port** -- port to listen on, default: 8080
 * **interface** -- interface to bind to
