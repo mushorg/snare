@@ -1,20 +1,23 @@
 FROM alpine
-
+  
 # Setup apt
 RUN apk -U --no-cache add \
                build-base \
                git \
                linux-headers \
                python3 \
-               python3-dev && \ 
+               python3-dev && \
 
-# Setup Snare
+# Setup Snare 
     git clone --depth=1 https://github.com/mushorg/snare /opt/snare && \
     cd /opt/snare/ && \
     pip3 install --no-cache-dir --upgrade pip setuptools && \
     pip3 install --no-cache-dir -r requirements.txt && \
-    python3.6 clone.py --target http://example.com && \
-    
+    python3.6 setup.py install && \
+    cd / && \
+    rm -rf /opt/snare && \
+    clone --target http://example.com && \
+
 # Clean up
     apk del --purge \
             build-base \
@@ -25,5 +28,4 @@ RUN apk -U --no-cache add \
     rm -rf /var/cache/apk/*
 
 # Start snare
-WORKDIR /opt/snare
-CMD /usr/bin/python3.6 /opt/snare/snare.py --no-dorks --auto-update false --host-ip 0.0.0.0 --port 80 --page-dir example.com
+CMD snare --no-dorks true --auto-update false --host-ip 0.0.0.0 --port 8080 --page-dir example.com
