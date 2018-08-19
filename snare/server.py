@@ -82,7 +82,8 @@ class HttpRequestHandler():
         )
         return response
 
-    def start(self):
+
+    async def start(self):
         app = web.Application()
         app.add_routes([web.route('*', '/{tail:.*}', self.handle_request)])
         aiohttp_jinja2.setup(
@@ -90,4 +91,15 @@ class HttpRequestHandler():
         )
         middleware = SnareMiddleware(self.meta['/status_404']['hash'])
         middleware.setup_middlewares(app)
-        web.run_app(app, host=self.run_args.host_ip, port=self.run_args.port)
+
+        self.runner = web.AppRunner(app)
+        await self.runner.setup()
+        site = web.TCPSite(self.runner, self.run_args.host_ip, self.run_args.port)
+
+        await site.start()
+        names = sorted(str(s.name) for s in self.runner.sites)
+        print("======== Running on {} ========\n"
+                   "(Press CTRL+C to quit)".format(', '.join(names)))
+
+    async def stop(self):
+        await self.runner.cleanup()
