@@ -82,7 +82,6 @@ class HttpRequestHandler():
         )
         return response
 
-
     async def start(self):
         app = web.Application()
         app.add_routes([web.route('*', '/{tail:.*}', self.handle_request)])
@@ -99,7 +98,7 @@ class HttpRequestHandler():
         await site.start()
         names = sorted(str(s.name) for s in self.runner.sites)
         print("======== Running on {} ========\n"
-                   "(Press CTRL+C to quit)".format(', '.join(names)))
+              "(Press CTRL+C to quit)".format(', '.join(names)))
 
     async def stop(self):
         await self.runner.cleanup()
