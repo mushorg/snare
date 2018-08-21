@@ -196,14 +196,19 @@ if __name__ == '__main__':
         args.host_ip = ni.ifaddresses(args.interface)[2][0]['addr']
 
     app = HttpRequestHandler(meta_info, args, snare_uuid, debug=args.debug, keep_alive=75)
-    drop_privileges()
+
     print('serving with uuid {0}'.format(snare_uuid.decode('utf-8')))
     print("Debug logs will be stored in", log_debug)
     print("Error logs will be stored in", log_err)
+    loop = asyncio.get_event_loop()
     try:
-        app.start()
+        loop.run_until_complete(app.start())
+        drop_privileges()
+        loop.run_forever()
     except (KeyboardInterrupt, TypeError) as e:
+        loop.run_until_complete(app.stop())
         print(e)
     finally:
         if compare_version_fut:
             compare_version_fut.cancel()
+    loop.close()
