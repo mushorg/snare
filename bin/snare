@@ -51,7 +51,7 @@ def snare_setup(base_path):
     if not os.path.exists(os.path.join(base_path, 'pages')):
         os.mkdir(os.path.join(base_path, 'pages'))
     # Write pid to pid file
-    with open(os.path.join(base_path, 'snared.pid'), 'wb') as pid_fh:
+    with open(os.path.join(base_path, 'snare.pid'), 'wb') as pid_fh:
         pid_fh.write(str(os.getpid()).encode('utf-8'))
     # Config file
     if not os.path.exists(os.path.join(base_path, 'snare.cfg')):
