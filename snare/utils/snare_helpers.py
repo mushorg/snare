@@ -51,14 +51,14 @@ class Converter:
             json.dump(self.meta, mj)
 
 
-def add_meta_tag(page_dir, index_page, config):
+def add_meta_tag(page_dir, index_page, config, base_path):
     google_content = config['WEB-TOOLS']['google']
     bing_content = config['WEB-TOOLS']['bing']
 
     if not google_content and not bing_content:
         return
 
-    main_page_path = os.path.join('/opt/snare/pages/', page_dir, index_page)
+    main_page_path = os.path.join(os.path.join(base_path,'pages'), page_dir, index_page)
     with open(main_page_path) as main:
         main_page = main.read()
     soup = BeautifulSoup(main_page, 'html.parser')
