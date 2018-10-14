@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 
 
 class Cloner(object):
-    def __init__(self, root, max_depth, css_validate,default_path):
+    def __init__(self, root, max_depth, css_validate, default_path):
         self.visited_urls = []
         self.root, self.error_page = self.add_scheme(root)
         self.max_depth = max_depth
