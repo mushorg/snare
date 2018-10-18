@@ -217,7 +217,3 @@ if __name__ == '__main__':
         if compare_version_fut:
             compare_version_fut.cancel()
     loop.close()
-<<<<<<< HEAD
-    
-=======
->>>>>>> upstream/master
