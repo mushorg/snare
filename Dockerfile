@@ -1,6 +1,8 @@
 FROM alpine
 
-ARG PAGE_URL=example.org
+ARG PAGE_URL=example.com
+
+ENV PAGE_URL $PAGE_URL
 ENV PORT 80
 ENV TANNER 127.0.0.1
   
