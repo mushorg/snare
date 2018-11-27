@@ -1,4 +1,8 @@
 FROM alpine
+
+ARG PAGE_URL=example.org
+ENV PORT 80
+ENV TANNER 127.0.0.1
   
 # Setup apt
 RUN apk -U --no-cache add \
@@ -16,7 +20,7 @@ RUN apk -U --no-cache add \
     python3.6 setup.py install && \
     cd / && \
     rm -rf /opt/snare && \
-    clone --target http://example.com && \
+    clone --target "http://$PAGE_URL" && \
 
 # Clean up
     apk del --purge \
@@ -28,4 +32,4 @@ RUN apk -U --no-cache add \
     rm -rf /var/cache/apk/*
 
 # Start snare
-CMD snare --no-dorks true --auto-update false --host-ip 0.0.0.0 --port 8080 --page-dir example.com
+CMD snare --no-dorks true --auto-update false --host-ip 0.0.0.0 --port $PORT --page-dir "$PAGE_URL" --tanner $TANNER
