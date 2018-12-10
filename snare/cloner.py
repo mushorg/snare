@@ -162,7 +162,7 @@ class Cloner(object):
             async with aiohttp.ClientSession() as session:
                 resp = await session.get(self.root)
                 if resp.host != self.root.host:
-                    self.moved_root = resp._url_obj
+                    self.moved_root = resp.url
                 resp.close()
         except aiohttp.ClientError as err:
             self.logger.error("Can\'t connect to target host: %s", err)
