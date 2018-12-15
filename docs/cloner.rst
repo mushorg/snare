@@ -1,6 +1,7 @@
 Cloner
 ======
 .. _cloner:
+
 Cloner clones the website that we require to be served by snare.
 
 Cloner command line parameters
@@ -11,4 +12,4 @@ Description
 ~~~~~~~~~~~
 
 * **target** -- url of website to be cloned
-* **max--depth** -- maximum depth of the web-pages desired to be cloned (optional), default: full depth of the site 
+* **max--depth** -- maximum depth of the web-pages desired to be cloned (optional), default: full depth of the site
