@@ -9,5 +9,5 @@ setup(name='Snare',
       author_email='glastopf@public.honeynet.org',
       url='https://github.com/mushorg/snare',
       packages=find_packages(exclude=['*.pyc']),
-      scripts=['bin/snare', 'bin/clone'],
+      scripts=['./bin/snare', './bin/clone'],
       )

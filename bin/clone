@@ -27,7 +27,7 @@ def main():
         print('Clone has to be run as root!')
         sys.exit(1)
     if not os.path.exists('/opt/snare'):
-        os.mkdir('/opt/snare')
+        os.makedirs('/opt/snare')
     if not os.path.exists('/opt/snare/pages'):
         os.mkdir('/opt/snare/pages')
     loop = asyncio.get_event_loop()
@@ -60,6 +60,6 @@ if __name__ == '__main__':
   / /    / /     / / / //  |/ / __/ / /_/ /
  / /___ / /____ / /_/ // /|  / /___/ _, _/
 /_____//______//_____//_/ |_/_____/_/ |_|
-    
+
     """)
     main()
