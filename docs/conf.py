@@ -4,7 +4,7 @@
 #
 # This file does only contain a selection of the most common options. For a
 # full list see the documentation:
-# http://www.sphinx-doc.org/en/stable/config
+# http://www.sphinx-doc.org/en/master/config
 
 # -- Path setup --------------------------------------------------------------
 
@@ -19,14 +19,14 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'snare'
-copyright = '2016, mushorg'
-author = 'mushorg'
+project = 'SNARE'
+copyright = '2018, mushmush'
+author = 'mushmush'
 
 # The short X.Y version
-version = '0.2'
+version = ''
 # The full version, including alpha/beta/rc tags
-release = '0.2'
+release = 'v0.3'
 
 
 # -- General configuration ---------------------------------------------------
@@ -62,11 +62,11 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path .
+# This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = None
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -101,7 +101,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'snaredoc'
+htmlhelp_basename = 'SNAREdoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -128,8 +128,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'snare.tex', 'snare Documentation',
-     u'viswak', 'manual'),
+    (master_doc, 'SNARE.tex', 'SNARE Documentation',
+     'mushmush', 'manual'),
 ]
 
 
@@ -138,7 +138,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'snare', u'snare Documentation',
+    (master_doc, 'snare', 'SNARE Documentation',
      [author], 1)
 ]
 
@@ -149,7 +149,25 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'snare', 'snare Documentation',
-     author, 'snare', 'One line description of project.',
+    (master_doc, 'SNARE', 'SNARE Documentation',
+     author, 'SNARE', 'One line description of project.',
      'Miscellaneous'),
 ]
+
+
+# -- Options for Epub output -------------------------------------------------
+
+# Bibliographic Dublin Core info.
+epub_title = project
+
+# The unique identifier of the text. This can be a ISBN number
+# or the project homepage.
+#
+# epub_identifier = ''
+
+# A unique identification for the text.
+#
+# epub_uid = ''
+
+# A list of files that should not be packed into the epub file.
+epub_exclude_files = ['search.html']

@@ -12,3 +12,4 @@ target/
 # Developer
 .idea/
 .venv
+.vscode
