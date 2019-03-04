@@ -3,12 +3,25 @@ SNARE
 
 Super Next generation Advanced Reactive honEypot
 
+Snare is a web application honeypot and is the successor of Glastopf, which has many of the same
+features as Glastopf as well as ability to convert existing Web pages into attack surfaces with TANNER.
+SNARE is an abbreviation for Super Next generation Advanced Reactive HonEypot. Every event sent from
+SNARE to TANNER is evaluated, and TANNER decides how SNARE should respond to the client. This allows
+the honeypot to produce dynamic responses which improves its camouflage.
+
 Basic Concepts
 """"""""""""""
 
 * Surface first. Focus on the attack surface generation.
 * Sensors and masters. Lightweight collectors (SNARE) and central decision maker (tanner).
 
+SNARE provides a basic Web interface that displays the number of attack sessions, total duration,
+and the frequencies of types of attacks. SNARE also provides further information such as IPs,
+ports, user agents, start and end times, paths and attack types on each individual session.
+
+SNARE when fingerprinted by attackers shows that it is a Nginx Web application server.  It requires
+Web contents to serve as a website. It comes with a Python program clone.py that allows the cloning
+of a website.
 
 Getting started
 """""""""""""""
