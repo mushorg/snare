@@ -31,8 +31,8 @@ class Cloner(object):
 
     @staticmethod
     def add_scheme(url):
-        test_url=str(yarl.URL(url))
-        test_string=str(url)
+        test_url = str(yarl.URL(url))
+        test_string = str(url)
         if yarl.URL(url).scheme:
             if test_string[-1] == '/':
                 new_url = yarl.URL(url)
