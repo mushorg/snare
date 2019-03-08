@@ -34,14 +34,14 @@ class Cloner(object):
         test_url=str(yarl.URL(url))
         test_string=str(url)
         if yarl.URL(url).scheme:
-            if test_string[-1]=='/':
+            if test_string[-1] == '/':
                 new_url = yarl.URL(url)
                 err_url = yarl.URL(url + 'status_404')
             else:
                 new_url = yarl.URL(url)
                 err_url = yarl.URL(url + '/status_404')
         else:
-            if test_string[-1]=='/':
+            if test_string[-1] == '/':
                 new_url = yarl.URL('http://' + url)
                 err_url = yarl.URL('http://' + url + 'status_404')
             else:
