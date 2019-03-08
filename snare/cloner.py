@@ -31,12 +31,22 @@ class Cloner(object):
 
     @staticmethod
     def add_scheme(url):
+        test_url=str(yarl.URL(url))
+        test_string=str(url)
         if yarl.URL(url).scheme:
-            new_url = yarl.URL(url)
-            err_url = yarl.URL(url + '/status_404')
+            if test_string[-1]=='/':
+                new_url = yarl.URL(url)
+                err_url = yarl.URL(url + 'status_404')
+            else:
+                new_url = yarl.URL(url)
+                err_url = yarl.URL(url + '/status_404')
         else:
-            new_url = yarl.URL('http://' + url)
-            err_url = yarl.URL('http://' + url + '/status_404')
+            if test_string[-1]=='/':
+                new_url = yarl.URL('http://' + url)
+                err_url = yarl.URL('http://' + url + 'status_404')
+            else:
+                new_url = yarl.URL('http://' + url)
+                err_url = yarl.URL('http://' + url + '/status_404')
         return new_url, err_url
 
     async def process_link(self, url, level, check_host=False):
