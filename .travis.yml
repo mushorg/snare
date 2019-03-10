@@ -1,9 +1,10 @@
 language: python
 python:
   - "3.5"
-# command to install dependencies
+  - "3.6"
+
 install: "pip install -r requirements.txt"
-# command to run tests
+
 script:
     - nosetests -w snare/tests -vv
     - pycodestyle . --max-line-length=120

@@ -28,7 +28,6 @@ from concurrent.futures import ProcessPoolExecutor
 import aiohttp
 import git
 import pip
-import netifaces as ni
 from snare.server import HttpRequestHandler
 from snare.utils.logger import Logger
 from snare.utils import snare_helpers
@@ -136,8 +135,7 @@ if __name__ == '__main__':
     page_group.add_argument("--list-pages", help="list available pages", action='store_true')
     parser.add_argument("--index-page", help="file name of the index page", default='index.html')
     parser.add_argument("--port", help="port to listen on", default='8080')
-    parser.add_argument("--interface", help="interface to bind to")
-    parser.add_argument("--host-ip", help="host ip to bind to", default='localhost')
+    parser.add_argument("--host-ip", help="host ip to bind to", default='127.0.0.1')
     parser.add_argument("--debug", help="run web server in debug mode", default=False)
     parser.add_argument("--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
     parser.add_argument("--skip-check-version", help="skip check for update", action='store_true')
@@ -191,9 +189,6 @@ if __name__ == '__main__':
     if args.auto_update is True:
         timeout = snare_helpers.parse_timeout(args.update_timeout)
         compare_version_fut = loop.run_in_executor(pool, compare_version_info, timeout)
-
-    if args.host_ip == 'localhost' and args.interface:
-        args.host_ip = ni.ifaddresses(args.interface)[2][0]['addr']
 
     app = HttpRequestHandler(meta_info, args, snare_uuid, debug=args.debug, keep_alive=75)
 
