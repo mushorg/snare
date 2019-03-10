@@ -38,7 +38,7 @@ class Cloner(object):
         else:
             new_url = yarl.URL('http://' + url)
             err_url = yarl.URL('http://' + url + 'status_404')
-        if test_string[-1]=='/':
+        if test_string[-1] == '/':
             err_url = yarl.URL('http://' + url + 'status_404')
         else:
             err_url = yarl.URL('http://' + url + '/status_404')
