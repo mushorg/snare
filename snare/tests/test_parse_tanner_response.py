@@ -73,6 +73,27 @@ class TestParseTannerResponse(unittest.TestCase):
         expected_result = [self.expected_content, self.content_type, {}, 200]
         self.assertCountEqual(real_result, expected_result)
 
+        self.detection = {
+            "type": 2,
+            "payload": {
+                "page": "",
+                "value": "test.png",
+                "headers": {
+                    "content-type": "multipart/form-data"
+                }
+            }
+        }
+
+        async def test():
+            (self.res1, self.res2,
+             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+
+        self.loop.run_until_complete(test())
+        expected_header = {"content-type": "multipart/form-data"}
+        real_result = [self.res1, self.res2, self.res3, self.res4]
+        expected_result = [b'test.png', 'image/png', expected_header, 200]
+        self.assertCountEqual(real_result, expected_result)
+
     def test_parse_type_three(self):
         self.detection = {
             "type": 3,
