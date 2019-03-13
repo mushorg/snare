@@ -24,7 +24,7 @@ class TestHandleRequest(unittest.TestCase):
         os.makedirs(self.main_page_path)
         self.page_dir = self.main_page_path.rsplit('/')[-1]
         args = run_args.parse_args(['--page-dir', self.page_dir])
-        uuid = ('9c10172f-7ce2-4fb4-b1c6-abc70141db56').encode('utf-8')
+        uuid = '9c10172f-7ce2-4fb4-b1c6-abc70141db56'.encode('utf-8')
         args.tanner = 'tanner.mushmush.org'
         args.no_dorks = True
         args.server_header = "test_server"
@@ -66,30 +66,30 @@ class TestHandleRequest(unittest.TestCase):
             return_value=(self.content, self.content_type, self.data['headers'], self.data['headers']['status']))
 
     def test_create_request_data(self):
-
         async def test():
             await self.handler.handle_request(self.request)
+
         self.loop.run_until_complete(test())
         self.handler.tanner_handler.create_data.assert_called_with(self.request, 200)
 
     def test_submit_request_data(self):
-
         async def test():
             await self.handler.handle_request(self.request)
+
         self.loop.run_until_complete(test())
         self.handler.tanner_handler.submit_data.assert_called_with(self.data)
 
     def test_submit_request_slurp(self):
-
         async def test():
             await self.handler.handle_request(self.request)
+
         self.loop.run_until_complete(test())
         self.handler.submit_slurp.assert_called_with(self.request.path_qs)
 
     def test_parse_response(self):
-
         async def test():
             await self.handler.handle_request(self.request)
+
         self.loop.run_until_complete(test())
         self.handler.tanner_handler.parse_tanner_response.assert_called_with(self.request.path_qs, {'type': 1})
 

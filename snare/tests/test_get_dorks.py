@@ -21,7 +21,7 @@ class TestGetDorks(unittest.TestCase):
                 timer=None, request_info=None, traces=None, loop=self.loop,
                 session=None
             )
-                                              )
+        )
         no_dorks = True
         tanner = "tanner.mushmush.org"
         self.handler = HtmlHandler(no_dorks, tanner)
@@ -32,6 +32,7 @@ class TestGetDorks(unittest.TestCase):
 
         async def test():
             self.data = await self.handler.get_dorks()
+
         self.loop.run_until_complete(test())
         aiohttp.ClientSession.get.assert_called_with('http://tanner.mushmush.org:8090/dorks', timeout=10.0)
 
@@ -40,6 +41,7 @@ class TestGetDorks(unittest.TestCase):
 
         async def test():
             self.data = await self.handler.get_dorks()
+
         self.loop.run_until_complete(test())
         self.assertEquals(self.data, self.dorks['response']['dorks'])
 
@@ -48,6 +50,7 @@ class TestGetDorks(unittest.TestCase):
 
         async def test():
             self.data = await self.handler.get_dorks()
+
         with self.assertRaises(Exception):
             self.loop.run_until_complete(test())
 

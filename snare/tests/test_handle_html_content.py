@@ -36,6 +36,7 @@ class TestHandleHtmlContent(unittest.TestCase):
 
         async def test():
             self.return_content = await self.handler.handle_content(self.content)
+
         self.loop.run_until_complete(test())
         soup = BeautifulSoup(self.return_content, "html.parser")
         return_content = soup.decode("utf-8")
@@ -46,6 +47,7 @@ class TestHandleHtmlContent(unittest.TestCase):
 
         async def test():
             self.return_content = await self.handler.handle_content(self.content)
+
         self.loop.run_until_complete(test())
         soup = BeautifulSoup(self.return_content, "html.parser")
         self.return_content = soup.decode("utf-8")
@@ -57,6 +59,7 @@ class TestHandleHtmlContent(unittest.TestCase):
 
         async def test():
             self.return_content = await self.handler.handle_content(self.content)
+
         with self.assertRaises(IndexError):
             self.loop.run_until_complete(test())
 

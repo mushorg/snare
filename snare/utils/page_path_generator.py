@@ -9,6 +9,6 @@ def directory_generator(size=9, chars=string.ascii_lowercase + string.digits):
 
 def generate_unique_path():
     path = '/opt/snare/pages/' + directory_generator()
-    while(os.path.exists(path)):
+    while os.path.exists(path):
         path = '/opt/snare/pages/' + directory_generator()
     return path

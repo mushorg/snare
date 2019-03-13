@@ -38,7 +38,7 @@ class TannerHandler():
             data['method'] = request.method
             data['headers'] = header
             data['path'] = request.path_qs
-            if ('Cookie' in header):
+            if 'Cookie' in header:
                 data['cookies'] = {
                     cookie.split('=')[0]: cookie.split('=')[1] for cookie in header['Cookie'].split(';')
                     }
@@ -123,4 +123,4 @@ class TannerHandler():
             payload_content = detection['payload']
             status_code = payload_content['status_code']
 
-        return (content, content_type, headers, status_code)
+        return content, content_type, headers, status_code
