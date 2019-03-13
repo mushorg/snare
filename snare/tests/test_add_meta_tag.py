@@ -28,5 +28,8 @@ class TestAddMetaTag(unittest.TestCase):
         assert(soup.find("meta", attrs={"name": "google-site-verification"}) and
                soup.find("meta", attrs={"name": "msvalidate.01"}))
 
+        config['WEB-TOOLS'] = dict(google='', bing='')
+        assert add_meta_tag(self.page_dir, self.index_page, config) is None
+
     def tearDown(self):
         shutil.rmtree(self.main_page_path)

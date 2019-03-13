@@ -19,7 +19,7 @@ class Cloner(object):
         self.max_depth = max_depth
         self.moved_root = None
         if len(self.root.host) < 4:
-            sys.exit('invalid taget {}'.format(self.root.host))
+            sys.exit('invalid target {}'.format(self.root.host))
         self.target_path = '/opt/snare/pages/{}'.format(self.root.host)
 
         if not os.path.exists(self.target_path):
