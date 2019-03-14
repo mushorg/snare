@@ -102,6 +102,8 @@ class Cloner(object):
 
     def _make_filename(self, url):
         host = url.host
+        # clear query
+        url = url.with_query(None)
         if url.is_absolute():
             file_name = url.relative().human_repr()
         else:
