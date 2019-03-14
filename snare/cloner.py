@@ -31,6 +31,8 @@ class Cloner(object):
 
     @staticmethod
     def add_scheme(url):
+        if url[-1] == '/':
+            url = url.strip('/')
         if yarl.URL(url).scheme:
             new_url = yarl.URL(url)
             err_url = yarl.URL(url + '/status_404')
