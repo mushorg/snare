@@ -73,6 +73,8 @@ class TestParseTannerResponse(unittest.TestCase):
         expected_result = [self.expected_content, self.content_type, {}, 200]
         self.assertCountEqual(real_result, expected_result)
 
+    def test_parse_type_two_with_headers(self):
+
         self.detection = {
             "type": 2,
             "payload": {
