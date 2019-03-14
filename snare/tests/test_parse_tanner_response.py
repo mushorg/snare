@@ -48,6 +48,7 @@ class TestParseTannerResponse(unittest.TestCase):
         async def test():
             (self.res1, self.res2,
              self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+
         self.loop.run_until_complete(test())
         real_result = [self.res1, self.res2, self.res3, self.res4]
         expected_result = [self.page_content, self.content_type, {}, 200]
@@ -66,6 +67,7 @@ class TestParseTannerResponse(unittest.TestCase):
         async def test():
             (self.res1, self.res2,
              self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+
         self.loop.run_until_complete(test())
         real_result = [self.res1, self.res2, self.res3, self.res4]
         expected_result = [self.expected_content, self.content_type, {}, 200]
@@ -85,6 +87,7 @@ class TestParseTannerResponse(unittest.TestCase):
         async def test():
             (self.res1, self.res2,
              self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+
         self.loop.run_until_complete(test())
         real_result = [self.res1, self.res2, self.res3, self.res4]
         expected_result = [self.expected_content, None, {}, 200]
@@ -98,6 +101,7 @@ class TestParseTannerResponse(unittest.TestCase):
         async def test():
             (self.res1, self.res2,
              self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+
         self.loop.run_until_complete(test())
         self.handler.html_handler.handle_content.assert_called_with(self.call_content)
 
@@ -109,6 +113,7 @@ class TestParseTannerResponse(unittest.TestCase):
         async def test():
             (self.res1, self.res2,
              self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+
         with self.assertRaises(KeyError):
             self.loop.run_until_complete(test())
 

@@ -63,12 +63,12 @@ def add_meta_tag(page_dir, index_page, config):
         main_page = main.read()
     soup = BeautifulSoup(main_page, 'html.parser')
 
-    if (google_content and soup.find("meta", attrs={"name": "google-site-verification"}) is None):
+    if google_content and soup.find("meta", attrs={"name": "google-site-verification"}) is None:
         google_meta = soup.new_tag('meta')
         google_meta.attrs['name'] = 'google-site-verification'
         google_meta.attrs['content'] = google_content
         soup.head.append(google_meta)
-    if (bing_content and soup.find("meta", attrs={"name": "msvalidate.01"}) is None):
+    if bing_content and soup.find("meta", attrs={"name": "msvalidate.01"}) is None:
         bing_meta = soup.new_tag('meta')
         bing_meta.attrs['name'] = 'msvalidate.01'
         bing_meta.attrs['content'] = bing_content

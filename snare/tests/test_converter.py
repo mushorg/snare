@@ -25,8 +25,8 @@ class TestConverter(unittest.TestCase):
             s = json.load(f)
         self.hname1 = s['index.html']['hash']
         self.hname2 = s['depth/page.html']['hash']
-        assert(os.path.exists(self.page_path + self.hname1) and
-               os.path.exists(self.page_path + self.hname2))
+        assert (os.path.exists(self.page_path + self.hname1) and
+                os.path.exists(self.page_path + self.hname2))
 
     def tearDown(self):
         shutil.rmtree('/tmp/test')

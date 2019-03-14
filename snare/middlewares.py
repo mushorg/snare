@@ -28,6 +28,7 @@ class SnareMiddleware():
                 if override:
                     return await override(request)
                 raise
+
         return error_middleware
 
     def setup_middlewares(self, app):

@@ -38,7 +38,7 @@ class TestSubmitData(unittest.TestCase):
                 timer=None, request_info=None, traces=None, loop=self.loop,
                 session=None
             )
-                                              )
+        )
         uuid = "test_uuid"
         args.tanner = "tanner.mushmush.org"
         args.no_dorks = True
@@ -50,6 +50,7 @@ class TestSubmitData(unittest.TestCase):
 
         async def test():
             self.result = await self.handler.submit_data(self.data)
+
         self.loop.run_until_complete(test())
         aiohttp.ClientSession.post.assert_called_with(
             'http://tanner.mushmush.org:8090/event', data=json.dumps(self.data), timeout=10.0
@@ -60,6 +61,7 @@ class TestSubmitData(unittest.TestCase):
 
         async def test():
             self.result = await self.handler.submit_data(self.data)
+
         self.loop.run_until_complete(test())
         self.assertEquals(self.result, dict(detection={'type': 1}, sess_uuid="test_uuid"))
 
@@ -68,6 +70,7 @@ class TestSubmitData(unittest.TestCase):
 
         async def test():
             self.result = await self.handler.submit_data(self.data)
+
         with self.assertRaises(Exception):
             self.loop.run_until_complete(test())
 
