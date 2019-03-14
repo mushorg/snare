@@ -28,6 +28,8 @@ class TestAddMetaTag(unittest.TestCase):
         assert(soup.find("meta", attrs={"name": "google-site-verification"}) and
                soup.find("meta", attrs={"name": "msvalidate.01"}))
 
+    def test_add_meta_tag_with_empty_tags(self):
+        config = configparser.ConfigParser()
         config['WEB-TOOLS'] = dict(google='', bing='')
         assert add_meta_tag(self.page_dir, self.index_page, config) is None
 

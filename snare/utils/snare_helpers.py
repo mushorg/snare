@@ -80,7 +80,6 @@ def add_meta_tag(page_dir, index_page, config):
 
 
 def parse_timeout(timeout):
-    result = None
     timeouts_coeff = {
         'M': 60,
         'H': 3600,
