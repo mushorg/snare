@@ -106,7 +106,7 @@ class TannerHandler():
                         content = p.read()
                 except KeyError:
                     content = '<html><body></body></html>'
-                    content_type = r'text\html'
+                    content_type = r'text/html'
 
                 soup = BeautifulSoup(content, 'html.parser')
                 script_tag = soup.new_tag('div')
