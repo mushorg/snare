@@ -41,7 +41,7 @@ You obviously want to bind to 0.0.0.0 and port 80 when running in <i>production<
 
 ## Testing
 
-For testing speedily along with full coverage report, we recommend running `pytest` on tests folder:
+In order to run the tests and receive a test coverage report, we recommend running `pytest`:
 
 
     sudo pytest --cov-report term-missing --cov=snare tests/
