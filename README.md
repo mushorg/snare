@@ -44,7 +44,8 @@ You obviously want to bind to 0.0.0.0 and port 80 when running in <i>production<
 In order to run the tests and receive a test coverage report, we recommend running `pytest`:
 
 
-    sudo pytest --cov-report term-missing --cov=snare tests/
+    pip install pytest pytest-cov
+    sudo pytest --cov-report term-missing --cov=snare snare/tests/
 
 
 ## Sample Output
