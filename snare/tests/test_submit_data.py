@@ -63,7 +63,7 @@ class TestSubmitData(unittest.TestCase):
             self.result = await self.handler.submit_data(self.data)
 
         self.loop.run_until_complete(test())
-        self.assertEquals(self.result, dict(detection={'type': 1}, sess_uuid="test_uuid"))
+        self.assertEqual(self.result, dict(detection={'type': 1}, sess_uuid="test_uuid"))
 
     def test_event_result_exception(self):
         aiohttp.ClientResponse.json = AsyncMock(side_effect=Exception())

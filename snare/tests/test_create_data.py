@@ -56,7 +56,7 @@ class TestCreateData(unittest.TestCase):
 
     def test_create_data(self):
         self.data = self.handler.create_data(self.request, self.response_status)
-        self.assertEquals(self.data, self.expected_data)
+        self.assertEqual(self.data, self.expected_data)
 
     def tearDown(self):
         shutil.rmtree(self.main_page_path)

@@ -43,7 +43,7 @@ class TestGetDorks(unittest.TestCase):
             self.data = await self.handler.get_dorks()
 
         self.loop.run_until_complete(test())
-        self.assertEquals(self.data, self.dorks['response']['dorks'])
+        self.assertEqual(self.data, self.dorks['response']['dorks'])
 
     def test_return_dorks_exception(self):
         aiohttp.ClientResponse.json = AsyncMock(side_effect=Exception())

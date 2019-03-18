@@ -40,7 +40,7 @@ class TestHandleHtmlContent(unittest.TestCase):
         self.loop.run_until_complete(test())
         soup = BeautifulSoup(self.return_content, "html.parser")
         return_content = soup.decode("utf-8")
-        self.assertEquals(return_content, self.expected_content)
+        self.assertEqual(return_content, self.expected_content)
 
     def test_handle_content_no_dorks(self):
         self.handler.no_dorks = True
@@ -51,7 +51,7 @@ class TestHandleHtmlContent(unittest.TestCase):
         self.loop.run_until_complete(test())
         soup = BeautifulSoup(self.return_content, "html.parser")
         self.return_content = soup.decode("utf-8")
-        self.assertEquals(self.return_content, self.no_dorks_content)
+        self.assertEqual(self.return_content, self.no_dorks_content)
 
     def test_handle_content_exception(self):
         self.handler.no_dorks = False
