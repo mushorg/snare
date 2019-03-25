@@ -72,9 +72,7 @@ class TestParseTannerResponse(unittest.TestCase):
 
     def test_parse_type_one_error(self):
         self.detection = {"type": 1}
-        meta_content = {"/index.html": {}}
         self.requested_name = 'something/'
-        self.handler = TannerHandler(self.args, meta_content, self.uuid)
         self.expected_status_code = 404
 
         async def test():
@@ -135,14 +133,12 @@ class TestParseTannerResponse(unittest.TestCase):
         self.detection = {
             "type": 2,
             "payload": {
-                "page": "/index.html",
+                "page": "/something",
                 "value": "test"
             }
         }
-        meta_content = {"/index.html": {}}
-        self.handler = TannerHandler(self.args, meta_content, self.uuid)
         self.expected_content = b'<html><body><div>test</div></body></html>'
-        self.content_type = r'text\html'
+        self.content_type = r'text/html'
 
         async def test():
             (self.res1, self.res2,
@@ -184,6 +180,18 @@ class TestParseTannerResponse(unittest.TestCase):
 
         self.loop.run_until_complete(test())
         self.handler.html_handler.handle_content.assert_called_with(self.call_content)
+
+    def test_parse_exception(self):
+        self.detection = {}
+        self.call_content = b'<html><body></body></html>'
+        self.expected_content = self.page_content
+
+        async def test():
+            (self.res1, self.res2,
+             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+
+        with self.assertRaises(KeyError):
+            self.loop.run_until_complete(test())
 
     def tearDown(self):
         shutil.rmtree(self.main_page_path)
