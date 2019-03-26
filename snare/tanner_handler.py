@@ -78,7 +78,7 @@ class TannerHandler():
             if query_start != -1:
                 possible_requests.append(requested_name[:query_start])
 
-            found = False
+            file_name = None
             for requested_name in possible_requests:
                 if requested_name == '/':
                     requested_name = self.run_args.index_page
@@ -91,9 +91,8 @@ class TannerHandler():
                 except KeyError:
                     pass
                 else:
-                    found = True
                     break
-            if not found:
+            if not file_name:
                 status_code = 404
             else:
                 path = os.path.join(self.dir, file_name)
