@@ -6,13 +6,10 @@ import os
 import json
 import yarl
 import aiohttp
-import logging
-from unittest import mock
+from json import JSONDecodeError
 from snare.utils.asyncmock import AsyncMock
 from snare.tanner_handler import TannerHandler
 from snare.utils.page_path_generator import generate_unique_path
-
-logger = logging.getLogger(__name__)
 
 
 class TestSubmitData(unittest.TestCase):
@@ -70,19 +67,14 @@ class TestSubmitData(unittest.TestCase):
         self.assertEqual(self.result, dict(detection={'type': 1}, sess_uuid="test_uuid"))
 
     def test_submit_data_error(self):
-
-        async def mock_json_decode_error(data):
-            logger.error('Error submitting data: JSONDecodeError {}'.format(data))
-
-        self.handler = mock.Mock()
-        self.handler.submit_data = mock_json_decode_error
+        aiohttp.ClientResponse.json = AsyncMock(side_effect=JSONDecodeError('ERROR', '', 0))
 
         async def test():
             self.result = await self.handler.submit_data(self.data)
 
         with self.assertLogs(level='ERROR') as log:
             self.loop.run_until_complete(test())
-            self.assertIn('Error submitting data: JSONDecodeError {}'.format(self.data), log.output[0])
+            self.assertIn('Error submitting data: ERROR: line 1 column 1 (char 0) {}'.format(self.data), log.output[0])
 
     def test_event_result_exception(self):
         aiohttp.ClientResponse.json = AsyncMock(side_effect=Exception())
