@@ -24,12 +24,12 @@ class TestParseTannerResponse(unittest.TestCase):
             f.write(self.page_content)
         with open(os.path.join(self.main_page_path, "meta.json"), 'w') as f:
             json.dump(meta_content, f)
-        args = run_args.parse_args(['--page-dir', page_dir])
-        args.index_page = '/index.html'
-        args.no_dorks = True
-        args.tanner = "tanner.mushmush.org"
-        uuid = "test_uuid"
-        self.handler = TannerHandler(args, meta_content, uuid)
+        self.args = run_args.parse_args(['--page-dir', page_dir])
+        self.args.index_page = '/index.html'
+        self.args.no_dorks = True
+        self.args.tanner = "tanner.mushmush.org"
+        self.uuid = "test_uuid"
+        self.handler = TannerHandler(self.args, meta_content, self.uuid)
         self.requested_name = '/'
         self.loop = asyncio.get_event_loop()
         self.handler.html_handler.handle_content = AsyncMock(return_value=self.page_content)
@@ -40,6 +40,8 @@ class TestParseTannerResponse(unittest.TestCase):
         self.detection = None
         self.expected_content = None
         self.call_content = None
+        self.expected_header = None
+        self.expected_status_code = None
 
     def test_parse_type_one(self):
         self.detection = {"type": 1}
@@ -54,6 +56,34 @@ class TestParseTannerResponse(unittest.TestCase):
         expected_result = [self.page_content, self.content_type, {}, 200]
         self.assertCountEqual(real_result, expected_result)
 
+    def test_parse_type_one_query(self):
+        self.requested_name = '/?'
+        self.detection = {"type": 1}
+        self.call_content = b'<html><body></body></html>'
+
+        async def test():
+            (self.res1, self.res2,
+             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+
+        self.loop.run_until_complete(test())
+        real_result = [self.res1, self.res2, self.res3, self.res4]
+        expected_result = [self.page_content, self.content_type, {}, 200]
+        self.assertCountEqual(real_result, expected_result)
+
+    def test_parse_type_one_error(self):
+        self.detection = {"type": 1}
+        self.requested_name = 'something/'
+        self.expected_status_code = 404
+
+        async def test():
+            (self.res1, self.res2,
+             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+
+        self.loop.run_until_complete(test())
+        real_result = [self.res1, self.res2, self.res3, self.res4]
+        expected_result = [None, None, {}, self.expected_status_code]
+        self.assertCountEqual(real_result, expected_result)
+
     def test_parse_type_two(self):
         self.detection = {
             "type": 2,
@@ -63,6 +93,52 @@ class TestParseTannerResponse(unittest.TestCase):
             }
         }
         self.expected_content = b'<html><body><div>test</div></body></html>'
+
+        async def test():
+            (self.res1, self.res2,
+             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+
+        self.loop.run_until_complete(test())
+        real_result = [self.res1, self.res2, self.res3, self.res4]
+        expected_result = [self.expected_content, self.content_type, {}, 200]
+        self.assertCountEqual(real_result, expected_result)
+
+    def test_parse_type_two_with_headers(self):
+
+        self.detection = {
+            "type": 2,
+            "payload": {
+                "page": "",
+                "value": "test.png",
+                "headers": {
+                    "content-type": "multipart/form-data"
+                }
+            }
+        }
+        self.expected_content = b'test.png'
+        self.content_type = 'image/png'
+        self.expected_header = {"content-type": "multipart/form-data"}
+
+        async def test():
+            (self.res1, self.res2,
+             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+
+        self.loop.run_until_complete(test())
+        real_result = [self.res1, self.res2, self.res3, self.res4]
+        expected_result = [self.expected_content, self.content_type, self.expected_header, 200]
+        self.assertCountEqual(real_result, expected_result)
+
+    def test_parse_type_two_error(self):
+
+        self.detection = {
+            "type": 2,
+            "payload": {
+                "page": "/something",
+                "value": "test"
+            }
+        }
+        self.expected_content = b'<html><body><div>test</div></body></html>'
+        self.content_type = r'text/html'
 
         async def test():
             (self.res1, self.res2,
