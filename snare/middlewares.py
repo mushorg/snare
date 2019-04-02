@@ -20,10 +20,12 @@ class SnareMiddleware():
         async def error_middleware(request, handler):
             try:
                 response = await handler(request)
-                override = overrides.get(response.status)
+                status = response.status
+                override = overrides.get(status)
                 if override:
                     response = await override(request)
                     response.headers['Server'] = self.server_header
+                    response.set_status(status)
                     return response
                 return response
             except web.HTTPException as ex:
