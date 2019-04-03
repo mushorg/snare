@@ -88,7 +88,10 @@ class HttpRequestHandler():
         aiohttp_jinja2.setup(
             app, loader=jinja2.FileSystemLoader(self.dir)
         )
-        middleware = SnareMiddleware(self.meta['/status_404']['hash'])
+        middleware = SnareMiddleware(
+            self.meta['/status_404']['hash'],
+            self.run_args.server_header
+        )
         middleware.setup_middlewares(app)
 
         self.runner = web.AppRunner(app)
