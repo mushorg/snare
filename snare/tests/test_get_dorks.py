@@ -46,7 +46,7 @@ class TestGetDorks(unittest.TestCase):
         self.loop.run_until_complete(test())
         self.assertEquals(self.data, self.dorks['response']['dorks'])
 
-    def test_get_dorks_error(self):
+    def test_logging_error(self):
         aiohttp.ClientResponse.json = AsyncMock(side_effect=JSONDecodeError('ERROR', '', 0))
 
         async def test():
@@ -56,7 +56,7 @@ class TestGetDorks(unittest.TestCase):
             self.loop.run_until_complete(test())
             self.assertIn('Error getting dorks: ERROR: line 1 column 1 (char 0)', log.output[0])
 
-    def test_get_dorks_timeout(self):
+    def test_logging_timeout(self):
         aiohttp.ClientResponse.json = AsyncMock(side_effect=asyncio.TimeoutError())
 
         async def test():
