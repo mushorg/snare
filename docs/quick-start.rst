@@ -40,5 +40,8 @@ Getting started
 You obviously want to bind to 0.0.0.0 and port 80 when running in *production*.
 
 **Docker build instructions**
-1. ``docker-compose build``
-2. ``docker-compose up``
+1. Change current directory to ``snare`` project directory
+2. ``docker-compose build``
+3. ``docker-compose up``
+
+More information about running ``docker-compose`` can be found `here <https://docs.docker.com/compose/gettingstarted/>`_.
