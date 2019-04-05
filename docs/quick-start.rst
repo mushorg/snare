@@ -14,7 +14,7 @@ Getting started
 """""""""""""""
 
  You need Python3. We tested primarily with >=3.4
- 
+
  This was tested with a recent Ubuntu based Linux.
 
 **Steps to setup:**
@@ -40,9 +40,5 @@ Getting started
 You obviously want to bind to 0.0.0.0 and port 80 when running in *production*.
 
 **Docker build instructions**
-
-1. Get SNARE: ``git clone https://github.com/mushorg/snare.git`` and ``cd snare``
-
-2. ``docker-compose build``
-
-3. ``docker-compose up``
+1. ``docker-compose build``
+2. ``docker-compose up``
