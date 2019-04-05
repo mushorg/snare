@@ -4,6 +4,7 @@ import shutil
 import os
 import yarl
 import aiohttp
+from json import JSONDecodeError
 from snare.utils.asyncmock import AsyncMock
 from snare.html_handler import HtmlHandler
 from snare.utils.page_path_generator import generate_unique_path
@@ -44,6 +45,26 @@ class TestGetDorks(unittest.TestCase):
 
         self.loop.run_until_complete(test())
         self.assertEqual(self.data, self.dorks['response']['dorks'])
+
+    def test_logging_error(self):
+        aiohttp.ClientResponse.json = AsyncMock(side_effect=JSONDecodeError('ERROR', '', 0))
+
+        async def test():
+            self.data = await self.handler.get_dorks()
+
+        with self.assertLogs(level='ERROR') as log:
+            self.loop.run_until_complete(test())
+            self.assertIn('Error getting dorks: ERROR: line 1 column 1 (char 0)', log.output[0])
+
+    def test_logging_timeout(self):
+        aiohttp.ClientResponse.json = AsyncMock(side_effect=asyncio.TimeoutError())
+
+        async def test():
+            self.data = await self.handler.get_dorks()
+
+        with self.assertLogs(level='INFO') as log:
+            self.loop.run_until_complete(test())
+            self.assertIn('Dorks timeout', log.output[0])
 
     def test_return_dorks_exception(self):
         aiohttp.ClientResponse.json = AsyncMock(side_effect=Exception())
