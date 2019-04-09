@@ -203,7 +203,4 @@ if __name__ == '__main__':
         loop.run_until_complete(app.stop())
         compare_version_proc.terminate()
         print(e)
-    finally:
-        if compare_version_fut:
-            compare_version_fut.cancel()
     loop.close()
