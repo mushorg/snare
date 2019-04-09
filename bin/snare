@@ -24,7 +24,6 @@ import os
 import sys
 import time
 import uuid
-from concurrent.futures import ProcessPoolExecutor
 import aiohttp
 import git
 import pip
@@ -184,11 +183,11 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(check_tanner())
 
-    pool = ProcessPoolExecutor(max_workers=multiprocessing.cpu_count())
     compare_version_fut = None
     if args.auto_update is True:
         timeout = snare_helpers.parse_timeout(args.update_timeout)
-        compare_version_fut = loop.run_in_executor(pool, compare_version_info, timeout)
+        compare_version_proc = multiprocessing.Process(target=compare_version_info, args=(timeout,))
+        compare_version_proc.start()
 
     app = HttpRequestHandler(meta_info, args, snare_uuid, debug=args.debug, keep_alive=75)
 
@@ -202,6 +201,7 @@ if __name__ == '__main__':
         loop.run_forever()
     except (KeyboardInterrupt, TypeError) as e:
         loop.run_until_complete(app.stop())
+        compare_version_proc.terminate()
         print(e)
     finally:
         if compare_version_fut:
