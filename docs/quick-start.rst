@@ -14,7 +14,7 @@ Getting started
 """""""""""""""
 
  You need Python3. We tested primarily with >=3.4
- 
+
  This was tested with a recent Ubuntu based Linux.
 
 **Steps to setup:**
@@ -38,3 +38,10 @@ Getting started
 [Note : Cloner clones the whole website, to restrict to a desired depth of cloning add ``--max-depth`` parameter]
 
 You obviously want to bind to 0.0.0.0 and port 80 when running in *production*.
+
+**Docker build instructions**
+1. Change current directory to ``snare`` project directory
+2. ``docker-compose build``
+3. ``docker-compose up``
+
+More information about running ``docker-compose`` can be found `here <https://docs.docker.com/compose/gettingstarted/>`_.
