@@ -202,5 +202,4 @@ if __name__ == '__main__':
     except (KeyboardInterrupt, TypeError) as e:
         loop.run_until_complete(app.stop())
         compare_version_proc.terminate()
-        print(e)
     loop.close()
