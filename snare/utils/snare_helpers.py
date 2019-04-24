@@ -8,6 +8,10 @@ import argparse
 from distutils.version import StrictVersion
 from bs4 import BeautifulSoup
 
+INFO = '\033[97m'  # white
+ERROR = '\033[31m'  # red
+WARNING = '\033[33m'  # yellow
+
 
 class VersionManager:
     def __init__(self):
@@ -88,7 +92,7 @@ def parse_timeout(timeout):
 
     form = timeout[-1]
     if form not in timeouts_coeff.keys():
-        print_err('Bad timeout format, default will be used')
+        print_color('Bad timeout format, default will be used', WARNING)
         result = parse_timeout('24H')
     else:
         result = int(timeout[:-1])
@@ -105,6 +109,5 @@ def str_to_bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected')
 
 
-def print_err(msg):
-    # print red message
-    print('\033[91m' + msg + '\033[0m')
+def print_color(msg, mode=INFO):
+    print(mode + msg + '\033[0m')
