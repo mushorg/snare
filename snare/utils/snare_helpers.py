@@ -88,7 +88,7 @@ def parse_timeout(timeout):
 
     form = timeout[-1]
     if form not in timeouts_coeff.keys():
-        print_color('Bad timeout format, default will be used', WARNING)
+        print_color('Bad timeout format, default will be used', 'WARNING')
         result = parse_timeout('24H')
     else:
         result = int(timeout[:-1])
