@@ -108,7 +108,7 @@ def str_to_bool(v):
 def print_color(msg, mode='INFO'):
     colors = {
         'INFO': '\033[97m',  # white
-        'ERROR': '\033[31m',  # red,
+        'ERROR': '\033[31m',  # red
         'WARNING': '\033[33m'  # yellow
     }
     try:
