@@ -46,7 +46,7 @@ class Cloner(object):
             url = yarl.URL(url)
         except UnicodeError:
             return None
-        if url.scheme == ("data" or "javascript" or "file"):
+        if url.scheme in ["data", "javascript", "file"]:
             return url.human_repr()
         if not url.is_absolute():
             if self.moved_root is None:
