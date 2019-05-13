@@ -31,7 +31,7 @@ import pip
 from snare.server import HttpRequestHandler
 from snare.utils.logger import Logger
 from snare.utils import snare_helpers
-from snare.utils.snare_helpers import str_to_bool
+from snare.utils.snare_helpers import str_to_bool, print_color
 
 
 def create_initial_config():
@@ -43,7 +43,7 @@ def create_initial_config():
 
 def snare_setup():
     if os.getuid() != 0:
-        print('Snare has to be started as root!')
+        print_color('Snare has to be started as root!', 'WARNING')
         sys.exit(1)
     # Create folders
     if not os.path.exists('/opt/snare'):
@@ -89,7 +89,7 @@ def compare_version_info(timeout):
             res = rem.fetch()
             diff_list = res[0].commit.diff(repo.heads.master)
         except TimeoutError:
-            print('timeout fetching the repository version')
+            print_color('timeout fetching the repository version', 'ERROR')
         else:
             if diff_list:
                 print('you are running an outdated version, SNARE will be updated and restarted')
@@ -115,7 +115,7 @@ async def check_tanner():
             version = result["version"]
             vm.check_compatibility(version)
         except aiohttp.ClientOSError:
-            print("Can't connect to tanner host {}".format(req_url))
+            print_color("Can't connect to tanner host {}".format(req_url), 'ERROR')
             exit(1)
         else:
             await resp.release()
@@ -165,7 +165,7 @@ if __name__ == '__main__':
         exit()
     full_page_path = os.path.join(base_page_path, args.page_dir)
     if not os.path.exists(full_page_path):
-        print("--page-dir: {0} does not exist".format(args.page_dir))
+        print_color("--page-dir: {0} does not exist".format(args.page_dir), 'ERROR')
         exit()
     args.index_page = os.path.join("/", args.index_page)
 
@@ -178,7 +178,7 @@ if __name__ == '__main__':
         meta_info = json.load(meta)
     if not os.path.exists(os.path.join(base_page_path, args.page_dir,
                                        os.path.join(meta_info[args.index_page]['hash']))):
-        print('can\'t create meta tag')
+        print_color('can\'t create meta tag', 'WARNING')
     else:
         snare_helpers.add_meta_tag(args.page_dir, meta_info[args.index_page]['hash'], config)
     loop = asyncio.get_event_loop()

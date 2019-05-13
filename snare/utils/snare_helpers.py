@@ -88,7 +88,7 @@ def parse_timeout(timeout):
 
     form = timeout[-1]
     if form not in timeouts_coeff.keys():
-        print('Bad timeout format, default will be used')
+        print_color('Bad timeout format, default will be used', 'WARNING')
         result = parse_timeout('24H')
     else:
         result = int(timeout[:-1])
@@ -103,3 +103,16 @@ def str_to_bool(v):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected')
+
+
+def print_color(msg, mode='INFO'):
+    colors = {
+        'INFO': '\033[97m',  # white
+        'ERROR': '\033[31m',  # red
+        'WARNING': '\033[33m'  # yellow
+    }
+    try:
+        color = colors[mode]
+    except KeyError:
+        color = colors['INFO']
+    print(color + msg + '\033[0m')
