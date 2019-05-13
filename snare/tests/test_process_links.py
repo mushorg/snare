@@ -16,14 +16,15 @@ class TestProcessLinks(unittest.TestCase):
         self.return_content = None
 
     def test_process_link_scheme(self):
-        self.url = 'file://images/test.png'
+        arr = ['file://images/test.png', 'data://images/test.txt', 'javascript://alert(1)/']
 
-        async def test():
-            self.return_content = await self.handler.process_link(self.url, self.level)
+        for url in arr:
+            async def test():
+                self.return_content = await self.handler.process_link(url, self.level)
 
-        self.loop.run_until_complete(test())
-        self.expected_content = 'file://images/test.png'
-        self.assertEqual(self.expected_content, self.return_content)
+            self.loop.run_until_complete(test())
+            self.expected_content = url
+            self.assertEqual(self.expected_content, self.return_content)
 
     def test_process_link_relative(self):
         self.url = '/foo/путь/'
