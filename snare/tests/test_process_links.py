@@ -1,6 +1,7 @@
 import unittest
 import asyncio
 import sys
+import yarl
 from snare.cloner import Cloner
 
 
@@ -28,12 +29,20 @@ class TestProcessLinks(unittest.TestCase):
 
     def test_process_link_relative(self):
         self.url = '/foo/путь/'
+        self.expected_content = 'http://example.com/foo/путь/'
 
         async def test():
             self.return_content = await self.handler.process_link(self.url, self.level)
 
         self.loop.run_until_complete(test())
         self.assertEqual(self.return_content, '/foo/путь/')
+
+        async def get_url():
+            self.url, self.level = await self.handler.new_urls.get()
+
+        self.loop.run_until_complete(get_url())
+        self.assertEqual(yarl.URL(self.url).human_repr(), self.expected_content)
+        self.assertEqual(self.level, 1)
 
     def test_check_host(self):
         self.url = 'http://foo.com'

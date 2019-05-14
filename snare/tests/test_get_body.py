@@ -36,6 +36,7 @@ class TestGetBody(unittest.TestCase):
                 session=None
             )
         )
+        self.meta = None
 
     def test_get_body(self):
         self.content = b'''<html><body><a href="http://example.com/test"></a></body></html>'''
@@ -43,6 +44,8 @@ class TestGetBody(unittest.TestCase):
         aiohttp.ClientResponse._headers = {'Content-Type': 'text/html'}
         aiohttp.ClientResponse.read = AsyncMock(return_value=self.content)
         self.filename, self.hashname = self.handler._make_filename(yarl.URL(self.root))
+        self.meta = {'/index.html': {'content_type': 'text/html', 'hash': 'd1546d731a9f30cc80127d57142a482b'},
+                     '/test': {'content_type': 'text/html', 'hash': '4539330648b80f94ef3bf911f6d77ac9'}}
 
         async def test():
             await self.handler.new_urls.put((yarl.URL(self.root), 0))
@@ -54,6 +57,9 @@ class TestGetBody(unittest.TestCase):
 
         self.expected_content = '<html><body><a href="/test"></a></body></html>'
         self.assertEqual(self.return_content, self.expected_content)
+
+        self.assertEqual(self.handler.visited_urls[-1], 'http://example.com/test')
+        self.assertEqual(self.handler.meta, self.meta)
 
     def test_get_body_css_validate(self):
         aiohttp.ClientResponse._headers = {'Content-Type': 'text/css'}
@@ -70,6 +76,13 @@ class TestGetBody(unittest.TestCase):
         self.loop.run_until_complete(test())
         self.expected_content = yarl.URL('http://example.com/example.png')
         self.assertEqual(self.return_content, self.expected_content)
+
+        async def get_url():
+            self.url, self.level = await self.handler.new_urls.get()
+
+        self.loop.run_until_complete(get_url())
+        self.assertEqual(self.url, self.expected_content)
+        self.assertEqual(self.level, 1)
 
     def test_get_body_css_validate_scheme(self):
         aiohttp.ClientResponse._headers = {'Content-Type': 'text/css'}
