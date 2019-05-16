@@ -15,15 +15,18 @@ class TestProcessLinks(unittest.TestCase):
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
         self.expected_content = None
         self.return_content = None
+        self.return_url = None
+        self.return_level = None
 
     def test_process_link_scheme(self):
-        arr = ['file://images/test.png', 'data://images/test.txt', 'javascript://alert(1)/']
+        test_urls = ['file://images/test.png', 'data://images/test.txt', 'javascript://alert(1)/']
 
-        for url in arr:
-            async def test():
-                self.return_content = await self.handler.process_link(url, self.level)
+        async def test(url_param):
+            self.return_content = await self.handler.process_link(url_param, self.level)
 
-            self.loop.run_until_complete(test())
+        for url in test_urls:
+
+            self.loop.run_until_complete(test(url))
             self.expected_content = url
             self.assertEqual(self.expected_content, self.return_content)
 
@@ -33,16 +36,12 @@ class TestProcessLinks(unittest.TestCase):
 
         async def test():
             self.return_content = await self.handler.process_link(self.url, self.level)
+            self.return_url, self.return_level = await self.handler.new_urls.get()
 
         self.loop.run_until_complete(test())
         self.assertEqual(self.return_content, '/foo/путь/')
-
-        async def get_url():
-            self.url, self.level = await self.handler.new_urls.get()
-
-        self.loop.run_until_complete(get_url())
-        self.assertEqual(yarl.URL(self.url).human_repr(), self.expected_content)
-        self.assertEqual(self.level, 1)
+        self.assertEqual(yarl.URL(self.return_url).human_repr(), self.expected_content)
+        self.assertEqual(self.return_level, self.level+1)
 
     def test_check_host(self):
         self.url = 'http://foo.com'
