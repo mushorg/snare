@@ -62,8 +62,7 @@ class TestGetBody(unittest.TestCase):
             self.return_content = f.read()
 
         self.assertEqual(self.return_content, self.expected_content)
-        self.assertEqual(self.handler.visited_urls[-1], 'http://example.com/test')
-        self.assertEqual(self.handler.visited_urls[-2], 'http://example.com/')
+        self.assertEqual(self.handler.visited_urls[-2:], ['http://example.com/', 'http://example.com/test'])
         self.assertEqual(self.handler.meta, self.meta)
 
     def test_get_body_css_validate(self):
