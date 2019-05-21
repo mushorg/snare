@@ -73,7 +73,8 @@ class TestProcessLinks(unittest.TestCase):
         self.assertEqual(self.return_content, None)
         self.assertEqual(self.qsize, self.return_size)
 
-    def test_process_link_unicode_error(self):
+    @mock.patch('yarl.URL')
+    def test_process_link_unicode_error(self, url):
 
         yarl.URL = mock.Mock(side_effect=UnicodeError)
 
