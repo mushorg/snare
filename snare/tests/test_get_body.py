@@ -30,6 +30,7 @@ class TestGetBody(unittest.TestCase):
         self.return_url = None
         self.return_level = None
         self.meta = None
+        self.q_size = None
 
         self.session = aiohttp.ClientSession
         self.session.get = AsyncMock(
@@ -62,6 +63,7 @@ class TestGetBody(unittest.TestCase):
 
         self.assertEqual(self.return_content, self.expected_content)
         self.assertEqual(self.handler.visited_urls[-1], 'http://example.com/test')
+        self.assertEqual(self.handler.visited_urls[-2], 'http://example.com/')
         self.assertEqual(self.handler.meta, self.meta)
 
     def test_get_body_css_validate(self):
@@ -71,35 +73,45 @@ class TestGetBody(unittest.TestCase):
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
         self.content = b'''.banner { background: url("/example.png") }'''
         aiohttp.ClientResponse.read = AsyncMock(return_value=self.content)
-        self.expected_content = yarl.URL('http://example.com/example.png')
+        self.expected_content = 'http://example.com/example.png'
+        self.return_size = 0
+        self.meta = {'/example.png': {'content_type': 'text/css', 'hash': '5a64beebcd2a6f1cbd00b8370debaa72'},
+                     '/index.html': {'content_type': 'text/css', 'hash': 'd1546d731a9f30cc80127d57142a482b'}}
 
         async def test():
             await self.handler.new_urls.put((yarl.URL(self.root), 0))
-            self.return_content = await self.handler.get_body(self.session)
-            self.return_url, self.return_level = await self.handler.new_urls.get()
+            await self.handler.get_body(self.session)
+            self.q_size = self.handler.new_urls.qsize()
 
         self.loop.run_until_complete(test())
-        self.assertEqual(self.return_content, self.expected_content)
-        self.assertEqual(self.return_url, self.expected_content)
-        self.assertEqual(self.return_level, self.level + 1)
+        self.assertEqual(self.handler.visited_urls[-1], self.expected_content)
+        self.assertEqual(self.q_size, self.return_size)
+        self.assertEqual(self.meta, self.handler.meta)
 
     def test_get_body_css_validate_scheme(self):
         aiohttp.ClientResponse._headers = {'Content-Type': 'text/css'}
 
         self.css_validate = 'true'
+        self.return_size = 0
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
 
         self.content = [b'''.banner { background: url("data://domain/test.txt") }''',
                         b'''.banner { background: url("file://domain/test.txt") }''']
 
+        self.meta = {'/index.html': {'content_type': 'text/css', 'hash': 'd1546d731a9f30cc80127d57142a482b'}}
+        self.expected_content = 'http://example.com/'
+
         async def test():
             await self.handler.new_urls.put((yarl.URL(self.root), 0))
-            self.return_content = await self.handler.get_body(self.session)
+            await self.handler.get_body(self.session)
+            self.q_size = self.handler.new_urls.qsize()
 
         for content in self.content:
             aiohttp.ClientResponse.read = AsyncMock(return_value=content)
             self.loop.run_until_complete(test())
-            self.assertEqual(self.return_content, self.expected_content)
+            self.assertEqual(self.return_size, self.q_size)
+            self.assertEqual(self.handler.meta, self.meta)
+            self.assertEqual(self.handler.visited_urls[-1], self.expected_content)
 
     def test_client_error(self):
         self.session.get = AsyncMock(side_effect=aiohttp.ClientError)

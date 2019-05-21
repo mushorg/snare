@@ -2,6 +2,7 @@ import unittest
 import asyncio
 import sys
 import yarl
+from unittest import mock
 from snare.cloner import Cloner
 
 
@@ -47,6 +48,19 @@ class TestProcessLinks(unittest.TestCase):
         self.assertEqual(yarl.URL(self.return_url).human_repr(), self.expected_content)
         self.assertEqual(self.return_level, self.level+1)
 
+    def test_process_link_absolute(self):
+        self.url = 'http://domain.com'
+        self.expected_content = ''
+
+        async def test():
+            self.return_content = await self.handler.process_link(self.url, self.level)
+            self.return_url, self.return_level = await self.handler.new_urls.get()
+
+        self.loop.run_until_complete(test())
+        self.assertEqual(self.return_content, self.expected_content)
+        self.assertEqual(yarl.URL(self.url), self.return_url)
+        self.assertEqual(self.return_level, self.level+1)
+
     def test_check_host(self):
         self.url = 'http://foo.com'
         self.return_size = 0
@@ -58,3 +72,13 @@ class TestProcessLinks(unittest.TestCase):
         self.loop.run_until_complete(test())
         self.assertEqual(self.return_content, None)
         self.assertEqual(self.qsize, self.return_size)
+
+    def test_process_link_unicode_error(self):
+
+        yarl.URL = mock.Mock(side_effect=UnicodeError)
+
+        async def test():
+            self.return_content = await self.handler.process_link(self.root, self.level)
+
+        self.loop.run_until_complete(test())
+        self.assertEqual(self.return_content, self.expected_content)

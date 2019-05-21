@@ -158,7 +158,6 @@ class Cloner(object):
                             carved_url = self.root.join(carved_url)
                         if carved_url.human_repr() not in self.visited_urls:
                             await self.new_urls.put((carved_url, level + 1))
-                        return carved_url
 
     async def get_root_host(self):
         try:
