@@ -26,8 +26,8 @@ class HtmlHandler():
                     self.logger.error('Error getting dorks: %s', e)
                 finally:
                     await r.release()
-        except asyncio.TimeoutError:
-            self.logger.info('Dorks timeout')
+        except asyncio.TimeoutError as error:
+            self.logger.error('Dorks timeout error: %s', error)
         return dorks['response']['dorks'] if dorks else []
 
     async def handle_content(self, content):

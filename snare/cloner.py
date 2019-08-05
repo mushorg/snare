@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 
 class Cloner(object):
     def __init__(self, root, max_depth, css_validate):
+        self.logger = logging.getLogger(__name__)
         self.visited_urls = []
         self.root, self.error_page = self.add_scheme(root)
         self.max_depth = max_depth
@@ -69,7 +70,7 @@ class Cloner(object):
         try:
             res = url.relative().human_repr()
         except ValueError:
-            self.logger.error(url)
+            self.logger.error("ValueError while processing the %s link", url)
         return res
 
     async def replace_links(self, data, level):
@@ -127,6 +128,7 @@ class Cloner(object):
             self.visited_urls.append(current_url.human_repr())
             file_name, hash_name = self._make_filename(current_url)
             print('name: ', file_name)
+            self.logger.debug('Cloned file: %s', file_name)
             self.meta[file_name] = {}
 
             data = None
@@ -150,6 +152,7 @@ class Cloner(object):
                     index_fh.write(data)
                 if content_type == 'text/css':
                     css = cssutils.parseString(data, validate=self.css_validate)
+                    self.logger.info('Validating the CSS..')
                     for carved_url in cssutils.getUrls(css):
                         if carved_url.startswith('data'):
                             continue

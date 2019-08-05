@@ -59,6 +59,7 @@ class TannerHandler():
                 finally:
                     await r.release()
         except Exception as e:
+            self.logger.exception('Exception: %s', e)
             raise e
         return event_result
 

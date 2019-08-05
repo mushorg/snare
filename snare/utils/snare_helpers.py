@@ -5,12 +5,14 @@ import mimetypes
 import json
 import shutil
 import argparse
+import logging
 from distutils.version import StrictVersion
 from bs4 import BeautifulSoup
 
 
 class VersionManager:
     def __init__(self):
+        self.logger = logging.getLogger(__name__)
         self.version = "0.3.0"
         self.version_mapper = {
             "0.1.0": ["0.1.0", "0.4.0"],
@@ -22,12 +24,14 @@ class VersionManager:
         min_version = self.version_mapper[self.version][0]
         max_version = self.version_mapper[self.version][1]
         if not (StrictVersion(min_version) <= StrictVersion(tanner_version) <= StrictVersion(max_version)):
+            self.logger.exception('Wrong tanner version %s', tanner_version)
             raise RuntimeError("Wrong tanner version: {}. Compatible versions are {} - {}"
                                .format(tanner_version, min_version, max_version))
 
 
 class Converter:
     def __init__(self):
+        self.logger = logging.getLogger(__name__)
         self.meta = {}
 
     def convert(self, path):
@@ -44,6 +48,7 @@ class Converter:
             m.update(fn.encode('utf-8'))
             hash_name = m.hexdigest()
             self.meta[file_name] = {'hash': hash_name, 'content_type': mimetypes.guess_type(file_name)[0]}
+            self.logger.debug('Converting the file as %s ', os.path.join(path, hash_name))
             shutil.copyfile(fn, os.path.join(path, hash_name))
             os.remove(fn)
 
