@@ -121,7 +121,7 @@ class TestGetBody(unittest.TestCase):
 
         with self.assertLogs(level='ERROR') as log:
             self.loop.run_until_complete(test())
-            self.assertIn('ERROR:snare.cloner:', log.output[0])
+            self.assertIn('ERROR:snare.cloner:', ''.join(log.output))
 
     def tearDown(self):
         shutil.rmtree(self.main_page_path)

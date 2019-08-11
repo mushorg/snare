@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 class Cloner(object):
     def __init__(self, root, max_depth, css_validate):
         self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
         self.visited_urls = []
         self.root, self.error_page = self.add_scheme(root)
         self.max_depth = max_depth
@@ -28,7 +29,6 @@ class Cloner(object):
         self.css_validate = css_validate
         self.new_urls = Queue()
         self.meta = {}
-        self.logger = logging.getLogger(__name__)
 
     @staticmethod
     def add_scheme(url):
@@ -127,7 +127,6 @@ class Cloner(object):
                 continue
             self.visited_urls.append(current_url.human_repr())
             file_name, hash_name = self._make_filename(current_url)
-            print('name: ', file_name)
             self.logger.debug('Cloned file: %s', file_name)
             self.meta[file_name] = {}
 
@@ -152,7 +151,6 @@ class Cloner(object):
                     index_fh.write(data)
                 if content_type == 'text/css':
                     css = cssutils.parseString(data, validate=self.css_validate)
-                    self.logger.info('Validating the CSS..')
                     for carved_url in cssutils.getUrls(css):
                         if carved_url.startswith('data'):
                             continue
