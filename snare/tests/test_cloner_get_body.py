@@ -56,7 +56,9 @@ class TestGetBody(unittest.TestCase):
             await self.handler.new_urls.put((yarl.URL(self.root), 0))
             await self.handler.get_body(self.session)
 
-        self.loop.run_until_complete(test())
+        with self.assertLogs(level='DEBUG') as log:
+            self.loop.run_until_complete(test())
+            self.assertIn('DEBUG:snare.cloner:Cloned file: /test', ''.join(log.output))
 
         with open(os.path.join(self.target_path, self.hashname)) as f:
             self.return_content = f.read()
