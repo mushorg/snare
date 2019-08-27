@@ -48,6 +48,6 @@ class Logger:
         )
         # ERROR log to 'clone.err'
         error_log_handler = logging.handlers.RotatingFileHandler(err_filename, encoding='utf-8')
-        error_log_handler.setLevel(logging.ERROR)
+        error_log_handler.setLevel(logging.DEBUG)
         error_log_handler.setFormatter(formatter)
         logger.addHandler(error_log_handler)
