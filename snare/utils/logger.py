@@ -41,13 +41,13 @@ class Logger:
         return logger
 
     @staticmethod
-    def create_clone_logger(err_filename, logger_name):
+    def create_clone_logger(log_filename, logger_name):
         logger = logging.getLogger(logger_name)
         formatter = logging.Formatter(
             fmt='%(asctime)s %(levelname)s:%(name)s:%(funcName)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S'
         )
-        # ERROR log to 'clone.err'
-        error_log_handler = logging.handlers.RotatingFileHandler(err_filename, encoding='utf-8')
-        error_log_handler.setLevel(logging.ERROR)
-        error_log_handler.setFormatter(formatter)
-        logger.addHandler(error_log_handler)
+        # logs to 'clone.err'
+        debug_log_handler = logging.handlers.RotatingFileHandler(log_filename, encoding='utf-8')
+        debug_log_handler.setLevel(logging.DEBUG)
+        debug_log_handler.setFormatter(formatter)
+        logger.addHandler(debug_log_handler)
