@@ -3,8 +3,13 @@ python:
   - "3.5"
   - "3.6"
 
-install: "pip install -r requirements.txt"
+install:
+  - pip install coveralls
+  - pip install -r requirements.txt
 
 script:
     - nosetests -w snare/tests -vv
     - pycodestyle . --max-line-length=120
+
+after_success:
+  - coveralls
