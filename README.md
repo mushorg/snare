@@ -9,12 +9,6 @@ About
 ---------
 SNARE is a web application honeypot sensor attracting all sort of maliciousness from the Internet.
 
-Snare is a web application honeypot and is the successor of Glastopf, which has many of the same
-features as Glastopf as well as ability to convert existing Web pages into attack surfaces with
-[tanner](https://github.com/mushorg/tanner).Every event sent from SNARE to [tanner](https://github.com/mushorg/tanner)
-is evaluated, and [tanner](https://github.com/mushorg/tanner) decides how SNARE should respond to the client.
-This allows the honeypot to produce dynamic responses which improves its camouflage.
-
 Documentation
 --------------
 The documentation can be found [here](http://snare.readthedocs.io).

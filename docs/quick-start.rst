@@ -3,21 +3,19 @@ SNARE
 
 Super Next generation Advanced Reactive honEypot
 
-Snare is a web application honeypot and is the successor of Glastopf, which has many of the same
-features as Glastopf as well as ability to convert existing Web pages into attack surfaces with TANNER_.
+SNARE is a web application honeypot and is the successor of Glastopf_, which has many of the same
+features as Glastopf_ as well as ability to convert existing Web pages into attack surfaces with TANNER_.
 Every event sent from SNARE to TANNER_ is evaluated, and TANNER_ decides how SNARE should respond to
-the client. This allows the honeypot to produce dynamic responses which improves its camouflage.
+the client. This allows the honeypot to produce dynamic responses which improves its camouflage. SNARE when fingerprinted by attackers shows that it is a Nginx Web application server.
 
 .. _TANNER: https://github.com/mushorg/tanner
+.. _Glastopf: https://github.com/mushorg/glastopf
 
 Basic Concepts
 """"""""""""""
 
-* Surface first. Focus on the attack surface generation.
+* Surface first. Focus on the attack surface generation. Clone with ``Cloner``.
 * Sensors and masters. Lightweight collectors (SNARE) and central decision maker (tanner).
-* Snare uses ``Cloner`` which clone the application, saves the files in ``/opt/`` and it serves it on top of itself
-  and thus creates an attack surface.
-* SNARE when fingerprinted by attackers shows that it is a Nginx Web application server.
 
 Getting started
 """""""""""""""
