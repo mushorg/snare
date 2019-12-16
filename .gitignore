@@ -12,3 +12,7 @@ docs/_build/
 .idea/
 .venv
 .vscode
+
+Snare.egg-info/
+build/
+dist/
