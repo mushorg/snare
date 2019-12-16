@@ -23,10 +23,12 @@ class VersionManager:
     def check_compatibility(self, tanner_version):
         min_version = self.version_mapper[self.version][0]
         max_version = self.version_mapper[self.version][1]
-        if not (StrictVersion(min_version) <= StrictVersion(tanner_version) <= StrictVersion(max_version)):
+        if not (StrictVersion(min_version) <= StrictVersion(
+                tanner_version) <= StrictVersion(max_version)):
             self.logger.exception('Wrong tanner version %s', tanner_version)
-            raise RuntimeError("Wrong tanner version: {}. Compatible versions are {} - {}"
-                               .format(tanner_version, min_version, max_version))
+            raise RuntimeError(
+                "Wrong tanner version: {}. Compatible versions are {} - {}" .format(
+                    tanner_version, min_version, max_version))
 
 
 class Converter:
@@ -47,8 +49,14 @@ class Converter:
             m = hashlib.md5()
             m.update(fn.encode('utf-8'))
             hash_name = m.hexdigest()
-            self.meta[file_name] = {'hash': hash_name, 'content_type': mimetypes.guess_type(file_name)[0]}
-            self.logger.debug('Converting the file as %s ', os.path.join(path, hash_name))
+            self.meta[file_name] = {
+                'hash': hash_name,
+                'content_type': mimetypes.guess_type(file_name)[0]}
+            self.logger.debug(
+                'Converting the file as %s ',
+                os.path.join(
+                    path,
+                    hash_name))
             shutil.copyfile(fn, os.path.join(path, hash_name))
             os.remove(fn)
 
@@ -68,12 +76,16 @@ def add_meta_tag(page_dir, index_page, config):
         main_page = main.read()
     soup = BeautifulSoup(main_page, 'html.parser')
 
-    if google_content and soup.find("meta", attrs={"name": "google-site-verification"}) is None:
+    if google_content and soup.find(
+            "meta", attrs={
+            "name": "google-site-verification"}) is None:
         google_meta = soup.new_tag('meta')
         google_meta.attrs['name'] = 'google-site-verification'
         google_meta.attrs['content'] = google_content
         soup.head.append(google_meta)
-    if bing_content and soup.find("meta", attrs={"name": "msvalidate.01"}) is None:
+    if bing_content and soup.find(
+            "meta", attrs={
+            "name": "msvalidate.01"}) is None:
         bing_meta = soup.new_tag('meta')
         bing_meta.attrs['name'] = 'msvalidate.01'
         bing_meta.attrs['content'] = bing_content

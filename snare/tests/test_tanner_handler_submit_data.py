@@ -24,22 +24,35 @@ class TestSubmitData(unittest.TestCase):
         args = run_args.parse_args(['--page-dir', page_dir])
         self.loop = asyncio.new_event_loop()
         self.data = {
-            'method': 'GET', 'path': '/',
+            'method': 'GET',
+            'path': '/',
             'headers': {
-                'Host': 'test_host', 'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1', 'User-Agent': 'test_agent', 'Accept': 'text/html',
-                'Accept-Encoding': 'test_encoding', 'Accept-Language': 'test_lang', 'Cookie': 'test_cookie',
-                'uuid': 'test_uuid', 'peer': {'ip': '::1', 'port': 80}, 'status': 200,
-                'cookies': 'test_cookies', ' sess_uuid': 'test_uuid'
-            }
-        }
+                'Host': 'test_host',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'User-Agent': 'test_agent',
+                'Accept': 'text/html',
+                'Accept-Encoding': 'test_encoding',
+                'Accept-Language': 'test_lang',
+                'Cookie': 'test_cookie',
+                'uuid': 'test_uuid',
+                'peer': {
+                    'ip': '::1',
+                    'port': 80},
+                'status': 200,
+                'cookies': 'test_cookies',
+                ' sess_uuid': 'test_uuid'}}
         aiohttp.ClientSession.post = AsyncMock(
             return_value=aiohttp.ClientResponse(
-                url=yarl.URL("http://www.example.com"), method="GET", writer=None, continue100=1,
-                timer=None, request_info=None, traces=None, loop=self.loop,
-                session=None
-            )
-        )
+                url=yarl.URL("http://www.example.com"),
+                method="GET",
+                writer=None,
+                continue100=1,
+                timer=None,
+                request_info=None,
+                traces=None,
+                loop=self.loop,
+                session=None))
         uuid = "test_uuid"
         args.tanner = "tanner.mushmush.org"
         args.no_dorks = True
@@ -47,7 +60,11 @@ class TestSubmitData(unittest.TestCase):
         self.result = None
 
     def test_post_data(self):
-        aiohttp.ClientResponse.json = AsyncMock(return_value=dict(detection={'type': 1}, sess_uuid="test_uuid"))
+        aiohttp.ClientResponse.json = AsyncMock(
+            return_value=dict(
+                detection={
+                    'type': 1},
+                sess_uuid="test_uuid"))
 
         async def test():
             self.result = await self.handler.submit_data(self.data)
@@ -58,23 +75,35 @@ class TestSubmitData(unittest.TestCase):
         )
 
     def test_event_result(self):
-        aiohttp.ClientResponse.json = AsyncMock(return_value=dict(detection={'type': 1}, sess_uuid="test_uuid"))
+        aiohttp.ClientResponse.json = AsyncMock(
+            return_value=dict(
+                detection={
+                    'type': 1},
+                sess_uuid="test_uuid"))
 
         async def test():
             self.result = await self.handler.submit_data(self.data)
 
         self.loop.run_until_complete(test())
-        self.assertEqual(self.result, dict(detection={'type': 1}, sess_uuid="test_uuid"))
+        self.assertEqual(
+            self.result,
+            dict(
+                detection={
+                    'type': 1},
+                sess_uuid="test_uuid"))
 
     def test_submit_data_error(self):
-        aiohttp.ClientResponse.json = AsyncMock(side_effect=JSONDecodeError('ERROR', '', 0))
+        aiohttp.ClientResponse.json = AsyncMock(
+            side_effect=JSONDecodeError('ERROR', '', 0))
 
         async def test():
             self.result = await self.handler.submit_data(self.data)
 
         with self.assertLogs(level='ERROR') as log:
             self.loop.run_until_complete(test())
-            self.assertIn('Error submitting data: ERROR: line 1 column 1 (char 0) {}'.format(self.data), log.output[0])
+            self.assertIn(
+                'Error submitting data: ERROR: line 1 column 1 (char 0) {}'.format(
+                    self.data), log.output[0])
 
     def test_event_result_exception(self):
         aiohttp.ClientResponse.json = AsyncMock(side_effect=Exception())

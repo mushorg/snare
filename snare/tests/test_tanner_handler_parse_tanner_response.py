@@ -17,7 +17,8 @@ class TestParseTannerResponse(unittest.TestCase):
         self.main_page_path = generate_unique_path()
         os.makedirs(self.main_page_path)
         page_dir = self.main_page_path.rsplit('/')[-1]
-        meta_content = {"/index.html": {"hash": "hash_name", "content_type": "text/html"}}
+        meta_content = {
+            "/index.html": {"hash": "hash_name", "content_type": "text/html"}}
         self.page_content = "<html><body></body></html>"
         self.content_type = "text/html"
         with open(os.path.join(self.main_page_path, "hash_name"), 'w') as f:
@@ -32,7 +33,8 @@ class TestParseTannerResponse(unittest.TestCase):
         self.handler = TannerHandler(self.args, meta_content, self.uuid)
         self.requested_name = '/'
         self.loop = asyncio.get_event_loop()
-        self.handler.html_handler.handle_content = AsyncMock(return_value=self.page_content)
+        self.handler.html_handler.handle_content = AsyncMock(
+            return_value=self.page_content)
         self.res1 = None
         self.res2 = None
         self.res3 = None
@@ -125,7 +127,11 @@ class TestParseTannerResponse(unittest.TestCase):
 
         self.loop.run_until_complete(test())
         real_result = [self.res1, self.res2, self.res3, self.res4]
-        expected_result = [self.expected_content, self.content_type, self.expected_header, 200]
+        expected_result = [
+            self.expected_content,
+            self.content_type,
+            self.expected_header,
+            200]
         self.assertCountEqual(real_result, expected_result)
 
     def test_parse_type_two_error(self):
@@ -179,7 +185,8 @@ class TestParseTannerResponse(unittest.TestCase):
              self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
 
         self.loop.run_until_complete(test())
-        self.handler.html_handler.handle_content.assert_called_with(self.call_content)
+        self.handler.html_handler.handle_content.assert_called_with(
+            self.call_content)
 
     def test_parse_exception(self):
         self.detection = {}

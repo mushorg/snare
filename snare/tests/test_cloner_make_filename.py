@@ -27,7 +27,8 @@ class TestMakeFilename(unittest.TestCase):
         self.assertEqual(self.hashname, '167a0418dd8ce3bf0ef00dfb6195f038')
 
     def test_make_filename_same_host(self):
-        self.filename, self.hashname = self.handler._make_filename(yarl.URL(self.root))
+        self.filename, self.hashname = self.handler._make_filename(
+            yarl.URL(self.root))
         self.assertEqual(self.filename, '/index.html')
         self.assertEqual(self.hashname, 'd1546d731a9f30cc80127d57142a482b')
 

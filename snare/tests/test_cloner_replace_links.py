@@ -34,7 +34,8 @@ class TestReplaceLinks(unittest.TestCase):
 
         self.loop.run_until_complete(test())
         self.assertEqual(str(self.return_content), self.expected_content)
-        self.handler.process_link.assert_called_with(self.root, self.level, check_host=True)
+        self.handler.process_link.assert_called_with(
+            self.root, self.level, check_host=True)
 
     def test_replace_image_links(self):
         self.handler.process_link = AsyncMock(return_value="/smiley.png")
