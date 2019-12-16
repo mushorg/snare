@@ -38,12 +38,9 @@ def main():
     parser.add_argument(
         "--css-validate", help="set whether css validation is required", type=str_to_bool, default=None
     )
-    parser.add_argument("--path", help="path to save the page to be cloned", required=False,default=None)
+    parser.add_argument("--path", help="path to save the page to be cloned", required=False,default="/opt/")
     args = parser.parse_args()
-    if args.path:
-        default_path = os.path.join(args.path, 'snare')
-    else:
-        default_path = '/opt/snare'
+    default_path = os.path.join(args.path, 'snare')
     if args.log_path:
         log_err = args.log_path + "clone.err"
     else:
