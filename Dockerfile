@@ -1,6 +1,6 @@
 FROM python:3.6-alpine3.8
 
-RUN apk -U --no-cache add git && \
+RUN apk -U --no-cache add git build-base && \
     rm -rf /root/* && \
     rm -rf /tmp/* /var/tmp/* && \
     rm -rf /var/cache/apk/*
