@@ -4,7 +4,7 @@ from aiohttp import web
 
 class SnareMiddleware():
 
-    def __init__(self, file_name, server_header):
+    def __init__(self, file_name, server_header=None):
         self.error_404 = file_name
         self.server_header = server_header
 
@@ -24,7 +24,8 @@ class SnareMiddleware():
                 override = overrides.get(status)
                 if override:
                     response = await override(request)
-                    response.headers['Server'] = self.server_header
+                    if self.server_header:
+                        response.headers['Server'] = self.server_header
                     response.set_status(status)
                     return response
                 return response

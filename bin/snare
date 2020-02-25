@@ -145,7 +145,7 @@ if __name__ == '__main__':
     parser.add_argument("--config", help="snare config file", default='snare.cfg')
     parser.add_argument("--auto-update", help="auto update SNARE if new version available ", default=True)
     parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
-    parser.add_argument("--server-header", help="set server-header", default='nginx/1.3.8')
+    parser.add_argument("--server-header", help="set server-header", default=None)
     parser.add_argument("--no-dorks", help="disable the use of dorks", type=str_to_bool,  default=True)
     parser.add_argument("--log-dir", help="path to directory of the log file", default='/opt/snare/')
     args = parser.parse_args()
