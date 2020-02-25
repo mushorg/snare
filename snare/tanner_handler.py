@@ -53,7 +53,7 @@ class TannerHandler():
                     timeout=10.0
                 )
                 try:
-                    event_result = await r.json()
+                    event_result = await r.json(content_type=None)
                 except json.decoder.JSONDecodeError as e:
                     self.logger.error('Error submitting data: {} {}'.format(e, data))
                 finally:
