@@ -34,7 +34,7 @@ class Cloner(object):
     def add_scheme(url):
         new_url = yarl.URL(url)
         if not new_url.scheme:
-            new_url = new_url.with_scheme('http')
+            new_url = yarl.URL('http://' + url)
         err_url = new_url.with_path('/status_404').with_query(None).with_fragment(None)
         return new_url, err_url
 
