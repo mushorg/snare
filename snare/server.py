@@ -29,7 +29,7 @@ class HttpRequestHandler():
                 r = await session.post(
                     'https://{0}:8080/api?auth={1}&chan=snare_test&msg={2}'.format(
                         self.run_args.slurp_host, self.run_args.slurp_auth, data
-                    ), data=json.dumps(data), timeout=10.0
+                    ), json=data, timeout=10.0
                 )
                 assert r.status == 200
                 r.close()

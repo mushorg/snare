@@ -54,7 +54,7 @@ class TestSubmitData(unittest.TestCase):
 
         self.loop.run_until_complete(test())
         aiohttp.ClientSession.post.assert_called_with(
-            'http://tanner.mushmush.org:8090/event', data=json.dumps(self.data), timeout=10.0
+            'http://tanner.mushmush.org:8090/event', json=self.data, timeout=10.0
         )
 
     def test_event_result(self):
