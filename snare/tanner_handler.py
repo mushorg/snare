@@ -54,7 +54,7 @@ class TannerHandler():
                 )
                 try:
                     event_result = await r.json()
-                except json.decoder.JSONDecodeError as e:
+                except (json.decoder.JSONDecodeError, aiohttp.client_exceptions.ContentTypeError) as e:
                     self.logger.error('Error submitting data: {} {}'.format(e, data))
                 finally:
                     await r.release()
