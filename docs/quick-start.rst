@@ -28,7 +28,7 @@ Getting started
 
 1. Get SNARE: ``git clone https://github.com/mushorg/snare.git`` and ``cd snare``
 
-2. Install requirements: ``pip3 install -r requirements.txt``
+2. Install requirements: ``sudo pip3 install -r requirements.txt``
 
 3. Setup snare: ``sudo python3 setup.py install``
 
