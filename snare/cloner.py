@@ -32,14 +32,10 @@ class Cloner(object):
 
     @staticmethod
     def add_scheme(url):
-        if url[-1] == '/':
-            url = url.strip('/')
-        if yarl.URL(url).scheme:
-            new_url = yarl.URL(url)
-            err_url = yarl.URL(url + '/status_404')
-        else:
+        new_url = yarl.URL(url)
+        if not new_url.scheme:
             new_url = yarl.URL('http://' + url)
-            err_url = yarl.URL('http://' + url + '/status_404')
+        err_url = new_url.with_path('/status_404').with_query(None).with_fragment(None)
         return new_url, err_url
 
     async def process_link(self, url, level, check_host=False):
