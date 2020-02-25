@@ -2,6 +2,7 @@ import re
 import os
 from urllib.parse import unquote
 import mimetypes
+import multidict
 import json
 import logging
 import aiohttp
@@ -34,6 +35,8 @@ class TannerHandler():
             )
             data['peer'] = peer
         if request.path:
+            # FIXME request.headers is a CIMultiDict, so items with the same
+            # key will be overwritten when converting to dictionary
             header = {key: value for (key, value) in request.headers.items()}
             data['method'] = request.method
             data['headers'] = header
@@ -70,7 +73,7 @@ class TannerHandler():
         content_type = None
         content = None
         status_code = 200
-        headers = {}
+        headers = multidict.CIMultiDict()
         # Creating a regex object for the pattern of multiple contiguous forward slashes
         p = re.compile('/+')
         # Substituting all occurrences of the pattern with single forward slash
@@ -92,6 +95,9 @@ class TannerHandler():
                 try:
                     file_name = self.meta[requested_name]['hash']
                     content_type = self.meta[requested_name]['content_type']
+                    for header in self.meta[requested_name]['headers']:
+                        for key, value in header.items():
+                            headers.add(key, value)
                 except KeyError:
                     pass
                 else:
@@ -113,6 +119,9 @@ class TannerHandler():
                 try:
                     file_name = self.meta[payload_content['page']]['hash']
                     content_type = self.meta[payload_content['page']]['content_type']
+                    for header in self.meta[payload_content['page']]['headers']:
+                        for key, value in header.items():
+                            headers.add(key, value)
                     page_path = os.path.join(self.dir, file_name)
                     with open(page_path, encoding='utf-8') as p:
                         content = p.read()
@@ -130,7 +139,8 @@ class TannerHandler():
                 content = payload_content['value'].encode('utf-8')
 
             if 'headers' in payload_content:
-                headers = payload_content['headers']
+                headers.update(payload_content['headers'])  # overwrite local headers with the tanner-provided ones
+                #headers.extend(payload_content['headers'])  # keep both headers with same name (undesired behavior)
         else:
             payload_content = detection['payload']
             status_code = payload_content['status_code']

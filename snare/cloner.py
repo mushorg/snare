@@ -41,6 +41,21 @@ class Cloner(object):
         err_url = new_url.with_path('/status_404').with_query(None).with_fragment(None)
         return new_url, err_url
 
+    @staticmethod
+    def get_headers(response):
+        # TODO probably need more...
+        ignored_headers_lowercase = [
+            "connection",
+            "content-length",
+            "content-type",
+        ]
+
+        headers = []
+        for key, value in response.headers.items():
+            if key.lower() not in ignored_headers_lowercase:
+                headers.append({key: value})
+        return headers
+
     async def process_link(self, url, level, check_host=False):
         try:
             url = yarl.URL(url)
@@ -133,6 +148,8 @@ class Cloner(object):
             content_type = None
             try:
                 response = await session.get(current_url, headers={'Accept': 'text/html'}, timeout=10.0)
+                headers = self.get_headers(response)
+                # TODO might not be needed anymore if we can rely on the header
                 content_type = response.content_type
                 data = await response.read()
 
@@ -142,6 +159,7 @@ class Cloner(object):
                 await response.release()
             if data is not None:
                 self.meta[file_name]['hash'] = hash_name
+                self.meta[file_name]['headers'] = headers
                 self.meta[file_name]['content_type'] = content_type
                 self.counter = self.counter + 1
                 if content_type == 'text/html':

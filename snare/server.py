@@ -3,7 +3,6 @@ import json
 import aiohttp
 from aiohttp import web
 from aiohttp.web import StaticResource as StaticRoute
-import multidict
 import aiohttp_jinja2
 import jinja2
 from snare.middlewares import SnareMiddleware
@@ -56,12 +55,8 @@ class HttpRequestHandler():
         content, content_type, headers, status_code = await self.tanner_handler.parse_tanner_response(
             request.path_qs, event_result['response']['message']['detection'])
 
-        response_headers = multidict.CIMultiDict()
-
-        for name, val in headers.items():
-            response_headers.add(name, val)
-
-        response_headers.add('Server', self.run_args.server_header)
+        if self.run_args.server_header:
+            headers['Server'] = self.run_args.server_header
 
         if 'cookies' in data and 'sess_uuid' in data['cookies']:
             previous_sess_uuid = data['cookies']['sess_uuid']
@@ -71,15 +66,12 @@ class HttpRequestHandler():
         if event_result is not None and ('sess_uuid' in event_result['response']['message']):
             cur_sess_id = event_result['response']['message']['sess_uuid']
             if previous_sess_uuid is None or not previous_sess_uuid.strip() or previous_sess_uuid != cur_sess_id:
-                response_headers.add('Set-Cookie', 'sess_uuid=' + cur_sess_id)
+                headers.add('Set-Cookie', 'sess_uuid=' + cur_sess_id)
 
         if not content_type:
-            response_content_type = 'text/plain'
-        else:
-            response_content_type = content_type
-        response = web.Response(
-            body=content, status=status_code, headers=response_headers, content_type=response_content_type
-        )
+            content_type = 'text/plain'
+
+        response = web.Response(body=content, status=status_code, headers=headers, content_type=content_type)
         return response
 
     async def start(self):
