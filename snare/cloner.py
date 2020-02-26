@@ -43,11 +43,16 @@ class Cloner(object):
 
     @staticmethod
     def get_headers(response):
-        # TODO probably need more...
         ignored_headers_lowercase = [
-            "connection",
-            "content-length",
-            "content-type",
+            'age',
+            'cache-control',
+            'connection',
+            'content-encoding',
+            'content-length',
+            'date',
+            'etag',
+            'expires',
+            'x-cache',
         ]
 
         headers = []
