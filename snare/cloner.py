@@ -157,22 +157,21 @@ class Cloner(object):
                 # TODO might not be needed anymore if we can rely on the header
                 content_type = response.content_type
                 data = await response.read()
-
             except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
                 self.logger.error(client_error)
             else:
                 await response.release()
+
             if data is not None:
                 self.meta[file_name]['hash'] = hash_name
                 self.meta[file_name]['headers'] = headers
                 self.meta[file_name]['content_type'] = content_type
                 self.counter = self.counter + 1
+
                 if content_type == 'text/html':
                     soup = await self.replace_links(data, level)
                     data = str(soup).encode()
-                with open(os.path.join(self.target_path, hash_name), 'wb') as index_fh:
-                    index_fh.write(data)
-                if content_type == 'text/css':
+                elif content_type == 'text/css':
                     css = cssutils.parseString(data, validate=self.css_validate)
                     for carved_url in cssutils.getUrls(css):
                         if carved_url.startswith('data'):
@@ -182,6 +181,9 @@ class Cloner(object):
                             carved_url = self.root.join(carved_url)
                         if carved_url.human_repr() not in self.visited_urls:
                             await self.new_urls.put((carved_url, level + 1))
+
+                with open(os.path.join(self.target_path, hash_name), 'wb') as index_fh:
+                    index_fh.write(data)
 
     async def get_root_host(self):
         try:

@@ -139,9 +139,10 @@ class TannerHandler():
                 content = payload_content['value'].encode('utf-8')
 
             if 'headers' in payload_content:
-                headers.update(payload_content['headers'])  # overwrite local headers with the tanner-provided ones
-                #headers.extend(payload_content['headers'])  # keep both headers with same name (undesired behavior)
-        else:
+                # overwrite local headers with the tanner-provided ones
+                headers.update(payload_content['headers'])
+
+        else:  # type 3
             payload_content = detection['payload']
             status_code = payload_content['status_code']
 
