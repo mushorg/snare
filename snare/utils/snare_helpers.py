@@ -47,7 +47,12 @@ class Converter:
             m = hashlib.md5()
             m.update(fn.encode('utf-8'))
             hash_name = m.hexdigest()
-            self.meta[file_name] = {'hash': hash_name, 'headers': [{"Content-Type": mimetypes.guess_type(file_name)[0]}]}
+            self.meta[file_name] = {
+                'hash': hash_name,
+                'headers': [
+                    {"Content-Type": mimetypes.guess_type(file_name)[0]},
+                ],
+            }
             self.logger.debug('Converting the file as %s ', os.path.join(path, hash_name))
             shutil.copyfile(fn, os.path.join(path, hash_name))
             os.remove(fn)
