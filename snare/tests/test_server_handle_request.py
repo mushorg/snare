@@ -3,6 +3,7 @@ from unittest.mock import Mock
 import asyncio
 import argparse
 import shutil
+import multidict
 import os
 import aiohttp
 from aiohttp.http_parser import RawRequestMessage
@@ -30,23 +31,27 @@ class TestHandleRequest(unittest.TestCase):
         args.server_header = "test_server"
         args.slurp_enabled = True
         self.handler = HttpRequestHandler(meta, args, uuid)
-        self.data = {
-            'method': 'GET', 'path': '/',
+        self.request_data = {
+            'method': 'GET',
+            'path': '/',
             'headers': {
-                'Host': 'test_host', 'status': 200
+                'Host': 'test_host',
+                'Content-Type': 'test_type',
             },
+            'status': 200,
             'cookies': {
-                'sess_uuid': 'prev_test_uuid'
-            }
+                'sess_uuid': 'prev_test_uuid',
+            },
         }
         self.loop = asyncio.new_event_loop()
-        self.content = '<html><body></body></html>'
-        self.content_type = 'test_type'
+        self.response_content = '<html><body></body></html>'
+        self.response_headers = multidict.CIMultiDict([("Content-Type", "text/html")])
+        self.response_status = 200
         event_result = dict(response=dict(message=dict(detection={'type': 1}, sess_uuid="test_uuid")))
         RequestHandler = Mock()
         protocol = RequestHandler()
         message = RawRequestMessage(
-            method='POST', path='/', version=HttpVersion(major=1, minor=1), headers=self.data['headers'],
+            method='POST', path='/', version=HttpVersion(major=1, minor=1), headers=self.request_data['headers'],
             raw_headers=None, should_close=None, compression=None, upgrade=None, chunked=None,
             url=URL('http://test_url/')
         )
@@ -54,7 +59,7 @@ class TestHandleRequest(unittest.TestCase):
             message=message, payload=None, protocol=protocol, payload_writer=None,
             task='POST', loop=self.loop
         )
-        self.handler.tanner_handler.create_data = Mock(return_value=self.data)
+        self.handler.tanner_handler.create_data = Mock(return_value=self.request_data)
         self.handler.tanner_handler.submit_data = AsyncMock(return_value=event_result)
         self.handler.submit_slurp = AsyncMock()
         web.Response.add_header = Mock()
@@ -63,7 +68,7 @@ class TestHandleRequest(unittest.TestCase):
         web.Response.write_eof = AsyncMock()
         aiohttp.streams.EmptyStreamReader.read = AsyncMock(return_value=b'con1=test1&con2=test2')
         self.handler.tanner_handler.parse_tanner_response = AsyncMock(
-            return_value=(self.content, self.content_type, self.data['headers'], self.data['headers']['status']))
+            return_value=(self.response_content, self.response_headers, self.response_status))
 
     def test_create_request_data(self):
         async def test():
@@ -77,7 +82,7 @@ class TestHandleRequest(unittest.TestCase):
             await self.handler.handle_request(self.request)
 
         self.loop.run_until_complete(test())
-        self.handler.tanner_handler.submit_data.assert_called_with(self.data)
+        self.handler.tanner_handler.submit_data.assert_called_with(self.request_data)
 
     def test_submit_request_slurp(self):
         async def test():

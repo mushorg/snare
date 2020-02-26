@@ -4,6 +4,7 @@ import argparse
 import shutil
 import os
 import json
+import multidict
 from snare.utils.asyncmock import AsyncMock
 from snare.utils.page_path_generator import generate_unique_path
 from snare.tanner_handler import TannerHandler
@@ -17,8 +18,10 @@ class TestParseTannerResponse(unittest.TestCase):
         self.main_page_path = generate_unique_path()
         os.makedirs(self.main_page_path)
         page_dir = self.main_page_path.rsplit('/')[-1]
-        meta_content = {"/index.html": {"hash": "hash_name", "content_type": "text/html"}}
+        meta_content = {"/index.html": {"hash": "hash_name", "headers": [{"Content-Type": "text/html"}]}}
         self.page_content = "<html><body></body></html>"
+        self.headers = multidict.CIMultiDict([("Content-Type", "text/html")])
+        self.status_code = 200
         self.content_type = "text/html"
         with open(os.path.join(self.main_page_path, "hash_name"), 'w') as f:
             f.write(self.page_content)
@@ -36,52 +39,52 @@ class TestParseTannerResponse(unittest.TestCase):
         self.res1 = None
         self.res2 = None
         self.res3 = None
-        self.res4 = None
         self.detection = None
         self.expected_content = None
         self.call_content = None
-        self.expected_header = None
-        self.expected_status_code = None
 
     def test_parse_type_one(self):
         self.detection = {"type": 1}
-        self.call_content = b'<html><body></body></html>'
 
         async def test():
-            (self.res1, self.res2,
-             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+            (self.res1, self.res2, self.res3) = \
+                await self.handler.parse_tanner_response(
+                    self.requested_name, self.detection)
 
         self.loop.run_until_complete(test())
-        real_result = [self.res1, self.res2, self.res3, self.res4]
-        expected_result = [self.page_content, self.content_type, {}, 200]
+        real_result = [self.res1, self.res2, self.res3]
+        expected_result = [self.page_content, self.headers, self.status_code]
         self.assertCountEqual(real_result, expected_result)
 
     def test_parse_type_one_query(self):
         self.requested_name = '/?'
         self.detection = {"type": 1}
-        self.call_content = b'<html><body></body></html>'
 
         async def test():
-            (self.res1, self.res2,
-             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+            (self.res1, self.res2, self.res3) = \
+                await self.handler.parse_tanner_response(
+                    self.requested_name, self.detection)
 
         self.loop.run_until_complete(test())
-        real_result = [self.res1, self.res2, self.res3, self.res4]
-        expected_result = [self.page_content, self.content_type, {}, 200]
+        real_result = [self.res1, self.res2, self.res3]
+        expected_result = [self.page_content, self.headers, self.status_code]
         self.assertCountEqual(real_result, expected_result)
 
     def test_parse_type_one_error(self):
-        self.detection = {"type": 1}
         self.requested_name = 'something/'
-        self.expected_status_code = 404
+        self.detection = {"type": 1}
+        self.expected_content = None
+        self.headers = multidict.CIMultiDict()
+        self.status_code = 404
 
         async def test():
-            (self.res1, self.res2,
-             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+            (self.res1, self.res2, self.res3) = \
+                await self.handler.parse_tanner_response(
+                    self.requested_name, self.detection)
 
         self.loop.run_until_complete(test())
-        real_result = [self.res1, self.res2, self.res3, self.res4]
-        expected_result = [None, None, {}, self.expected_status_code]
+        real_result = [self.res1, self.res2, self.res3]
+        expected_result = [self.expected_content, self.headers, self.status_code]
         self.assertCountEqual(real_result, expected_result)
 
     def test_parse_type_two(self):
@@ -89,64 +92,65 @@ class TestParseTannerResponse(unittest.TestCase):
             "type": 2,
             "payload": {
                 "page": "/index.html",
-                "value": "test"
-            }
+                "value": "test",
+            },
         }
         self.expected_content = b'<html><body><div>test</div></body></html>'
 
         async def test():
-            (self.res1, self.res2,
-             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+            (self.res1, self.res2, self.res3) = \
+                await self.handler.parse_tanner_response(
+                    self.requested_name, self.detection)
 
         self.loop.run_until_complete(test())
-        real_result = [self.res1, self.res2, self.res3, self.res4]
-        expected_result = [self.expected_content, self.content_type, {}, 200]
+        real_result = [self.res1, self.res2, self.res3]
+        expected_result = [self.expected_content, self.headers, self.status_code]
         self.assertCountEqual(real_result, expected_result)
 
     def test_parse_type_two_with_headers(self):
-
         self.detection = {
             "type": 2,
             "payload": {
                 "page": "",
                 "value": "test.png",
                 "headers": {
-                    "content-type": "multipart/form-data"
-                }
-            }
+                    "content-type": "multipart/form-data",
+                },
+            },
         }
         self.expected_content = b'test.png'
         self.content_type = 'image/png'
-        self.expected_header = {"content-type": "multipart/form-data"}
+        self.headers = multidict.CIMultiDict([("Content-Type", "multipart/form-data")])
 
         async def test():
-            (self.res1, self.res2,
-             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+            (self.res1, self.res2, self.res3) = \
+                await self.handler.parse_tanner_response(
+                    self.requested_name, self.detection)
 
         self.loop.run_until_complete(test())
-        real_result = [self.res1, self.res2, self.res3, self.res4]
-        expected_result = [self.expected_content, self.content_type, self.expected_header, 200]
+        real_result = [self.res1, self.res2, self.res3]
+        expected_result = [self.expected_content, self.headers, self.status_code]
         self.assertCountEqual(real_result, expected_result)
 
     def test_parse_type_two_error(self):
-
         self.detection = {
             "type": 2,
             "payload": {
                 "page": "/something",
-                "value": "test"
-            }
+                "value": "test",
+            },
         }
         self.expected_content = b'<html><body><div>test</div></body></html>'
         self.content_type = r'text/html'
 
         async def test():
-            (self.res1, self.res2,
-             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+            (self.res1, self.res2, self.res3) = \
+                await self.handler.parse_tanner_response(
+                    self.requested_name, self.detection)
 
         self.loop.run_until_complete(test())
-        real_result = [self.res1, self.res2, self.res3, self.res4]
-        expected_result = [self.expected_content, self.content_type, {}, 200]
+        real_result = [self.res1, self.res2, self.res3]
+        expected_result = [self.expected_content, self.headers, self.status_code]
         self.assertCountEqual(real_result, expected_result)
 
     def test_parse_type_three(self):
@@ -155,18 +159,20 @@ class TestParseTannerResponse(unittest.TestCase):
             "payload": {
                 "page": "/index.html",
                 "value": "test",
-                "status_code": 200
-            }
+                "status_code": 200,
+            },
         }
         self.expected_content = None
+        self.headers = multidict.CIMultiDict()
 
         async def test():
-            (self.res1, self.res2,
-             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+            (self.res1, self.res2, self.res3) = \
+                await self.handler.parse_tanner_response(
+                    self.requested_name, self.detection)
 
         self.loop.run_until_complete(test())
-        real_result = [self.res1, self.res2, self.res3, self.res4]
-        expected_result = [self.expected_content, None, {}, 200]
+        real_result = [self.res1, self.res2, self.res3]
+        expected_result = [self.expected_content, self.headers, self.status_code]
         self.assertCountEqual(real_result, expected_result)
 
     def test_call_handle_html(self):
@@ -175,20 +181,21 @@ class TestParseTannerResponse(unittest.TestCase):
         self.expected_content = self.page_content
 
         async def test():
-            (self.res1, self.res2,
-             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+            (self.res1, self.res2, self.res3) = \
+                await self.handler.parse_tanner_response(
+                    self.requested_name, self.detection)
 
         self.loop.run_until_complete(test())
         self.handler.html_handler.handle_content.assert_called_with(self.call_content)
 
     def test_parse_exception(self):
         self.detection = {}
-        self.call_content = b'<html><body></body></html>'
         self.expected_content = self.page_content
 
         async def test():
-            (self.res1, self.res2,
-             self.res3, self.res4) = await self.handler.parse_tanner_response(self.requested_name, self.detection)
+            (self.res1, self.res2, self.res3) = \
+                await self.handler.parse_tanner_response(
+                    self.requested_name, self.detection)
 
         with self.assertRaises(KeyError):
             self.loop.run_until_complete(test())

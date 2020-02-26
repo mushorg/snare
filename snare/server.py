@@ -52,7 +52,7 @@ class HttpRequestHandler():
         if self.run_args.slurp_enabled:
             await self.submit_slurp(request.path_qs)
 
-        content, content_type, headers, status_code = await self.tanner_handler.parse_tanner_response(
+        content, headers, status_code = await self.tanner_handler.parse_tanner_response(
             request.path_qs, event_result['response']['message']['detection'])
 
         if self.run_args.server_header:
@@ -68,11 +68,7 @@ class HttpRequestHandler():
             if previous_sess_uuid is None or not previous_sess_uuid.strip() or previous_sess_uuid != cur_sess_id:
                 headers.add('Set-Cookie', 'sess_uuid=' + cur_sess_id)
 
-        if not content_type:
-            content_type = 'text/plain'
-
-        response = web.Response(body=content, status=status_code, headers=headers, content_type=content_type)
-        return response
+        return web.Response(body=content, status=status_code, headers=headers)
 
     async def start(self):
         app = web.Application()
