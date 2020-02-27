@@ -24,9 +24,6 @@ from snare.utils.snare_helpers import str_to_bool, print_color
 
 
 def main():
-    if os.getuid() != 0:
-        print_color('Clone has to be run as root!', 'WARNING')
-        sys.exit(1)
     if not os.path.exists('/opt/snare'):
         os.makedirs('/opt/snare')
     if not os.path.exists('/opt/snare/pages'):
@@ -39,11 +36,11 @@ def main():
     parser.add_argument(
         "--css-validate", help="set whether css validation is required", type=str_to_bool, default=None
     )
-    parser.add_argument("--path", help="path to save the page to be cloned", required=False,default="/opt/")
+    parser.add_argument("--path", help="path to save the page to be cloned", required=False, default="/opt/")
     args = parser.parse_args()
     default_path = os.path.join(args.path, 'snare')
     if args.log_path:
-        log_file = args.log_path + "clone.log"
+        log_file = od.path.join(args.log_path, "clone.log")
     else:
         log_file = os.path.join(default_path, 'clone.log')
 
