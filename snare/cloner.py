@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 
 
 class Cloner(object):
-    def __init__(self, root, max_depth, css_validate, default_path):
+    def __init__(self, root, max_depth, css_validate, default_path='/opt/snare'):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
         self.visited_urls = []

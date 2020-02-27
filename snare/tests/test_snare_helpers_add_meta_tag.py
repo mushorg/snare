@@ -21,8 +21,7 @@ class TestAddMetaTag(unittest.TestCase):
     def test_add_meta_tag(self):
         config = configparser.ConfigParser()
         config['WEB-TOOLS'] = dict(google='test google content', bing='test bing content')
-        default_path = '/opt/snare'
-        add_meta_tag(self.page_dir, self.index_page, config, default_path)
+        add_meta_tag(self.page_dir, self.index_page, config)
         with open(os.path.join(self.main_page_path, 'index.html')) as main:
             main_page = main.read()
         soup = BeautifulSoup(main_page, 'html.parser')
