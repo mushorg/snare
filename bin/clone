@@ -39,15 +39,22 @@ def main():
     parser.add_argument(
         "--css-validate", help="set whether css validation is required", type=str_to_bool, default=None
     )
+    parser.add_argument("--path", help="path to save the page to be cloned", required=False,default="/opt/")
     args = parser.parse_args()
+    default_path = os.path.join(args.path, 'snare')
     if args.log_path:
         log_file = args.log_path + "clone.log"
     else:
-        log_file = "/opt/snare/clone.log"
+        log_file = os.path.join(default_path, 'clone.log')
+
+    if not os.path.isdir(default_path):
+        if not os.path.exists(os.path.dirname(log_file)):
+            os.makedirs(os.path.dirname(log_file))
+
     logger.Logger.create_clone_logger(log_file, __package__)
     print("Logs will be stored in {}\n".format(log_file))
     try:
-        cloner = Cloner(args.target, int(args.max_depth), args.css_validate)
+        cloner = Cloner(args.target, int(args.max_depth), args.css_validate, default_path)
         loop.run_until_complete(cloner.get_root_host())
         loop.run_until_complete(cloner.run())
     except KeyboardInterrupt:

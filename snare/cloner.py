@@ -13,19 +13,20 @@ from bs4 import BeautifulSoup
 
 
 class Cloner(object):
-    def __init__(self, root, max_depth, css_validate):
+    def __init__(self, root, max_depth, css_validate, default_path):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
         self.visited_urls = []
         self.root, self.error_page = self.add_scheme(root)
         self.max_depth = max_depth
         self.moved_root = None
+        self.default_path = default_path
         if len(self.root.host) < 4:
             sys.exit('invalid target {}'.format(self.root.host))
-        self.target_path = '/opt/snare/pages/{}'.format(self.root.host)
+        self.target_path = '{}/pages/{}'.format(self.default_path, self.root.host)
 
         if not os.path.exists(self.target_path):
-            os.mkdir(self.target_path)
+            os.makedirs(self.target_path)
         self.css_validate = css_validate
         self.new_urls = Queue()
         self.meta = {}
