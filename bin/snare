@@ -21,6 +21,7 @@ import configparser
 import json
 import multiprocessing
 import os
+import shutil
 import sys
 import time
 import uuid
@@ -133,6 +134,7 @@ if __name__ == '__main__':
     page_group = parser.add_mutually_exclusive_group(required=True)
     page_group.add_argument("--page-dir", help="name of the folder to be served")
     page_group.add_argument("--list-pages", help="list available pages", action='store_true')
+    page_group.add_argument("--rm-pages", help="delete a page directory")
     parser.add_argument("--index-page", help="file name of the index page", default='index.html')
     parser.add_argument("--port", help="port to listen on", default='8080')
     parser.add_argument("--host-ip", help="host ip to bind to", default='127.0.0.1')
@@ -163,6 +165,17 @@ if __name__ == '__main__':
             print('\t- {}'.format(page))
         print('\nuse with --page-dir {page_name}\n\n')
         exit()
+    
+    if args.rm_pages:
+        try:
+            path = base_page_path + args.rm_pages
+            shutil.rmtree(path)
+            print_color("Deleted page directory %s" % (path), 'INFO')
+            exit()
+        except OSError as e:
+            print ("Error: %s - %s." % (e.filename, e.strerror))
+            exit()
+
     full_page_path = os.path.join(base_page_path, args.page_dir)
     if not os.path.exists(full_page_path):
         print_color("--page-dir: {0} does not exist".format(args.page_dir), 'ERROR')
