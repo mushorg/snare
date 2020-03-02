@@ -77,8 +77,8 @@ class HttpRequestHandler():
             app, loader=jinja2.FileSystemLoader(self.dir)
         )
         middleware = SnareMiddleware(
-            headers=self.meta['/status_404']['headers'],
-            error_404=self.meta['/status_404']['hash'],
+            error_404=self.meta['/status_404'].get('hash'),
+            headers=self.meta['/status_404'].get('headers', []),
             server_header=self.run_args.server_header
         )
         middleware.setup_middlewares(app)

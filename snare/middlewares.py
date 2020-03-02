@@ -5,7 +5,10 @@ from aiohttp import web
 
 class SnareMiddleware():
 
-    def __init__(self, headers, error_404, error_500=None, server_header=None):
+    def __init__(self, error_404, error_500=None, headers=[], server_header=''):
+        self.error_404 = error_404
+        self.error_500 = error_500 if error_500 else '500.html'
+
         self.headers = multidict.CIMultiDict()
         for header in headers:
             for key, value in header.items():
@@ -13,9 +16,6 @@ class SnareMiddleware():
 
         if server_header:
             self.headers['Server'] = server_header
-
-        self.error_404 = error_404
-        self.error_500 = error_500 if error_500 else '500.html'
 
     async def handle_404(self, request):
         return aiohttp_jinja2.render_template(self.error_404, request, {})
