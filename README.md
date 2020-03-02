@@ -44,6 +44,8 @@ More information about running `docker-compose` can be found [here.](https://doc
 
 [Note : Cloner clones the whole website, to restrict to a desired depth of cloning add `--max-depth` parameter]
 
+Incase of errors, check port 8080, 8090 and 80 using `sudo netstat -tulnp`, and kll these prcesses with `sudo kill -9 <PID>`. 
+
 You obviously want to bind to 0.0.0.0 and port 80 when running in <i>production</i>.
 
 ## Testing
