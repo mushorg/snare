@@ -93,7 +93,7 @@ class TannerHandler():
                 requested_name = unquote(requested_name)
                 try:
                     file_name = self.meta[requested_name]['hash']
-                    for header in self.meta[requested_name]['headers']:
+                    for header in self.meta[requested_name].get('headers', []):
                         for key, value in header.items():
                             headers.add(key, value)
                     if 'content_type' in self.meta[requested_name]:
@@ -119,7 +119,7 @@ class TannerHandler():
             if payload_content['page']:
                 try:
                     file_name = self.meta[payload_content['page']]['hash']
-                    for header in self.meta[payload_content['page']]['headers']:
+                    for header in self.meta[payload_content['page']].get('headers', []):
                         for key, value in header.items():
                             headers.add(key, value)
                     if 'content_type' in self.meta[payload_content['page']]:
