@@ -34,6 +34,26 @@ from snare.utils import snare_helpers
 from snare.utils.snare_helpers import str_to_bool, print_color
 
 
+def check_meta_file(meta_info):
+    """
+    This function checks the meta.json file
+
+    meta.json format is:
+    {'/page_path.html': {'hash':'long hash', 'content_type': 'page mime type'}}
+
+    This function makes sure none of the path in that is missing the `hash` value.
+
+    refer to issue: https://github.com/mushorg/snare/issues/201
+    """
+
+    for k, v in meta_info.items():
+        if 'hash' in v and 'content_type' in v:
+            continue
+        else:
+            return False
+    return True
+
+
 def create_initial_config():
     cfg = configparser.ConfigParser()
     cfg['WEB-TOOLS'] = dict(google='', bing='')
@@ -176,6 +196,11 @@ if __name__ == '__main__':
 
     with open(os.path.join(full_page_path, 'meta.json')) as meta:
         meta_info = json.load(meta)
+
+    if not check_meta_file(meta_info):
+        print_color("meta.json is missing some hash values. Please clone the pages again.", "ERROR")
+        exit()
+
     if not os.path.exists(os.path.join(base_page_path, args.page_dir,
                                        os.path.join(meta_info[args.index_page]['hash']))):
         print_color('can\'t create meta tag', 'WARNING')
