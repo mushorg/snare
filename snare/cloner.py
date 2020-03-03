@@ -140,6 +140,7 @@ class Cloner(object):
             if data is not None:
                 self.meta[file_name]['hash'] = hash_name
                 self.meta[file_name]['content_type'] = content_type
+                print('Cloned url: ',current_url)
                 if content_type == 'text/html':
                     soup = await self.replace_links(data, level)
                     data = str(soup).encode()

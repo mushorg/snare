@@ -50,6 +50,7 @@ def main():
         cloner = Cloner(args.target, int(args.max_depth), args.css_validate)
         loop.run_until_complete(cloner.get_root_host())
         loop.run_until_complete(cloner.run())
+        print('Done!')
     except KeyboardInterrupt:
         pass
 
