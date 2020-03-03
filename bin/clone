@@ -21,7 +21,7 @@ import sys
 from snare.utils import logger
 from snare.cloner import Cloner
 from snare.utils.snare_helpers import str_to_bool, print_color
-
+from datetime import datetime
 
 def main():
     if os.getuid() != 0:
@@ -45,12 +45,23 @@ def main():
     else:
         log_file = "/opt/snare/clone.log"
     logger.Logger.create_clone_logger(log_file, __package__)
-    print("Logs will be stored in {}\n".format(log_file))
+    print("  Logs will be stored in {}".format(log_file), end="")
     try:
+        start=datetime.now()
         cloner = Cloner(args.target, int(args.max_depth), args.css_validate)
         loop.run_until_complete(cloner.get_root_host())
         loop.run_until_complete(cloner.run())
-        print('Done!')
+        end=datetime.now()-start
+        print("")
+
+        print("""
+        -------------------------------------->SUMMARY<------------------------------------------------
+         Total number of URLs cloned: {}
+         Time elapsed: {}
+         Cloned directory: {}
+        -----------------------------------------------------------------------------------------------
+        """.format(str(cloner.counter), str(end), cloner.target_path))
+
     except KeyboardInterrupt:
         pass
 
