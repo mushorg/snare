@@ -44,8 +44,12 @@ More information about running `docker-compose` can be found [here.](https://doc
 
 [Note : Cloner clones the whole website, to restrict to a desired depth of cloning add `--max-depth` parameter]
 
-In case of an error while running `docker-compose up`, check the port 8080, 8090, 80 by running `sudo netstat -tulnp`, if they are active kill the process by sudo kill -9 <PID>  
-
+In case of an error while running `docker-compose up`, check the port 80 by running `sudo netstat -tulnp`, if they are occupied then change the 
+`ENV PORT 80` in Dockerfile, 
+``ports:
+-  "80:80"`` in docker-compose.yml
+to some other free ports.
+ 
 You obviously want to bind to 0.0.0.0 and port 80 when running in <i>production</i>.
 
 ## Testing
