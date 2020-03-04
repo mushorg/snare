@@ -31,27 +31,7 @@ import pip
 from snare.server import HttpRequestHandler
 from snare.utils.logger import Logger
 from snare.utils import snare_helpers
-from snare.utils.snare_helpers import str_to_bool, print_color
-
-
-def check_meta_file(meta_info):
-    """
-    This function checks the meta.json file
-
-    meta.json format is:
-    {'/page_path.html': {'hash':'long hash', 'content_type': 'page mime type'}}
-
-    This function makes sure none of the path in that is missing the `hash` value.
-
-    refer to issue: https://github.com/mushorg/snare/issues/201
-    """
-
-    for k, v in meta_info.items():
-        if 'hash' in v and 'content_type' in v:
-            continue
-        else:
-            return False
-    return True
+from snare.utils.snare_helpers import str_to_bool, print_color, check_meta_file
 
 
 def create_initial_config():
@@ -198,7 +178,7 @@ if __name__ == '__main__':
         meta_info = json.load(meta)
 
     if not check_meta_file(meta_info):
-        print_color("meta.json is missing some hash values. Please clone the pages again.", "ERROR")
+        print_color("Error found in meta.json. Please clone the pages again.", "ERROR")
         exit()
 
     if not os.path.exists(os.path.join(base_page_path, args.page_dir,
