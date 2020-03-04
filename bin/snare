@@ -78,7 +78,7 @@ def drop_privileges():
     os.setuid(wanted_user.pw_uid)
     new_user = pwd.getpwuid(os.getuid())
     new_group = grp.getgrgid(os.getgid())
-    print('privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name))
+    print_color('privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name), 'INFO')
 
 
 def compare_version_info(timeout):
@@ -92,7 +92,7 @@ def compare_version_info(timeout):
             print_color('timeout fetching the repository version', 'ERROR')
         else:
             if diff_list:
-                print('you are running an outdated version, SNARE will be updated and restarted')
+                print_color('you are running an outdated version, SNARE will be updated and restarted', 'INFO')
                 repo.git.reset('--hard')
                 repo.heads.master.checkout()
                 repo.git.clean('-xdf')
@@ -101,7 +101,7 @@ def compare_version_info(timeout):
                 os.execv(sys.executable, [sys.executable, __file__] + sys.argv[1:])
                 return
             else:
-                print('you are running the latest version')
+                print_color('you are running the latest version', 'INFO')
             time.sleep(timeout)
 
 
@@ -158,10 +158,10 @@ if __name__ == '__main__':
     log_err = args.log_dir + "snare.err"
     Logger.create_logger(log_debug, log_err, __package__)
     if args.list_pages:
-        print('Available pages:\n')
+        print_color('Available pages:\n', 'INFO')
         for page in os.listdir(base_page_path):
-            print('\t- {}'.format(page))
-        print('\nuse with --page-dir {page_name}\n\n')
+            print_color('\t- {}'.format(page), 'INFO')
+        print_color('\nuse with --page-dir {page_name}\n\n', 'INFO')
         exit()
     full_page_path = os.path.join(base_page_path, args.page_dir)
     if not os.path.exists(full_page_path):
@@ -172,7 +172,7 @@ if __name__ == '__main__':
     if not os.path.exists(os.path.join(full_page_path, 'meta.json')):
         conv = snare_helpers.Converter()
         conv.convert(full_page_path)
-        print("pages were converted. Try to clone again for the better result.")
+        print_color("pages were converted. Try to clone again for the better result.", 'WARNING')
 
     with open(os.path.join(full_page_path, 'meta.json')) as meta:
         meta_info = json.load(meta)
@@ -192,9 +192,9 @@ if __name__ == '__main__':
 
     app = HttpRequestHandler(meta_info, args, snare_uuid, debug=args.debug, keep_alive=75)
 
-    print('serving with uuid {0}'.format(snare_uuid.decode('utf-8')))
-    print("Debug logs will be stored in", log_debug)
-    print("Error logs will be stored in", log_err)
+    print_color('serving with uuid {0}'.format(snare_uuid.decode('utf-8')), 'INFO')
+    print_color("Debug logs will be stored in {}".format(log_debug), 'INFO')
+    print_color("Error logs will be stored in {}".format(log_err), 'INFO')
     loop = asyncio.get_event_loop()
     try:
         loop.run_until_complete(app.start())
@@ -202,7 +202,7 @@ if __name__ == '__main__':
         loop.run_forever()
     except (KeyboardInterrupt, TypeError) as e:
         loop.run_until_complete(app.stop())
-        print(e)
+        print_color(e, 'ERROR')
     finally:
         if compare_version_fut:
             compare_version_fut.cancel()

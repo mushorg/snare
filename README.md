@@ -23,7 +23,7 @@ Basic Concepts
 Getting started
 ---------------
 
-- You need Python3. We tested primarily with >=3.5
+- You need Python3.6 to run SNARE
 - This was tested with a recent Ubuntu based Linux.
 
 #### Steps to setup
