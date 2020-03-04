@@ -44,7 +44,7 @@ More information about running `docker-compose` can be found [here.](https://doc
 
 [Note : Cloner clones the whole website, to restrict to a desired depth of cloning add `--max-depth` parameter]
 
-In case of an error while running `docker-compose up`, check the port 80 by running `sudo netstat -tulnp`, if they are occupied then reffer to docker documentation to change the defalt port. 
+In case of an error while running `docker-compose up`, check the port 80 by running `sudo netstat -tulnp`, if they are occupied then reffer to docker documentation to change the defalt port. This is because snare will start on 0.0.0.0 with port 80. 
 
 You obviously want to bind to 0.0.0.0 and port 80 when running in <i>production</i>.
 
