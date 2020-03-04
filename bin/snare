@@ -31,7 +31,7 @@ import pip
 from snare.server import HttpRequestHandler
 from snare.utils.logger import Logger
 from snare.utils import snare_helpers
-from snare.utils.snare_helpers import str_to_bool, print_color
+from snare.utils.snare_helpers import str_to_bool, print_color, check_meta_file
 
 
 def create_initial_config():
@@ -176,6 +176,11 @@ if __name__ == '__main__':
 
     with open(os.path.join(full_page_path, 'meta.json')) as meta:
         meta_info = json.load(meta)
+
+    if not check_meta_file(meta_info):
+        print_color("Error found in meta.json. Please clone the pages again.", "ERROR")
+        exit()
+
     if not os.path.exists(os.path.join(base_page_path, args.page_dir,
                                        os.path.join(meta_info[args.index_page]['hash']))):
         print_color('can\'t create meta tag', 'WARNING')
