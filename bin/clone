@@ -53,7 +53,6 @@ def main():
         loop.run_until_complete(cloner.run())
         end=datetime.now()-start
         print("")
-
         print("""
         -------------------------------------->SUMMARY<------------------------------------------------
          Total number of URLs cloned: {}

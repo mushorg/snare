@@ -10,9 +10,7 @@ import aiohttp
 import cssutils
 import yarl
 from bs4 import BeautifulSoup
-
 animation = "|/-\\"
-
 class Cloner(object):
     def __init__(self, root, max_depth, css_validate):
         self.logger = logging.getLogger(__name__)
@@ -24,7 +22,6 @@ class Cloner(object):
         if len(self.root.host) < 4:
             sys.exit('invalid target {}'.format(self.root.host))
         self.target_path = '/opt/snare/pages/{}'.format(self.root.host)
-
         if not os.path.exists(self.target_path):
             os.mkdir(self.target_path)
         self.css_validate = css_validate
@@ -129,7 +126,6 @@ class Cloner(object):
             file_name, hash_name = self._make_filename(current_url)
             self.logger.debug('Cloned file: %s', file_name)
             self.meta[file_name] = {}
-
             data = None
             content_type = None
             try:
@@ -144,8 +140,6 @@ class Cloner(object):
             if data is not None:
                 self.meta[file_name]['hash'] = hash_name
                 self.meta[file_name]['content_type'] = content_type
-
-
                 self.counter=self.counter+1
                 if content_type == 'text/html':
                     soup = await self.replace_links(data, level)
@@ -176,8 +170,6 @@ class Cloner(object):
 
     async def run(self):
         session = aiohttp.ClientSession()
-
-
         try:
             await self.new_urls.put((self.root, 0))
             await self.new_urls.put((self.error_page, 0))
