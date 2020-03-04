@@ -27,11 +27,12 @@ class Cloner(object):
         if not os.path.exists(self.target_path):
             os.mkdir(self.target_path)
         self.css_validate = css_validate
-        self.new_urls=Queue()
-        self.meta={}
+        self.new_urls = Queue()
+        self.meta = {}
 
-        self.counter=0
-        self.itr=0
+        self.counter = 0
+        self.itr = 0
+
     @staticmethod
     def add_scheme(url):
         new_url = yarl.URL(url)
@@ -117,10 +118,10 @@ class Cloner(object):
         hash_name = m.hexdigest()
         return file_name, hash_name
 
-    async def get_body (self, session):
+    async def get_body(self, session):
         while not self.new_urls.empty():
             print(animation[self.itr % len(animation)], end="\r")
-            self.itr=self.itr+1
+            self.itr = self.itr + 1
             current_url, level = await self.new_urls.get()
             if current_url.human_repr() in self.visited_urls:
                 continue
@@ -140,9 +141,9 @@ class Cloner(object):
             else:
                 await response.release()
             if data is not None:
-                self.meta[ file_name]['hash'] = hash_name
+                self.meta[file_name]['hash'] = hash_name
                 self.meta[file_name]['content_type'] = content_type
-                self.counter=self.counter+1
+                self.counter = self.counter + 1
                 if content_type == 'text/html':
                     soup = await self.replace_links(data, level)
                     data = str(soup).encode()
