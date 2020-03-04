@@ -57,7 +57,6 @@ class Cloner(object):
                     url.fragment or \
                     (self.moved_root is not None and host != self.moved_root.host):
                 return None
-
         if url.human_repr() not in self.visited_urls and (level + 1) <= self.max_depth:
             await self.new_urls.put((url, level + 1))
 

@@ -13,7 +13,6 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 """
-
 import argparse
 import asyncio
 import os
@@ -45,9 +44,7 @@ def main():
     else:
         log_file = "/opt/snare/clone.log"
     logger.Logger.create_clone_logger(log_file, __package__)
-
     print("  Logs will be stored in {}".format(log_file), end="")
-
     try:
         start=datetime.now()
         cloner = Cloner(args.target, int(args.max_depth), args.css_validate)
@@ -62,10 +59,8 @@ def main():
          Cloned directory: {}
         -----------------------------------------------------------------------------------------------
         """.format(str(cloner.counter), str(end), cloner.target_path))
-
     except KeyboardInterrupt:
         pass
-
 
 if __name__ == '__main__':
     print("""
