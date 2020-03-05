@@ -49,9 +49,6 @@ class HttpRequestHandler():
         # Submit the event to the TANNER service
         event_result = await self.tanner_handler.submit_data(data)
 
-        if not event_result:
-            self.logger.error("Error submitting data: {}".format(data))
-
         # Log the event to slurp service if enabled
         if self.run_args.slurp_enabled:
             await self.submit_slurp(request.path_qs)
