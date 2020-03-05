@@ -39,12 +39,12 @@ Getting started
 1. Change current directory to `snare` project directory
 2. `docker-compose build`
 3. `docker-compose up`
-
+4. Snare will start on 0.0.0.0 with port 80.
 More information about running `docker-compose` can be found [here.](https://docs.docker.com/compose/gettingstarted/)
 
 [Note : Cloner clones the whole website, to restrict to a desired depth of cloning add `--max-depth` parameter]
 
-In case of an error while running `docker-compose up`, check the port 80 by running `sudo netstat -tulnp`, if they are occupied then reffer to docker documentation to change the defalt port. This is because snare will start on 0.0.0.0 with port 80. 
+In case of an error while running `docker-compose up`, check the availability port 80, if it is occupied then reffer to docker documentations to change the default port.
 
 You obviously want to bind to 0.0.0.0 and port 80 when running in <i>production</i>.
 
