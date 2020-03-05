@@ -119,7 +119,7 @@ def str_to_bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected')
 
 
-def print_color(msg, mode='INFO',end="\n"):
+def print_color(msg, mode='INFO', end="\n"):
     colors = {
         'INFO': '\033[97m',  # white
         'ERROR': '\033[31m',  # red
