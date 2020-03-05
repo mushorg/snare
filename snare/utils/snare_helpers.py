@@ -84,6 +84,15 @@ def add_meta_tag(page_dir, index_page, config):
         file.write(html)
 
 
+def check_meta_file(meta_info):
+    for k, v in meta_info.items():
+        if 'hash' in v and 'content_type' in v:
+            continue
+        else:
+            return False
+    return True
+
+
 def parse_timeout(timeout):
     timeouts_coeff = {
         'M': 60,
