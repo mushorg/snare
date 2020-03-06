@@ -129,4 +129,4 @@ def print_color(msg, mode='INFO'):
         color = colors[mode]
     except KeyError:
         color = colors['INFO']
-    print(color + msg + '\033[0m')
+    print(color + str(msg) + '\033[0m')
