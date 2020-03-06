@@ -13,7 +13,6 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 """
-
 import argparse
 import asyncio
 import os
@@ -21,7 +20,7 @@ import sys
 from snare.utils import logger
 from snare.cloner import Cloner
 from snare.utils.snare_helpers import str_to_bool, print_color
-
+from datetime import datetime
 
 def main():
     if os.getuid() != 0:
@@ -45,13 +44,23 @@ def main():
     else:
         log_file = "/opt/snare/clone.log"
     logger.Logger.create_clone_logger(log_file, __package__)
-    print_color("Logs will be stored in {}\n".format(log_file), 'INFO')
+    print_color("  Logs will be stored in {}".format(log_file),"INFO" ,end="")
     try:
+        start=datetime.now()
         cloner = Cloner(args.target, int(args.max_depth), args.css_validate)
         loop.run_until_complete(cloner.get_root_host())
         loop.run_until_complete(cloner.run())
+        end=datetime.now()-start
     except KeyboardInterrupt:
+        end=datetime.now()-start
         pass
+    finally:
+        print("")
+        print_color("-"*36+">SUMMARY<"+"-"*36,"INFO")
+        print_color('\tTotal number of URLs cloned: {}'.format(str(cloner.counter)),"INFO")
+        print_color('\tTime elapsed: {}'.format(str(end)),"INFO")
+        print_color('\tCloned directory: {}'.format(cloner.target_path),"INFO")
+        print_color('-'*82,"INFO")
 
 
 if __name__ == '__main__':
