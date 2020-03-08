@@ -38,3 +38,13 @@ class TestCloner(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.main_page_path)
+
+    def test_no_host(self):
+        self.url = 'http:/'
+        with self.assertRaises(SystemExit):
+            Cloner(self.url, self.max_depth, self.css_validate)
+
+    def test_limited_length_host(self):
+        self.url = 'http://aaa'
+        with self.assertRaises(SystemExit):
+            Cloner(self.url, self.max_depth, self.css_validate)
