@@ -33,8 +33,8 @@ Getting started
 3. Activate virtual environment: `. venv/bin/activate`
 4. Install requirements: `pip3 install -r requirements.txt`
 5. Setup snare: `python3 setup.py install`
-6. Clone a page: `clone --target http://example.com`
-7. Run SNARE: `snare --port 8080 --page-dir example.com`
+6. Clone a page: `clone --target http://example.com --path <path to base dir>`
+7. Run SNARE: `snare --port 8080 --page-dir example.com --path <path to base dir> --log-dir <path to log dir>`
 8. Test: Visit http://localhost:8080/index.html
 9. (Optionally) Have your own [tanner](https://github.com/mushorg/tanner) service running.
 
@@ -48,7 +48,7 @@ More information about running `docker-compose` can be found [here.](https://doc
 
 [Note : Cloner clones the whole website, to restrict to a desired depth of cloning add `--max-depth` parameter]
 
-You obviously want to bind to 0.0.0.0 and port 80 when running in <i>production</i>.
+You obviously want to bind to 0.0.0.0 and port 80 when running in _production_.
 
 ## Testing
 
