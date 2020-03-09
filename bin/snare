@@ -95,12 +95,8 @@ def compare_version_info(timeout):
             print_color('timeout fetching the repository version', 'ERROR')
         else:
             if diff_list:
-<<<<<<< HEAD
-                print_color('you are running an outdated version, SNARE will be updated and restarted', 'INFO')
-=======
-                print(
-                    'you are running an outdated version, SNARE will be updated and restarted')
->>>>>>> flake 8 fixes
+                print_color(
+                    'you are running an outdated version, SNARE will be updated and restarted', 'INFO')
                 repo.git.reset('--hard')
                 repo.heads.master.checkout()
                 repo.git.clean('-xdf')
@@ -234,17 +230,13 @@ if __name__ == '__main__':
 
     with open(os.path.join(full_page_path, 'meta.json')) as meta:
         meta_info = json.load(meta)
-<<<<<<< HEAD
 
     if not check_meta_file(meta_info):
         print_color("Error found in meta.json. Please clone the pages again.", "ERROR")
         exit()
 
-    if not os.path.exists(os.path.join(base_page_path, args.page_dir,
-=======
     if not os.path.exists(os.path.join(base_page_path,
                                        args.page_dir,
->>>>>>> flake 8 fixes
                                        os.path.join(meta_info[args.index_page]['hash']))):
         print_color('can\'t create meta tag', 'WARNING')
     else:
