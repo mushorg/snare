@@ -10,6 +10,7 @@ import aiohttp
 import cssutils
 import yarl
 from bs4 import BeautifulSoup
+animation = "|/-\\"
 
 
 class Cloner(object):
@@ -30,6 +31,9 @@ class Cloner(object):
         self.css_validate = css_validate
         self.new_urls = Queue()
         self.meta = {}
+
+        self.counter = 0
+        self.itr = 0
 
     @staticmethod
     def add_scheme(url):
@@ -59,7 +63,6 @@ class Cloner(object):
                     url.fragment or \
                     (self.moved_root is not None and host != self.moved_root.host):
                 return None
-
         if url.human_repr() not in self.visited_urls and (level + 1) <= self.max_depth:
             await self.new_urls.put((url, level + 1))
 
@@ -119,6 +122,8 @@ class Cloner(object):
 
     async def get_body(self, session):
         while not self.new_urls.empty():
+            print(animation[self.itr % len(animation)], end="\r")
+            self.itr = self.itr + 1
             current_url, level = await self.new_urls.get()
             if current_url.human_repr() in self.visited_urls:
                 continue
@@ -126,7 +131,6 @@ class Cloner(object):
             file_name, hash_name = self._make_filename(current_url)
             self.logger.debug('Cloned file: %s', file_name)
             self.meta[file_name] = {}
-
             data = None
             content_type = None
             try:
@@ -141,6 +145,7 @@ class Cloner(object):
             if data is not None:
                 self.meta[file_name]['hash'] = hash_name
                 self.meta[file_name]['content_type'] = content_type
+                self.counter = self.counter + 1
                 if content_type == 'text/html':
                     soup = await self.replace_links(data, level)
                     data = str(soup).encode()
