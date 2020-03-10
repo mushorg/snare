@@ -29,12 +29,15 @@ Getting started
 #### Steps to setup
 
 1. Get SNARE: `git clone https://github.com/mushorg/snare.git` and `cd snare`
-2. Make virtual environment: `python3 -m venv venv`
-3. Activate virtual environment: `. venv/bin/activate`
-4. Install requirements: `pip3 install -r requirements.txt`
-5. Setup snare: `python3 setup.py install`
-6. Clone a page: `clone --target http://example.com --path <path to base dir>`
-7. Run SNARE: `snare --port 8080 --page-dir example.com --path <path to base dir> --log-dir <path to log dir>`
+2. [Optional] Make virtual environment: `python3 -m venv venv`
+3. [Optional] Activate virtual environment: `. venv/bin/activate`
+
+**Note:** Do not use sudo with below commands if you're running snare in virtual environment.
+
+4. Install requirements: `sudo pip3 install -r requirements.txt`
+5. Setup snare: `sudo python3 setup.py install`
+6. Clone a page: `sudo clone --target http://example.com --path <path to base dir>`
+7. Run SNARE: `sudo snare --port 8080 --page-dir example.com --path <path to base dir> --log-dir <path to log dir>`
 8. Test: Visit http://localhost:8080/index.html
 9. (Optionally) Have your own [tanner](https://github.com/mushorg/tanner) service running.
 

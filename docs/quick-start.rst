@@ -28,17 +28,19 @@ Getting started
 
 1. Get SNARE: ``git clone https://github.com/mushorg/snare.git`` and ``cd snare``
 
-2. Make virtual environment: ``python3 -m venv venv``
+2. [Optional] Make virtual environment: ``python3 -m venv venv``
 
-3. Activate virtual environment: ``. venv/bin/activate``
+3. [Optional] Activate virtual environment: ``. venv/bin/activate``
 
-4. Install requirements: ``pip3 install -r requirements.txt``
+**Note:** Do not use sudo with below commands if you're running snare in virtual environment.
 
-5. Setup snare: ``python3 setup.py install``
+4. Install requirements: ``sudo pip3 install -r requirements.txt``
 
-6. Clone a page: ``clone --target http://example.com --path <path to base dir>``
+5. Setup snare: ``sudo python3 setup.py install``
 
-7. Run SNARE: ``snare --port 8080 --page-dir example.com --path <path to base dir> --log-dir <path to log dir>`` (See :doc:`parameters` description for more info)
+6. Clone a page: ``sudo clone --target http://example.com --path <path to base dir>``
+
+7. Run SNARE: ``sudo snare --port 8080 --page-dir example.com --path <path to base dir> --log-dir <path to log dir>`` (See :doc:`parameters` description for more info)
 
 8. Test: Visit http://localhost:8080/index.html
 
