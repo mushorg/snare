@@ -24,10 +24,6 @@ from datetime import datetime
 
 
 def main():
-    if not os.path.exists('/opt/snare'):
-        os.makedirs('/opt/snare')
-    if not os.path.exists('/opt/snare/pages'):
-        os.mkdir('/opt/snare/pages')
     loop = asyncio.get_event_loop()
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", help="domain of the site to be cloned", required=True)
@@ -37,16 +33,27 @@ def main():
         "--css-validate", help="set whether css validation is required", type=str_to_bool, default=None
     )
     parser.add_argument("--path", help="path to save the page to be cloned", required=False, default="/opt/")
+
     args = parser.parse_args()
     default_path = os.path.join(args.path, 'snare')
+
     if args.log_path:
         log_file = os.path.join(args.log_path, "clone.log")
     else:
         log_file = os.path.join(default_path, 'clone.log')
 
-    if not os.path.isdir(default_path):
-        if not os.path.exists(os.path.dirname(log_file)):
-            os.makedirs(os.path.dirname(log_file))
+    if(not os.path.realpath(default_path).startswith(os.path.expanduser('~')) or
+       not os.path.realpath(os.path.dirname(log_file)).startswith(os.path.expanduser('~'))):
+        if os.getuid() != 0:
+            print_color('Cloner has to be started as root!', 'WARNING')
+            sys.exit(1)
+
+    if not os.path.exists(default_path):
+        os.makedirs(default_path)
+    if not os.path.exists('{}/pages'.format(default_path)):
+        os.makedirs('{}/pages'.format(default_path))
+    if not os.path.exists(os.path.dirname(log_file)):
+        os.makedirs(os.path.dirname(log_file))
 
     logger.Logger.create_clone_logger(log_file, __package__)
     print_color("  Logs will be stored in {}".format(log_file), "INFO", end="")
@@ -58,7 +65,6 @@ def main():
         end = datetime.now()-start
     except KeyboardInterrupt:
         end = datetime.now()-start
-        pass
     finally:
         print("")
         print_color("-"*36+">SUMMARY<"+"-"*36, "INFO")
