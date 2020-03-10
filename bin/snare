@@ -32,30 +32,31 @@ from snare.utils import snare_helpers
 from snare.utils.snare_helpers import str_to_bool, print_color, check_meta_file
 
 
-def create_initial_config():
+def create_initial_config(base_path):
     cfg = configparser.ConfigParser()
     cfg['WEB-TOOLS'] = dict(google='', bing='')
-    with open('/opt/snare/snare.cfg', 'w') as configfile:
+    with open(os.path.join(base_path,'snare.cfg'), 'w') as configfile:
         cfg.write(configfile)
 
 
-def snare_setup():
-    if os.getuid() != 0:
-        print_color('Snare has to be started as root!', 'WARNING')
-        sys.exit(1)
+def snare_setup(base_path):
+    if not os.path.realpath(base_path).startswith(os.path.expanduser('~')):
+        if os.getuid() != 0:
+            print_color('Snare has to be started as root!', 'WARNING')
+            sys.exit(1)
     # Create folders
-    if not os.path.exists('/opt/snare'):
-        os.mkdir('/opt/snare')
-    if not os.path.exists('/opt/snare/pages'):
-        os.mkdir('/opt/snare/pages')
+    if not os.path.exists(base_path):
+        os.mkdir(base_path)
+    if not os.path.exists(os.path.join(base_path,'pages')):
+        os.mkdir(os.path.join(base_path,'pages'))
     # Write pid to pid file
-    with open('/opt/snare/snare.pid', 'wb') as pid_fh:
+    with open(os.path.join(base_path,'snare.pid'), 'wb') as pid_fh:
         pid_fh.write(str(os.getpid()).encode('utf-8'))
     # Config file
-    if not os.path.exists('/opt/snare/snare.cfg'):
-        create_initial_config()
+    if not os.path.exists(os.path.join(base_path,'snare.cfg')):
+        create_initial_config(base_path)
     # Read or create the sensor id
-    uuid_file_path = '/opt/snare/snare.uuid'
+    uuid_file_path = os.path.join(base_path,'snare.uuid')
     if os.path.exists(uuid_file_path):
         with open(uuid_file_path, 'rb') as uuid_fh:
             snare_uuid = uuid_fh.read()
