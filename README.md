@@ -44,7 +44,7 @@ Getting started
 4. Snare will start on 0.0.0.0 with port 80.
 More information about running `docker-compose` can be found [here.](https://docs.docker.com/compose/gettingstarted/)
 
-In case of an error while running `docker-compose up`, check the availability of port 80, if it is occupied then reffer to docker documentations to change the default port.
+In case of an error while running `docker-compose up`, check the availability of port 80, if it is occupied then refer to Docker documentation to change the default port.
 
 You obviously want to bind to 0.0.0.0 and port 80 when running in <i>production</i>.
 
@@ -52,10 +52,10 @@ You obviously want to bind to 0.0.0.0 and port 80 when running in <i>production<
 
 In order to run the tests and receive a test coverage report, we recommend running `pytest`:
 
-
+```
     pip install pytest pytest-cov
     sudo pytest --cov-report term-missing --cov=snare snare/tests/
-
+```
 
 ## Sample Output
 
