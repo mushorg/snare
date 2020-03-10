@@ -24,14 +24,26 @@ class TestSubmitData(unittest.TestCase):
         args = run_args.parse_args(['--page-dir', page_dir])
         self.loop = asyncio.new_event_loop()
         self.data = {
-            'method': 'GET', 'path': '/',
+            'method': 'GET',
+            'path': '/',
             'headers': {
-                'Host': 'test_host', 'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1', 'User-Agent': 'test_agent', 'Accept': 'text/html',
-                'Accept-Encoding': 'test_encoding', 'Accept-Language': 'test_lang', 'Cookie': 'test_cookie',
-                'uuid': 'test_uuid', 'peer': {'ip': '::1', 'port': 80}, 'status': 200,
-                'cookies': 'test_cookies', ' sess_uuid': 'test_uuid'
-            }
+                'Host': 'test_host',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'User-Agent': 'test_agent',
+                'Accept': 'text/html',
+                'Accept-Encoding': 'test_encoding',
+                'Accept-Language': 'test_lang',
+                'Cookie': 'test_cookie'
+                },
+            'uuid': 'test_uuid',
+            'peer': {
+                'ip': '::1',
+                'port': 80
+            },
+            'status': 200,
+            'cookies': 'test_cookies',
+            'sess_uuid': 'test_uuid'
         }
         aiohttp.ClientSession.post = AsyncMock(
             return_value=aiohttp.ClientResponse(
