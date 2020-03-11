@@ -41,15 +41,17 @@ Getting started
 8. Test: Visit http://localhost:8080/index.html
 9. (Optionally) Have your own [tanner](https://github.com/mushorg/tanner) service running.
 
+[Note : Cloner clones the whole website, to restrict to a desired depth of cloning add `--max-depth` parameter]
+
 #### Docker build instructions
 
 1. Change current directory to `snare` project directory
 2. `docker-compose build`
 3. `docker-compose up`
-
+4. Snare will start on 0.0.0.0 with port 80.
 More information about running `docker-compose` can be found [here.](https://docs.docker.com/compose/gettingstarted/)
 
-[Note : Cloner clones the whole website, to restrict to a desired depth of cloning add `--max-depth` parameter]
+In case of an error while running `docker-compose up`, check the availability of port 80, if it is occupied then refer to Docker documentation to change the default port.
 
 You obviously want to bind to 0.0.0.0 and port 80 when running in _production_.
 
@@ -57,8 +59,10 @@ You obviously want to bind to 0.0.0.0 and port 80 when running in _production_.
 
 In order to run the tests and receive a test coverage report, we recommend running `pytest`:
 
+```
     pip install pytest pytest-cov
     sudo pytest --cov-report term-missing --cov=snare snare/tests/
+```
 
 ## Sample Output
 
