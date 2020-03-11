@@ -42,11 +42,17 @@ def main():
     else:
         log_file = os.path.join(default_path, 'clone.log')
 
-    if(not os.path.realpath(default_path).startswith(os.path.expanduser('~')) or
-       not os.path.realpath(os.path.dirname(log_file)).startswith(os.path.expanduser('~'))):
+    try:
+        with open(os.path.join(default_path, 'temp'), 'w') as tempfile:
+            tempfile.write('')
+        with open(os.path.join(os.path.dirname(log_file), 'temp'), 'w') as tempfile:
+            tempfile.write('')
+    except IOError as e:
         if os.getuid() != 0:
-            print_color('Cloner has to be started as root!', 'WARNING')
+            print_color('Snare has to be started as root!', 'WARNING')
             sys.exit(1)
+        else:
+            raise e
 
     if not os.path.exists(default_path):
         os.makedirs(default_path)

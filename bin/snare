@@ -40,15 +40,22 @@ def create_initial_config(base_path):
 
 
 def snare_setup(base_path):
-    if not os.path.realpath(base_path).startswith(os.path.expanduser('~')):
+    # Create folders
+    if not os.path.exists(base_path):
+        os.makedirs(base_path)
+
+    try:
+        with open(os.path.join(base_path, 'temp'), 'w') as tempfile:
+            tempfile.write('')
+    except IOError as e:
         if os.getuid() != 0:
             print_color('Snare has to be started as root!', 'WARNING')
             sys.exit(1)
-    # Create folders
-    if not os.path.exists(base_path):
-        os.mkdir(base_path)
+        else:
+            raise e
+
     if not os.path.exists(os.path.join(base_path,'pages')):
-        os.mkdir(os.path.join(base_path,'pages'))
+        os.makedirs(os.path.join(base_path,'pages'))
     # Write pid to pid file
     with open(os.path.join(base_path,'snare.pid'), 'wb') as pid_fh:
         pid_fh.write(str(os.getpid()).encode('utf-8'))
@@ -145,16 +152,17 @@ if __name__ == '__main__':
     parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
     parser.add_argument("--server-header", help="set server-header", default='nginx/1.3.8')
     parser.add_argument("--no-dorks", help="disable the use of dorks", type=str_to_bool,  default=True)
-    parser.add_argument("--log-dir", help="path to directory of the log file", default='/opt/snare/')
     parser.add_argument("--path", help="path to save the page to be cloned", required=False, default='/opt/')
+    parser.add_argument("--page-path", help="Use only if the path not same as that of snare. Path to cloned pages",
+                        required=False, default='/opt/snare/')
     args = parser.parse_args()
-    base_path = os.path.join(args.path,'snare')
-    base_page_path = os.path.join(base_path,'pages')
+    base_path = os.path.join(args.path, 'snare')
+    base_page_path = os.path.join(args.page_path, 'pages')
     snare_uuid = snare_setup(base_path)
     config = configparser.ConfigParser()
     config.read(os.path.join(base_path, args.config))
-    log_debug = os.path.join(args.log_dir, "snare.log")
-    log_err = os.path.join(args.log_dir, "snare.err")
+    log_debug = os.path.join(base_path, 'snare.log')
+    log_err = os.path.join(base_path, 'snare.err')
     Logger.create_logger(log_debug, log_err, __package__)
     if args.list_pages:
         print_color('Available pages:\n', 'INFO')
