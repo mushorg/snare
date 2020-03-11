@@ -40,11 +40,10 @@ def create_initial_config(base_path):
 
 
 def snare_setup(base_path):
-    # Create folders
-    if not os.path.exists(base_path):
-        os.makedirs(base_path)
-
     try:
+        # Create folders
+        if not os.path.exists(base_path):
+            os.makedirs(base_path)
         with open(os.path.join(base_path, 'temp'), 'w') as tempfile:
             tempfile.write('')
     except IOError as e:
