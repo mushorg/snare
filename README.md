@@ -1,5 +1,6 @@
 SNARE
 =====
+
 [![Documentation Status](https://readthedocs.org/projects/snare/badge/?version=latest)](http://snare.readthedocs.io/en/latest/?badge=latest)
 [![Build Status](https://travis-ci.org/mushorg/snare.svg?branch=master)](https://travis-ci.org/mushorg/snare)
 [![Coverage Status](https://coveralls.io/repos/github/mushorg/snare/badge.svg?branch=master)](https://coveralls.io/github/mushorg/snare?branch=master)
@@ -7,11 +8,13 @@ SNARE
 _**Super Next generation Advanced Reactive honEypot**_
 
 About
----------
+-----
+
 SNARE is a web application honeypot sensor attracting all sort of maliciousness from the Internet.
 
 Documentation
 --------------
+
 The documentation can be found [here](http://snare.readthedocs.io).
 
 Basic Concepts
