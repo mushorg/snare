@@ -17,7 +17,7 @@ class HttpRequestHandler():
             base_page_path = os.path.join(os.path.join(run_args.path, 'snare'), 'pages')
         else:
             base_page_path = os.path.join(run_args.page_path, 'pages')
-        self.dir = '/{}'.format(os.path.join(base_page_path, run_args.page_dir), run_args.page_dir)
+        self.dir = '{}/{}'.format(os.path.join(base_page_path, run_args.page_dir), run_args.page_dir)
         self.meta = meta
         self.snare_uuid = snare_uuid
         self.logger = logging.getLogger(__name__)
