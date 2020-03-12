@@ -175,7 +175,7 @@ if __name__ == '__main__':
         exit()
     full_page_path = os.path.join(base_page_path, args.page_dir)
     d_args = vars(args)
-    d_args['full_page_path'] = full_page_path
+    d_args['full_page_path'] = os.path.realpath(full_page_path)
     if not os.path.exists(full_page_path):
         print_color("--page-dir: {0} does not exist".format(args.page_dir), 'ERROR')
         exit()
