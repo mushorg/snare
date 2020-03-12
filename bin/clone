@@ -43,10 +43,17 @@ def main():
         log_file = os.path.join(default_path, 'clone.log')
 
     try:
+        if not os.path.exists(default_path):
+            os.makedirs(default_path)
         with open(os.path.join(default_path, 'temp'), 'w') as tempfile:
             tempfile.write('')
+        os.remove(os.path.join(default_path, 'temp'))
+
+        if not os.path.exists(os.path.dirname(log_file)):
+            os.makedirs(os.path.dirname(log_file))
         with open(os.path.join(os.path.dirname(log_file), 'temp'), 'w') as tempfile:
             tempfile.write('')
+        os.remove(os.path.join(os.path.dirname(log_file), 'temp'))
     except IOError as e:
         if os.getuid() != 0:
             print_color('Snare has to be started as root!', 'WARNING')
@@ -54,12 +61,8 @@ def main():
         else:
             raise e
 
-    if not os.path.exists(default_path):
-        os.makedirs(default_path)
     if not os.path.exists('{}/pages'.format(default_path)):
         os.makedirs('{}/pages'.format(default_path))
-    if not os.path.exists(os.path.dirname(log_file)):
-        os.makedirs(os.path.dirname(log_file))
 
     logger.Logger.create_clone_logger(log_file, __package__)
     print_color("  Logs will be stored in {}".format(log_file), "INFO", end="")

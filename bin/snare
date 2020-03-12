@@ -46,6 +46,7 @@ def snare_setup(base_path):
             os.makedirs(base_path)
         with open(os.path.join(base_path, 'temp'), 'w') as tempfile:
             tempfile.write('')
+        os.remove(os.path.join(base_path, 'temp'))
     except IOError as e:
         if os.getuid() != 0:
             print_color('Snare has to be started as root!', 'WARNING')
@@ -153,10 +154,13 @@ if __name__ == '__main__':
     parser.add_argument("--no-dorks", help="disable the use of dorks", type=str_to_bool,  default=True)
     parser.add_argument("--path", help="path to save the page to be cloned", required=False, default='/opt/')
     parser.add_argument("--page-path", help="Use only if the path not same as that of snare. Path to cloned pages",
-                        required=False, default='/opt/snare/')
+                        required=False, default='none')
     args = parser.parse_args()
     base_path = os.path.join(args.path, 'snare')
-    base_page_path = os.path.join(args.page_path, 'pages')
+    if(args.page_path == 'none'):
+        base_page_path = os.path.join(base_path, 'pages')
+    else:
+        base_page_path = os.path.join(args.page_path, 'pages')
     snare_uuid = snare_setup(base_path)
     config = configparser.ConfigParser()
     config.read(os.path.join(base_path, args.config))
@@ -170,6 +174,8 @@ if __name__ == '__main__':
         print_color('\nuse with --page-dir {page_name}\n\n', 'INFO')
         exit()
     full_page_path = os.path.join(base_page_path, args.page_dir)
+    d_args = vars(args)
+    d_args['full_page_path'] = full_page_path
     if not os.path.exists(full_page_path):
         print_color("--page-dir: {0} does not exist".format(args.page_dir), 'ERROR')
         exit()
