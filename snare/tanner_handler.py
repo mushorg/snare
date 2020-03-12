@@ -96,9 +96,10 @@ class TannerHandler():
                     for header in self.meta[requested_name].get('headers', []):
                         for key, value in header.items():
                             headers.add(key, value)
-                    if 'content_type' in self.meta[requested_name]:
-                        # overwrite headers with legacy content-type if present
-                        headers['Content-Type'] = self.meta[requested_name]['content_type']
+                    # overwrite headers with legacy content-type if present and not none
+                    content_type = self.meta[requested_name].get('content_type')
+                    if content_type:
+                        headers['Content-Type'] = content_type
                 except KeyError:
                     pass
                 else:
@@ -122,9 +123,10 @@ class TannerHandler():
                     for header in self.meta[payload_content['page']].get('headers', []):
                         for key, value in header.items():
                             headers.add(key, value)
-                    if 'content_type' in self.meta[payload_content['page']]:
-                        # overwrite headers with legacy content-type if present
-                        headers['Content-Type'] = self.meta[payload_content['page']]['content_type']
+                    # overwrite headers with legacy content-type if present and not none
+                    content_type = self.meta[payload_content['page']].get('content_type')
+                    if content_type:
+                        headers['Content-Type'] = content_type
                     page_path = os.path.join(self.dir, file_name)
                     with open(page_path, encoding='utf-8') as p:
                         content = p.read()
@@ -138,7 +140,9 @@ class TannerHandler():
                 soup.body.append(script_tag)
                 content = str(soup).encode()
             else:
-                headers['Content-Type'] = mimetypes.guess_type(payload_content['value'])[0]
+                content_type = mimetypes.guess_type(payload_content['value'])[0]
+                if content_type:
+                    headers['Content-Type'] = content_type
                 content = payload_content['value'].encode('utf-8')
 
             if 'headers' in payload_content:
