@@ -6,6 +6,7 @@ from asyncio import Queue
 import hashlib
 import json
 import re
+from collections import defaultdict
 import aiohttp
 import cssutils
 import yarl
@@ -28,7 +29,7 @@ class Cloner(object):
             os.mkdir(self.target_path)
         self.css_validate = css_validate
         self.new_urls = Queue()
-        self.meta = {}
+        self.meta = defaultdict(dict)
 
         self.counter = 0
         self.itr = 0
@@ -128,7 +129,6 @@ class Cloner(object):
             self.visited_urls.append(current_url.human_repr())
             file_name, hash_name = self._make_filename(current_url)
             self.logger.debug('Cloned file: %s', file_name)
-            self.meta[file_name] = {}
             data = None
             content_type = None
             try:
