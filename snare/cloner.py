@@ -94,9 +94,12 @@ class Cloner(object):
                 act_link['action'] = res
 
         # prevent redirects
-        for redir in soup.findAll(True, attrs={'name': re.compile('redirect.*')}):
+        for redir in soup.findAll(
+            True, attrs={
+                'name': re.compile('redirect.*')}):
             if redir['value'] != "":
-                redir['value'] = yarl.URL(redir['value']).relative().human_repr()
+                redir['value'] = yarl.URL(
+                    redir['value']).relative().human_repr()
 
         return soup
 
@@ -110,7 +113,8 @@ class Cloner(object):
             file_name = "/" + file_name
 
         if file_name == '/' or file_name == "":
-            if host == self.root.host or (self.moved_root is not None and self.moved_root.host == host):
+            if host == self.root.host or\
+                    self.moved_root is not None and self.moved_root.host == host:
                 file_name = '/index.html'
             else:
                 file_name = host
@@ -150,7 +154,8 @@ class Cloner(object):
                 with open(os.path.join(self.target_path, hash_name), 'wb') as index_fh:
                     index_fh.write(data)
                 if content_type == 'text/css':
-                    css = cssutils.parseString(data, validate=self.css_validate)
+                    css = cssutils.parseString(
+                        data, validate=self.css_validate)
                     for carved_url in cssutils.getUrls(css):
                         if carved_url.startswith('data'):
                             continue
