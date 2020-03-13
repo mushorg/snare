@@ -34,14 +34,17 @@ class TestSubmitData(unittest.TestCase):
                 'Accept': 'text/html',
                 'Accept-Encoding': 'test_encoding',
                 'Accept-Language': 'test_lang',
-                'Cookie': 'test_cookie',
-                'uuid': 'test_uuid',
-                'peer': {
-                    'ip': '::1',
-                    'port': 80},
-                'status': 200,
-                'cookies': 'test_cookies',
-                ' sess_uuid': 'test_uuid'}}
+                'Cookie': 'test_cookie'
+                },
+            'uuid': 'test_uuid',
+            'peer': {
+                'ip': '::1',
+                'port': 80
+            },
+            'status': 200,
+            'cookies': 'test_cookies',
+            'sess_uuid': 'test_uuid'
+        }
         aiohttp.ClientSession.post = AsyncMock(
             return_value=aiohttp.ClientResponse(
                 url=yarl.URL("http://www.example.com"),
