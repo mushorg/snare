@@ -21,7 +21,10 @@ class TestProcessLinks(unittest.TestCase):
         self.qsize = None
 
     def test_process_link_scheme(self):
-        test_urls = ['file://images/test.png', 'data://images/test.txt', 'javascript://alert(1)/']
+        test_urls = [
+            'file://images/test.png',
+            'data://images/test.txt',
+            'javascript://alert(1)/']
 
         async def test(url_param):
             self.return_content = await self.handler.process_link(url_param, self.level)
@@ -45,8 +48,11 @@ class TestProcessLinks(unittest.TestCase):
 
         self.loop.run_until_complete(test())
         self.assertEqual(self.return_content, '/foo/путь/')
-        self.assertEqual(yarl.URL(self.return_url).human_repr(), self.expected_content)
-        self.assertEqual(self.return_level, self.level+1)
+        self.assertEqual(
+            yarl.URL(
+                self.return_url).human_repr(),
+            self.expected_content)
+        self.assertEqual(self.return_level, self.level + 1)
 
     def test_process_link_absolute(self):
         self.url = 'http://domain.com'
@@ -59,7 +65,7 @@ class TestProcessLinks(unittest.TestCase):
         self.loop.run_until_complete(test())
         self.assertEqual(self.return_content, self.expected_content)
         self.assertEqual(yarl.URL(self.url), self.return_url)
-        self.assertEqual(self.return_level, self.level+1)
+        self.assertEqual(self.return_level, self.level + 1)
 
     def test_check_host(self):
         self.url = 'http://foo.com'

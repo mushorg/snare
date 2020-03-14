@@ -20,7 +20,8 @@ class TestGetBody(unittest.TestCase):
         self.loop = asyncio.new_event_loop()
         self.css_validate = 'false'
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
-        self.target_path = '/opt/snare/pages/{}'.format(yarl.URL(self.root).host)
+        self.target_path = '/opt/snare/pages/{}'.format(
+            yarl.URL(self.root).host)
         self.return_content = None
         self.expected_content = None
         self.filename = None
@@ -35,18 +36,23 @@ class TestGetBody(unittest.TestCase):
         self.session = aiohttp.ClientSession
         self.session.get = AsyncMock(
             return_value=aiohttp.ClientResponse(
-                url=yarl.URL("http://www.example.com"), method="GET", writer=None, continue100=1,
-                timer=None, request_info=None, traces=None, loop=self.loop,
-                session=None
-            )
-        )
+                url=yarl.URL("http://www.example.com"),
+                method="GET",
+                writer=None,
+                continue100=1,
+                timer=None,
+                request_info=None,
+                traces=None,
+                loop=self.loop,
+                session=None))
 
     def test_get_body(self):
         self.content = b'''<html><body><a href="http://example.com/test"></a></body></html>'''
 
         aiohttp.ClientResponse._headers = {'Content-Type': 'text/html'}
         aiohttp.ClientResponse.read = AsyncMock(return_value=self.content)
-        self.filename, self.hashname = self.handler._make_filename(yarl.URL(self.root))
+        self.filename, self.hashname = self.handler._make_filename(
+            yarl.URL(self.root))
         self.expected_content = '<html><body><a href="/test"></a></body></html>'
 
         self.meta = {
@@ -66,13 +72,17 @@ class TestGetBody(unittest.TestCase):
 
         with self.assertLogs(level='DEBUG') as log:
             self.loop.run_until_complete(test())
-            self.assertIn('DEBUG:snare.cloner:Cloned file: /test', ''.join(log.output))
+            self.assertIn(
+                'DEBUG:snare.cloner:Cloned file: /test',
+                ''.join(
+                    log.output))
 
         with open(os.path.join(self.target_path, self.hashname)) as f:
             self.return_content = f.read()
 
         self.assertEqual(self.return_content, self.expected_content)
-        self.assertEqual(self.handler.visited_urls[-2:], ['http://example.com/', 'http://example.com/test'])
+        self.assertEqual(
+            self.handler.visited_urls[-2:], ['http://example.com/', 'http://example.com/test'])
         self.assertEqual(self.handler.meta, self.meta)
 
     def test_get_body_css_validate(self):
@@ -111,7 +121,6 @@ class TestGetBody(unittest.TestCase):
         self.css_validate = 'true'
         self.return_size = 0
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
-
         self.content = [b'''.banner { background: url("data://domain/test.txt") }''',
                         b'''.banner { background: url("file://domain/test.txt") }''']
         self.meta = {
@@ -120,6 +129,7 @@ class TestGetBody(unittest.TestCase):
                 'headers': [{'Content-Type': 'text/css'}],
             },
         }
+
         self.expected_content = 'http://example.com/'
 
         async def test():
@@ -132,7 +142,8 @@ class TestGetBody(unittest.TestCase):
             self.loop.run_until_complete(test())
             self.assertEqual(self.return_size, self.q_size)
             self.assertEqual(self.handler.meta, self.meta)
-            self.assertEqual(self.handler.visited_urls[-1], self.expected_content)
+            self.assertEqual(
+                self.handler.visited_urls[-1], self.expected_content)
 
     def test_client_error(self):
         self.session.get = AsyncMock(side_effect=aiohttp.ClientError)

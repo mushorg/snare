@@ -35,7 +35,8 @@ class TestParseTannerResponse(unittest.TestCase):
         self.handler = TannerHandler(self.args, meta_content, self.uuid)
         self.requested_name = '/'
         self.loop = asyncio.get_event_loop()
-        self.handler.html_handler.handle_content = AsyncMock(return_value=self.page_content)
+        self.handler.html_handler.handle_content = AsyncMock(
+            return_value=self.page_content)
         self.res1 = None
         self.res2 = None
         self.res3 = None
@@ -130,6 +131,7 @@ class TestParseTannerResponse(unittest.TestCase):
         self.loop.run_until_complete(test())
         real_result = [self.res1, self.res2, self.res3]
         expected_result = [self.expected_content, self.headers, self.status_code]
+
         self.assertCountEqual(real_result, expected_result)
 
     def test_parse_type_two_error(self):
@@ -186,7 +188,8 @@ class TestParseTannerResponse(unittest.TestCase):
                     self.requested_name, self.detection)
 
         self.loop.run_until_complete(test())
-        self.handler.html_handler.handle_content.assert_called_with(self.call_content)
+        self.handler.html_handler.handle_content.assert_called_with(
+            self.call_content)
 
     def test_parse_exception(self):
         self.detection = {}

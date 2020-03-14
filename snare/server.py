@@ -10,7 +10,14 @@ from snare.tanner_handler import TannerHandler
 
 
 class HttpRequestHandler():
-    def __init__(self, meta, run_args, snare_uuid, debug=False, keep_alive=75, **kwargs):
+    def __init__(
+            self,
+            meta,
+            run_args,
+            snare_uuid,
+            debug=False,
+            keep_alive=75,
+            **kwargs):
         self.run_args = run_args
         self.dir = '/opt/snare/pages/{}'.format(run_args.page_dir)
         self.meta = meta
@@ -63,7 +70,8 @@ class HttpRequestHandler():
         else:
             previous_sess_uuid = None
 
-        if event_result is not None and ('sess_uuid' in event_result['response']['message']):
+        if event_result is not None and\
+                'sess_uuid' in event_result['response']['message']:
             cur_sess_id = event_result['response']['message']['sess_uuid']
             if previous_sess_uuid is None or not previous_sess_uuid.strip() or previous_sess_uuid != cur_sess_id:
                 headers.add('Set-Cookie', 'sess_uuid=' + cur_sess_id)
@@ -85,7 +93,10 @@ class HttpRequestHandler():
 
         self.runner = web.AppRunner(app)
         await self.runner.setup()
-        site = web.TCPSite(self.runner, self.run_args.host_ip, self.run_args.port)
+        site = web.TCPSite(
+            self.runner,
+            self.run_args.host_ip,
+            self.run_args.port)
 
         await site.start()
         names = sorted(str(s.name) for s in self.runner.sites)

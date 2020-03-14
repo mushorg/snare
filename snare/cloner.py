@@ -6,6 +6,7 @@ from asyncio import Queue
 import hashlib
 import json
 import re
+from collections import defaultdict
 import aiohttp
 import cssutils
 import yarl
@@ -28,7 +29,7 @@ class Cloner(object):
             os.mkdir(self.target_path)
         self.css_validate = css_validate
         self.new_urls = Queue()
-        self.meta = {}
+        self.meta = defaultdict(dict)
 
         self.counter = 0
         self.itr = 0
@@ -113,9 +114,12 @@ class Cloner(object):
                 act_link['action'] = res
 
         # prevent redirects
-        for redir in soup.findAll(True, attrs={'name': re.compile('redirect.*')}):
+        for redir in soup.findAll(
+            True, attrs={
+                'name': re.compile('redirect.*')}):
             if redir['value'] != "":
-                redir['value'] = yarl.URL(redir['value']).relative().human_repr()
+                redir['value'] = yarl.URL(
+                    redir['value']).relative().human_repr()
 
         return soup
 
@@ -129,7 +133,8 @@ class Cloner(object):
             file_name = "/" + file_name
 
         if file_name == '/' or file_name == "":
-            if host == self.root.host or (self.moved_root is not None and self.moved_root.host == host):
+            if host == self.root.host or\
+                    self.moved_root is not None and self.moved_root.host == host:
                 file_name = '/index.html'
             else:
                 file_name = host
@@ -148,7 +153,6 @@ class Cloner(object):
             self.visited_urls.append(current_url.human_repr())
             file_name, hash_name = self._make_filename(current_url)
             self.logger.debug('Cloned file: %s', file_name)
-            self.meta[file_name] = {}
             data = None
             content_type = None
             try:

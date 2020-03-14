@@ -78,7 +78,10 @@ def drop_privileges():
     os.setuid(wanted_user.pw_uid)
     new_user = pwd.getpwuid(os.getuid())
     new_group = grp.getgrgid(os.getgid())
-    print_color('privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name), 'INFO')
+    print_color(
+        'privileges dropped, running as "{}:{}"'.format(
+            new_user.pw_name,
+            new_group.gr_name), 'INFO')
 
 
 def compare_version_info(timeout):
@@ -92,7 +95,8 @@ def compare_version_info(timeout):
             print_color('timeout fetching the repository version', 'ERROR')
         else:
             if diff_list:
-                print_color('you are running an outdated version, SNARE will be updated and restarted', 'INFO')
+                print_color(
+                    'you are running an outdated version, SNARE will be updated and restarted', 'INFO')
                 repo.git.reset('--hard')
                 repo.heads.master.checkout()
                 repo.git.clean('-xdf')
@@ -115,7 +119,9 @@ async def check_tanner():
             version = result["version"]
             vm.check_compatibility(version)
         except aiohttp.ClientOSError:
-            print_color("Can't connect to tanner host {}".format(req_url), 'ERROR')
+            print_color(
+                "Can't connect to tanner host {}".format(req_url),
+                'ERROR')
             exit(1)
         else:
             await resp.release()
@@ -131,9 +137,16 @@ if __name__ == '__main__':
     """)
     parser = argparse.ArgumentParser()
     page_group = parser.add_mutually_exclusive_group(required=True)
-    page_group.add_argument("--page-dir", help="name of the folder to be served")
-    page_group.add_argument("--list-pages", help="list available pages", action='store_true')
-    parser.add_argument("--index-page", help="file name of the index page", default='index.html')
+    page_group.add_argument("--page-dir",
+                            help="name of the folder to be served")
+    page_group.add_argument(
+        "--list-pages",
+        help="list available pages",
+        action='store_true')
+    parser.add_argument(
+        "--index-page",
+        help="file name of the index page",
+        default='index.html')
     parser.add_argument("--port", help="port to listen on", default='8080')
     parser.add_argument("--host-ip", help="host ip to bind to", default='127.0.0.1')
     parser.add_argument("--debug", help="run web server in debug mode", default=False)
@@ -148,6 +161,7 @@ if __name__ == '__main__':
     parser.add_argument("--server-header", help="set server-header", default=None)
     parser.add_argument("--no-dorks", help="disable the use of dorks", type=str_to_bool,  default=True)
     parser.add_argument("--log-dir", help="path to directory of the log file", default='/opt/snare/')
+    
     args = parser.parse_args()
     base_path = '/opt/snare/'
     base_page_path = '/opt/snare/pages/'
@@ -165,7 +179,8 @@ if __name__ == '__main__':
         exit()
     full_page_path = os.path.join(base_page_path, args.page_dir)
     if not os.path.exists(full_page_path):
-        print_color("--page-dir: {0} does not exist".format(args.page_dir), 'ERROR')
+        print_color(
+            "--page-dir: {0} does not exist".format(args.page_dir), 'ERROR')
         exit()
     args.index_page = os.path.join("/", args.index_page)
 
@@ -181,11 +196,13 @@ if __name__ == '__main__':
         print_color("Error found in meta.json. Please clone the pages again.", "ERROR")
         exit()
 
-    if not os.path.exists(os.path.join(base_page_path, args.page_dir,
+    if not os.path.exists(os.path.join(base_page_path,
+                                       args.page_dir,
                                        os.path.join(meta_info[args.index_page]['hash']))):
         print_color('can\'t create meta tag', 'WARNING')
     else:
-        snare_helpers.add_meta_tag(args.page_dir, meta_info[args.index_page]['hash'], config)
+        snare_helpers.add_meta_tag(
+            args.page_dir, meta_info[args.index_page]['hash'], config)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(check_tanner())
 
@@ -193,9 +210,15 @@ if __name__ == '__main__':
     compare_version_fut = None
     if args.auto_update is True:
         timeout = snare_helpers.parse_timeout(args.update_timeout)
-        compare_version_fut = loop.run_in_executor(pool, compare_version_info, timeout)
+        compare_version_fut = loop.run_in_executor(
+            pool, compare_version_info, timeout)
 
-    app = HttpRequestHandler(meta_info, args, snare_uuid, debug=args.debug, keep_alive=75)
+    app = HttpRequestHandler(
+        meta_info,
+        args,
+        snare_uuid,
+        debug=args.debug,
+        keep_alive=75)
 
     print_color('serving with uuid {0}'.format(snare_uuid.decode('utf-8')), 'INFO')
     print_color("Debug logs will be stored in {}".format(log_debug), 'INFO')
