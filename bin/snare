@@ -200,7 +200,7 @@ if __name__ == '__main__':
         help="disable the use of dorks",
         type=str_to_bool,
         default=True)
-    parset.add_argument(
+    parser.add_argument(
         "--path",
         help="path to save the page to be cloned",
         required=False,

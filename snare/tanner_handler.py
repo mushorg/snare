@@ -13,10 +13,7 @@ class TannerHandler():
     def __init__(self, run_args, meta, snare_uuid):
         self.run_args = run_args
         self.meta = meta
-        if('full_page_path' in run_args):
-            self.dir = run_args.full_page_path
-        else:
-            self.dir = '/opt/snare/pages/{}'.format(run_args.page_dir)
+        self.dir = run_args.full_page_path
         self.snare_uuid = snare_uuid
         self.html_handler = HtmlHandler(run_args.no_dorks, run_args.tanner)
         self.logger = logging.getLogger(__name__)
