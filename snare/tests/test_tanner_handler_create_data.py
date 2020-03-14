@@ -23,7 +23,7 @@ class TestCreateData(unittest.TestCase):
         page_dir = self.main_page_path.rsplit('/')[-1]
         args = run_args.parse_args(['--page-dir', page_dir])
         args_dict = vars(args)
-        args_dict['full_page_path'] = os.path.realpath(page_dir)
+        args_dict['full_page_path'] = self.main_page_path
         snare_uuid = '9c10172f-7ce2-4fb4-b1c6-abc70141db56'.encode('utf-8')
         args.no_dorks = True
         self.handler = TannerHandler(args, meta, snare_uuid)

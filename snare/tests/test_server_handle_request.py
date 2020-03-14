@@ -25,7 +25,7 @@ class TestHandleRequest(unittest.TestCase):
         self.page_dir = self.main_page_path.rsplit('/')[-1]
         args = run_args.parse_args(['--page-dir', self.page_dir])
         args_dict = vars(args)
-        args_dict['full_page_path'] = os.path.realpath(self.page_dir)
+        args_dict['full_page_path'] = self.main_page_path
         uuid = '9c10172f-7ce2-4fb4-b1c6-abc70141db56'.encode('utf-8')
         args.tanner = 'tanner.mushmush.org'
         args.no_dorks = True
