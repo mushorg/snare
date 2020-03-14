@@ -42,9 +42,8 @@ class TannerHandler():
             data['headers'] = header
             data['path'] = request.path_qs
             if 'Cookie' in header:
-                data['cookies'] = {
-                    cookie.split('=')[0]: cookie.split('=')[1] for cookie in header['Cookie'].split(';')
-                    }
+                data['cookies'] = {cookie.split('=')[0]: cookie.split('=')[1]
+                                   for cookie in header['Cookie'].split(';')}
         return data
 
     async def submit_data(self, data):
@@ -125,11 +124,15 @@ class TannerHandler():
 
                 soup = BeautifulSoup(content, 'html.parser')
                 script_tag = soup.new_tag('div')
-                script_tag.append(BeautifulSoup(payload_content['value'], 'html.parser'))
+                script_tag.append(
+                    BeautifulSoup(
+                        payload_content['value'],
+                        'html.parser'))
                 soup.body.append(script_tag)
                 content = str(soup).encode()
             else:
-                content_type = mimetypes.guess_type(payload_content['value'])[0]
+                content_type = mimetypes.guess_type(
+                    payload_content['value'])[0]
                 content = payload_content['value'].encode('utf-8')
 
             if 'headers' in payload_content:
