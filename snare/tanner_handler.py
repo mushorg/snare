@@ -128,8 +128,7 @@ class TannerHandler():
                 soup.body.append(script_tag)
                 content = str(soup).encode()
             else:
-                content_type = mimetypes.guess_type(
-                    payload_content['value'])[0]
+                content_type = 'text/plain'
                 content = payload_content['value'].encode('utf-8')
 
             if 'headers' in payload_content:
