@@ -21,7 +21,7 @@ Getting started
 """""""""""""""
 
  You need Python3. We tested primarily with >=3.4
-
+ 
  This was tested with a recent Ubuntu based Linux.
 
 **Steps to setup:**
@@ -40,7 +40,7 @@ Getting started
 
 6. Clone a page: ``sudo clone --target http://example.com --path <path to base dir>``
 
-7. Run SNARE: ``sudo snare --port 8080 --page-dir example.com --path <path to base dir> --log-dir <path to log dir>`` (See :doc:`parameters` description for more info)
+7. Run SNARE: ``sudo snare --port 8080 --page-dir example.com --path <path to base dir>`` (See :doc:`parameters` description for more info)
 
 8. Test: Visit http://localhost:8080/index.html
 
@@ -53,6 +53,7 @@ Getting started
 You obviously want to bind to 0.0.0.0 and port 80 when running in *production*.
 
 **Docker build instructions**
+
 1. Change current directory to ``snare`` project directory
 2. ``docker-compose build``
 3. ``docker-compose up``
