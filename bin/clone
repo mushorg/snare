@@ -17,10 +17,11 @@ import argparse
 import asyncio
 import os
 import sys
-from snare.utils import logger
-from snare.cloner import Cloner
-from snare.utils.snare_helpers import str_to_bool, print_color
 from datetime import datetime
+
+from snare.cloner import Cloner
+from snare.utils import logger
+from snare.utils.snare_helpers import check_privileges, print_color, str_to_bool
 
 
 def main():
@@ -43,23 +44,11 @@ def main():
         log_file = os.path.join(default_path, 'clone.log')
 
     try:
-        if not os.path.exists(default_path):
-            os.makedirs(default_path)
-        with open(os.path.join(default_path, 'temp'), 'w') as tempfile:
-            tempfile.write('')
-        os.remove(os.path.join(default_path, 'temp'))
-
-        if not os.path.exists(os.path.dirname(log_file)):
-            os.makedirs(os.path.dirname(log_file))
-        with open(os.path.join(os.path.dirname(log_file), 'temp'), 'w') as tempfile:
-            tempfile.write('')
-        os.remove(os.path.join(os.path.dirname(log_file), 'temp'))
-    except IOError as e:
-        if os.getuid() != 0:
-            print_color('Snare has to be started as root!', 'WARNING')
-            sys.exit(1)
-        else:
-            raise e
+        check_privileges(default_path)
+        check_privileges(os.path.dirname(log_file))
+    except IOError:
+        print_color('Snare has to be started as root!', 'WARNING')
+        sys.exit(1)
 
     if not os.path.exists('{}/pages'.format(default_path)):
         os.makedirs('{}/pages'.format(default_path))

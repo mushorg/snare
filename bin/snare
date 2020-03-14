@@ -13,23 +13,25 @@ GNU General Public License for more details.
 """
 import argparse
 import asyncio
-import pwd
-import grp
 import configparser
+import grp
 import json
 import multiprocessing
 import os
+import pwd
 import sys
 import time
 import uuid
 from concurrent.futures import ProcessPoolExecutor
+
 import aiohttp
-import git
 import pip
+
+import git
 from snare.server import HttpRequestHandler
-from snare.utils.logger import Logger
 from snare.utils import snare_helpers
-from snare.utils.snare_helpers import str_to_bool, print_color, check_meta_file
+from snare.utils.logger import Logger
+from snare.utils.snare_helpers import check_privileges, check_meta_file, print_color, str_to_bool
 
 
 def create_initial_config(base_path):
@@ -42,17 +44,10 @@ def create_initial_config(base_path):
 def snare_setup(base_path):
     try:
         # Create folders
-        if not os.path.exists(base_path):
-            os.makedirs(base_path)
-        with open(os.path.join(base_path, 'temp'), 'w') as tempfile:
-            tempfile.write('')
-        os.remove(os.path.join(base_path, 'temp'))
-    except IOError as e:
-        if os.getuid() != 0:
-            print_color('Snare has to be started as root!', 'WARNING')
-            sys.exit(1)
-        else:
-            raise e
+        check_privileges(base_path)
+    except IOError:
+        print_color('Snare has to be started as root!', 'WARNING')
+        sys.exit(1)
 
     if not os.path.exists(os.path.join(base_path,'pages')):
         os.makedirs(os.path.join(base_path,'pages'))
@@ -153,14 +148,15 @@ if __name__ == '__main__':
     parser.add_argument("--server-header", help="set server-header", default='nginx/1.3.8')
     parser.add_argument("--no-dorks", help="disable the use of dorks", type=str_to_bool,  default=True)
     parser.add_argument("--path", help="path to save the page to be cloned", required=False, default='/opt/')
-    parser.add_argument("--page-path", help="Use only if the path not same as that of snare. Path to cloned pages",
-                        required=False, default='none')
+
     args = parser.parse_args()
     base_path = os.path.join(args.path, 'snare')
-    if(args.page_path == 'none'):
+    if(not os.path.isabs(args.page_dir)):
         base_page_path = os.path.join(base_path, 'pages')
+        full_page_path = os.path.join(base_page_path, args.page_dir)
     else:
-        base_page_path = os.path.join(args.page_path, 'pages')
+        base_page_path = os.path.dirname(args.page_dir)
+        full_page_path = args.page_dir
     snare_uuid = snare_setup(base_path)
     config = configparser.ConfigParser()
     config.read(os.path.join(base_path, args.config))
@@ -173,7 +169,6 @@ if __name__ == '__main__':
             print_color('\t- {}'.format(page), 'INFO')
         print_color('\nuse with --page-dir {page_name}\n\n', 'INFO')
         exit()
-    full_page_path = os.path.join(base_page_path, args.page_dir)
     args_dict = vars(args)
     args_dict['full_page_path'] = os.path.realpath(full_page_path)
     if not os.path.exists(full_page_path):
@@ -193,7 +188,7 @@ if __name__ == '__main__':
         print_color("Error found in meta.json. Please clone the pages again.", "ERROR")
         exit()
 
-    if not os.path.exists(os.path.join(base_page_path, args.page_dir,
+    if not os.path.exists(os.path.join(full_page_path,
                                        os.path.join(meta_info[args.index_page]['hash']))):
         print_color('can\'t create meta tag', 'WARNING')
     else:

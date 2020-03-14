@@ -130,3 +130,14 @@ def print_color(msg, mode='INFO', end="\n"):
     except KeyError:
         color = colors['INFO']
     print(color + str(msg) + '\033[0m', end=end)
+
+
+def check_privileges(path):
+    """
+    Checks if the user has privileges to the path passed as argument.
+    """
+    if not os.path.exists(path):
+        os.makedirs(path)
+    with open(os.path.join(path, 'temp'), 'w') as tempfile:
+        tempfile.write('')
+    os.remove(os.path.join(path, 'temp'))

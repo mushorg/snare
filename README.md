@@ -40,7 +40,7 @@ Getting started
 4. Install requirements: `sudo pip3 install -r requirements.txt`
 5. Setup snare: `sudo python3 setup.py install`
 6. Clone a page: `sudo clone --target http://example.com --path <path to base dir>`
-7. Run SNARE: `sudo snare --port 8080 --page-dir example.com --path <path to base dir> --log-dir <path to log dir>`
+7. Run SNARE: `sudo snare --port 8080 --page-dir example.com --path <path to base dir>`
 8. Test: Visit http://localhost:8080/index.html
 9. (Optionally) Have your own [tanner](https://github.com/mushorg/tanner) service running.
 
