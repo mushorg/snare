@@ -51,12 +51,11 @@ class Converter:
             hash_name = m.hexdigest()
             self.meta[file_name] = {
                 'hash': hash_name,
-                'content_type': mimetypes.guess_type(file_name)[0]}
-            self.logger.debug(
-                'Converting the file as %s ',
-                os.path.join(
-                    path,
-                    hash_name))
+                'headers': [
+                    {"Content-Type": mimetypes.guess_type(file_name)[0]},
+                ],
+            }
+            self.logger.debug('Converting the file as %s ', os.path.join(path, hash_name))
             shutil.copyfile(fn, os.path.join(path, hash_name))
             os.remove(fn)
 
@@ -98,7 +97,7 @@ def add_meta_tag(page_dir, index_page, config):
 
 def check_meta_file(meta_info):
     for k, v in meta_info.items():
-        if 'hash' in v and 'content_type' in v:
+        if 'hash' in v and any(l in v for l in ['content_type', 'headers']):
             continue
         else:
             return False

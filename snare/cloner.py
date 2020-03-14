@@ -42,6 +42,26 @@ class Cloner(object):
         err_url = new_url.with_path('/status_404').with_query(None).with_fragment(None)
         return new_url, err_url
 
+    @staticmethod
+    def get_headers(response):
+        ignored_headers_lowercase = [
+            'age',
+            'cache-control',
+            'connection',
+            'content-encoding',
+            'content-length',
+            'date',
+            'etag',
+            'expires',
+            'x-cache',
+        ]
+
+        headers = []
+        for key, value in response.headers.items():
+            if key.lower() not in ignored_headers_lowercase:
+                headers.append({key: value})
+        return headers
+
     async def process_link(self, url, level, check_host=False):
         try:
             url = yarl.URL(url)
@@ -137,25 +157,24 @@ class Cloner(object):
             content_type = None
             try:
                 response = await session.get(current_url, headers={'Accept': 'text/html'}, timeout=10.0)
+                headers = self.get_headers(response)
                 content_type = response.content_type
                 data = await response.read()
-
             except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
                 self.logger.error(client_error)
             else:
                 await response.release()
+
             if data is not None:
                 self.meta[file_name]['hash'] = hash_name
-                self.meta[file_name]['content_type'] = content_type
+                self.meta[file_name]['headers'] = headers
                 self.counter = self.counter + 1
+
                 if content_type == 'text/html':
                     soup = await self.replace_links(data, level)
                     data = str(soup).encode()
-                with open(os.path.join(self.target_path, hash_name), 'wb') as index_fh:
-                    index_fh.write(data)
-                if content_type == 'text/css':
-                    css = cssutils.parseString(
-                        data, validate=self.css_validate)
+                elif content_type == 'text/css':
+                    css = cssutils.parseString(data, validate=self.css_validate)
                     for carved_url in cssutils.getUrls(css):
                         if carved_url.startswith('data'):
                             continue
@@ -164,6 +183,9 @@ class Cloner(object):
                             carved_url = self.root.join(carved_url)
                         if carved_url.human_repr() not in self.visited_urls:
                             await self.new_urls.put((carved_url, level + 1))
+
+                with open(os.path.join(self.target_path, hash_name), 'wb') as index_fh:
+                    index_fh.write(data)
 
     async def get_root_host(self):
         try:

@@ -2,6 +2,7 @@ import re
 import os
 from urllib.parse import unquote
 import mimetypes
+import multidict
 import json
 import logging
 import aiohttp
@@ -34,6 +35,8 @@ class TannerHandler():
             )
             data['peer'] = peer
         if request.path:
+            # FIXME request.headers is a CIMultiDict, so items with the same
+            # key will be overwritten when converting to dictionary
             header = {key: value for (key, value) in request.headers.items()}
             data['method'] = request.method
             data['headers'] = header
@@ -66,10 +69,9 @@ class TannerHandler():
         return event_result
 
     async def parse_tanner_response(self, requested_name, detection):
-        content_type = None
         content = None
         status_code = 200
-        headers = {}
+        headers = multidict.CIMultiDict()
         # Creating a regex object for the pattern of multiple contiguous forward slashes
         p = re.compile('/+')
         # Substituting all occurrences of the pattern with single forward slash
@@ -90,11 +92,18 @@ class TannerHandler():
                 requested_name = unquote(requested_name)
                 try:
                     file_name = self.meta[requested_name]['hash']
-                    content_type = self.meta[requested_name]['content_type']
+                    for header in self.meta[requested_name].get('headers', []):
+                        for key, value in header.items():
+                            headers.add(key, value)
+                    # overwrite headers with legacy content-type if present and not none
+                    content_type = self.meta[requested_name].get('content_type')
+                    if content_type:
+                        headers['Content-Type'] = content_type
                 except KeyError:
                     pass
                 else:
                     break
+
             if not file_name:
                 status_code = 404
             else:
@@ -102,22 +111,27 @@ class TannerHandler():
                 if os.path.isfile(path):
                     with open(path, 'rb') as fh:
                         content = fh.read()
-                    if content_type:
-                        if 'text/html' in content_type:
-                            content = await self.html_handler.handle_content(content)
+                    if headers.get('Content-Type', '').startswith('text/html'):
+                        content = await self.html_handler.handle_content(content)
 
         elif detection['type'] == 2:
             payload_content = detection['payload']
             if payload_content['page']:
                 try:
                     file_name = self.meta[payload_content['page']]['hash']
-                    content_type = self.meta[payload_content['page']]['content_type']
+                    for header in self.meta[payload_content['page']].get('headers', []):
+                        for key, value in header.items():
+                            headers.add(key, value)
+                    # overwrite headers with legacy content-type if present and not none
+                    content_type = self.meta[payload_content['page']].get('content_type')
+                    if content_type:
+                        headers['Content-Type'] = content_type
                     page_path = os.path.join(self.dir, file_name)
                     with open(page_path, encoding='utf-8') as p:
                         content = p.read()
                 except KeyError:
                     content = '<html><body></body></html>'
-                    content_type = r'text/html'
+                    headers['Content-Type'] = 'text/html'
 
                 soup = BeautifulSoup(content, 'html.parser')
                 script_tag = soup.new_tag('div')
@@ -129,12 +143,16 @@ class TannerHandler():
                 content = str(soup).encode()
             else:
                 content_type = 'text/plain'
+                if content_type:
+                    headers['Content-Type'] = content_type
                 content = payload_content['value'].encode('utf-8')
 
             if 'headers' in payload_content:
-                headers = payload_content['headers']
-        else:
+                # overwrite local headers with the tanner-provided ones
+                headers.update(payload_content['headers'])
+
+        else:  # type 3
             payload_content = detection['payload']
             status_code = payload_content['status_code']
 
-        return content, content_type, headers, status_code
+        return content, headers, status_code

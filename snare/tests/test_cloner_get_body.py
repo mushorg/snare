@@ -55,10 +55,16 @@ class TestGetBody(unittest.TestCase):
             yarl.URL(self.root))
         self.expected_content = '<html><body><a href="/test"></a></body></html>'
 
-        self.meta = {'/index.html': {'content_type': 'text/html',
-                                     'hash': 'd1546d731a9f30cc80127d57142a482b'},
-                     '/test': {'content_type': 'text/html',
-                               'hash': '4539330648b80f94ef3bf911f6d77ac9'}}
+        self.meta = {
+            '/index.html': {
+                'hash': 'd1546d731a9f30cc80127d57142a482b',
+                'headers': [{'Content-Type': 'text/html'}],
+            },
+            '/test': {
+                'hash': '4539330648b80f94ef3bf911f6d77ac9',
+                'headers': [{'Content-Type': 'text/html'}],
+            },
+        }
 
         async def test():
             await self.handler.new_urls.put((yarl.URL(self.root), 0))
@@ -88,10 +94,16 @@ class TestGetBody(unittest.TestCase):
         aiohttp.ClientResponse.read = AsyncMock(return_value=self.content)
         self.expected_content = 'http://example.com/example.png'
         self.return_size = 0
-        self.meta = {'/example.png': {'content_type': 'text/css',
-                                      'hash': '5a64beebcd2a6f1cbd00b8370debaa72'},
-                     '/index.html': {'content_type': 'text/css',
-                                     'hash': 'd1546d731a9f30cc80127d57142a482b'}}
+        self.meta = {
+            '/example.png': {
+                'hash': '5a64beebcd2a6f1cbd00b8370debaa72',
+                'headers': [{'Content-Type': 'text/css'}],
+            },
+            '/index.html': {
+                'hash': 'd1546d731a9f30cc80127d57142a482b',
+                'headers': [{'Content-Type': 'text/css'}],
+            },
+        }
 
         async def test():
             await self.handler.new_urls.put((yarl.URL(self.root), 0))
@@ -109,13 +121,15 @@ class TestGetBody(unittest.TestCase):
         self.css_validate = 'true'
         self.return_size = 0
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
+        self.content = [b'''.banner { background: url("data://domain/test.txt") }''',
+                        b'''.banner { background: url("file://domain/test.txt") }''']
+        self.meta = {
+            '/index.html': {
+                'hash': 'd1546d731a9f30cc80127d57142a482b',
+                'headers': [{'Content-Type': 'text/css'}],
+            },
+        }
 
-        self.content = [
-            b'''.banner { background: url("data://domain/test.txt") }''',
-            b'''.banner { background: url("file://domain/test.txt") }''']
-
-        self.meta = {'/index.html': {'content_type': 'text/css',
-                                     'hash': 'd1546d731a9f30cc80127d57142a482b'}}
         self.expected_content = 'http://example.com/'
 
         async def test():
