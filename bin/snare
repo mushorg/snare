@@ -195,14 +195,14 @@ if __name__ == '__main__':
     if not check_meta_file(meta_info):
         print_color("Error found in meta.json. Please clone the pages again.", "ERROR")
         exit()
-
-    if not os.path.exists(os.path.join(base_page_path,
-                                       args.page_dir,
+    try:
+        if not os.path.exists(os.path.join(base_page_path, args.page_dir,
                                        os.path.join(meta_info[args.index_page]['hash']))):
-        print_color('can\'t create meta tag', 'WARNING')
-    else:
-        snare_helpers.add_meta_tag(
-            args.page_dir, meta_info[args.index_page]['hash'], config)
+            print_color('can\'t create meta tag', 'WARNING')
+        else:
+            snare_helpers.add_meta_tag(args.page_dir, meta_info[args.index_page]['hash'], config)
+    except KeyError as e:
+        print_color(e,"has not been created.")
     loop = asyncio.get_event_loop()
     loop.run_until_complete(check_tanner())
 
