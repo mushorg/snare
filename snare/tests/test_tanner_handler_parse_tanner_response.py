@@ -28,6 +28,8 @@ class TestParseTannerResponse(unittest.TestCase):
         with open(os.path.join(self.main_page_path, "meta.json"), 'w') as f:
             json.dump(meta_content, f)
         self.args = run_args.parse_args(['--page-dir', page_dir])
+        args_dict = vars(args)
+        args_dict['full_page_path'] = self.main_page_path
         self.args.index_page = '/index.html'
         self.args.no_dorks = True
         self.args.tanner = "tanner.mushmush.org"

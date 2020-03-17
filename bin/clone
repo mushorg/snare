@@ -17,19 +17,14 @@ import argparse
 import asyncio
 import os
 import sys
-from snare.utils import logger
-from snare.cloner import Cloner
-from snare.utils.snare_helpers import str_to_bool, print_color
 from datetime import datetime
 
+from snare.cloner import Cloner
+from snare.utils import logger
+from snare.utils.snare_helpers import check_privileges, print_color, str_to_bool
+
+
 def main():
-    if os.getuid() != 0:
-        print_color('Clone has to be run as root!', 'WARNING')
-        sys.exit(1)
-    if not os.path.exists('/opt/snare'):
-        os.makedirs('/opt/snare')
-    if not os.path.exists('/opt/snare/pages'):
-        os.mkdir('/opt/snare/pages')
     loop = asyncio.get_event_loop()
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -47,29 +42,47 @@ def main():
         help="set whether css validation is required",
         type=str_to_bool,
         default=None)
+    parser.add_argument(
+        "--path",
+        help="path to save the page to be cloned",
+        required=False,
+        default="/opt/"
+    )
     args = parser.parse_args()
+    default_path = os.path.join(args.path, 'snare')
+
     if args.log_path:
-        log_file = args.log_path + "clone.log"
+        log_file = os.path.join(args.log_path, "clone.log")
     else:
-        log_file = "/opt/snare/clone.log"
-    logger.Logger.create_clone_logger(log_file, __package__)
-    print_color("  Logs will be stored in {}".format(log_file),"INFO" ,end="")
+        log_file = os.path.join(default_path, 'clone.log')
+
     try:
-        start=datetime.now()
-        cloner = Cloner(args.target, int(args.max_depth), args.css_validate)
+        check_privileges(default_path)
+        check_privileges(os.path.dirname(log_file))
+    except IOError:
+        print_color('Snare has to be started as root!', 'WARNING')
+        sys.exit(1)
+
+    if not os.path.exists('{}/pages'.format(default_path)):
+        os.makedirs('{}/pages'.format(default_path))
+
+    logger.Logger.create_clone_logger(log_file, __package__)
+    print_color("  Logs will be stored in {}".format(log_file), "INFO", end="")
+    try:
+        start = datetime.now()
+        cloner = Cloner(args.target, int(args.max_depth), args.css_validate, default_path)
         loop.run_until_complete(cloner.get_root_host())
         loop.run_until_complete(cloner.run())
-        end=datetime.now()-start
+        end = datetime.now()-start
     except KeyboardInterrupt:
-        end=datetime.now()-start
-        pass
+        end = datetime.now()-start
     finally:
         print("")
-        print_color("-"*36+">SUMMARY<"+"-"*36,"INFO")
-        print_color('\tTotal number of URLs cloned: {}'.format(str(cloner.counter)),"INFO")
-        print_color('\tTime elapsed: {}'.format(str(end)),"INFO")
-        print_color('\tCloned directory: {}'.format(cloner.target_path),"INFO")
-        print_color('-'*82,"INFO")
+        print_color("-"*36+">SUMMARY<"+"-"*36, "INFO")
+        print_color('\tTotal number of URLs cloned: {}'.format(str(cloner.counter)), "INFO")
+        print_color('\tTime elapsed: {}'.format(str(end)), "INFO")
+        print_color('\tCloned directory: {}'.format(cloner.target_path), "INFO")
+        print_color('-'*82, "INFO")
 
 
 if __name__ == '__main__':

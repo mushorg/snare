@@ -19,7 +19,7 @@ class HttpRequestHandler():
             keep_alive=75,
             **kwargs):
         self.run_args = run_args
-        self.dir = '/opt/snare/pages/{}'.format(run_args.page_dir)
+        self.dir = run_args.full_page_path
         self.meta = meta
         self.snare_uuid = snare_uuid
         self.logger = logging.getLogger(__name__)
