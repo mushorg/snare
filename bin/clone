@@ -59,8 +59,8 @@ def main():
     try:
         check_privileges(default_path)
         check_privileges(os.path.dirname(log_file))
-    except IOError:
-        print_color('Snare has to be started as root!', 'WARNING')
+    except PermissionError as err:
+        print_color(err, 'WARNING')
         sys.exit(1)
 
     if not os.path.exists('{}/pages'.format(default_path)):

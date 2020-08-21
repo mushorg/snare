@@ -13,7 +13,7 @@ class TestStrToBool(unittest.TestCase):
         try:
             check_privileges(self.path)
             self.privileges = True
-        except IOError:
+        except PermissionError:
             self.privileges = False
         assert self.privileges is False
 
@@ -22,6 +22,6 @@ class TestStrToBool(unittest.TestCase):
         try:
             check_privileges(self.path)
             self.privileges = True
-        except IOError:
+        except PermissionError:
             self.privileges = False
         assert self.privileges is True

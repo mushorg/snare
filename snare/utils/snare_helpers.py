@@ -148,7 +148,9 @@ def check_privileges(path):
     Checks if the user has privileges to the path passed as argument.
     """
     if not os.path.exists(path):
-        os.makedirs(path)
-    with open(os.path.join(path, 'temp'), 'w') as tempfile:
-        tempfile.write('')
-    os.remove(os.path.join(path, 'temp'))
+        try:
+            os.makedirs(path)
+        except PermissionError:
+            raise PermissionError(f'Permission denied: \'{os.path.abspath(path)}\'')
+    if not os.access(path, os.W_OK):
+        raise PermissionError(f'Permission denied: \'{os.path.abspath(path)}\'')
