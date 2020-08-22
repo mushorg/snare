@@ -45,8 +45,8 @@ def snare_setup(base_path):
     try:
         # Create folders
         check_privileges(base_path)
-    except IOError:
-        print_color('Snare has to be started as root!', 'WARNING')
+    except PermissionError as err:
+        print_color(err, 'WARNING')
         sys.exit(1)
 
     if not os.path.exists(os.path.join(base_path,'pages')):
