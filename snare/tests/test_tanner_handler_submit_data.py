@@ -37,7 +37,7 @@ class TestSubmitData(unittest.TestCase):
                 'Accept-Encoding': 'test_encoding',
                 'Accept-Language': 'test_lang',
                 'Cookie': 'test_cookie'
-                },
+            },
             'uuid': 'test_uuid',
             'peer': {
                 'ip': '::1',

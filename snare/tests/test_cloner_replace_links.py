@@ -65,5 +65,17 @@ class TestReplaceLinks(unittest.TestCase):
         self.assertEqual(str(self.return_content), self.expected_content)
         self.handler.process_link.assert_called_with(self.root, self.level)
 
+    def test_replace_redirects(self):
+        self.root = "http://example.com"
+        self.content = '\n<html>\n<body>\n<p name="redirect" value="http://example.com/home.html">Redirecting...</p>\n</body>\n</html>\n'
+
+        self.expected_content = '\n<html>\n<body>\n<p name="redirect" value="/home.html">Redirecting...</p>\n</body>\n</html>\n'
+
+        async def test():
+            self.return_content = await self.handler.replace_links(self.content, self.level)
+
+        self.loop.run_until_complete(test())
+        self.assertEqual(str(self.return_content), self.expected_content)
+
     def tearDown(self):
         shutil.rmtree(self.main_page_path)

@@ -22,7 +22,8 @@ class TestAddMetaTag(unittest.TestCase):
         config = configparser.ConfigParser()
         config['WEB-TOOLS'] = dict(google='test google content',
                                    bing='test bing content')
-        add_meta_tag(self.page_dir, self.index_page, config)
+        add_meta_tag(self.page_dir, self.index_page,
+                     config, base_path="/opt/snare")
         with open(os.path.join(self.main_page_path, 'index.html')) as main:
             main_page = main.read()
         soup = BeautifulSoup(main_page, 'html.parser')
@@ -33,7 +34,8 @@ class TestAddMetaTag(unittest.TestCase):
     def test_add_meta_tag_with_empty_tags(self):
         config = configparser.ConfigParser()
         config['WEB-TOOLS'] = dict(google='', bing='')
-        assert add_meta_tag(self.page_dir, self.index_page, config) is None
+        assert add_meta_tag(self.page_dir, self.index_page,
+                            config, base_path="/opt/snare") is None
 
     def tearDown(self):
         shutil.rmtree(self.main_page_path)

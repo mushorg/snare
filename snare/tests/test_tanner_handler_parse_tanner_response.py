@@ -18,7 +18,8 @@ class TestParseTannerResponse(unittest.TestCase):
         self.main_page_path = generate_unique_path()
         os.makedirs(self.main_page_path)
         page_dir = self.main_page_path.rsplit('/')[-1]
-        meta_content = {"/index.html": {"hash": "hash_name", "headers": [{"Content-Type": "text/html"}]}}
+        meta_content = {"/index.html": {"hash": "hash_name",
+                                        "headers": [{"Content-Type": "text/html"}]}}
         self.page_content = "<html><body></body></html>"
         self.headers = multidict.CIMultiDict([("Content-Type", "text/html")])
         self.status_code = 200
@@ -28,7 +29,7 @@ class TestParseTannerResponse(unittest.TestCase):
         with open(os.path.join(self.main_page_path, "meta.json"), 'w') as f:
             json.dump(meta_content, f)
         self.args = run_args.parse_args(['--page-dir', page_dir])
-        args_dict = vars(args)
+        args_dict = vars(self.args)
         args_dict['full_page_path'] = self.main_page_path
         self.args.index_page = '/index.html'
         self.args.no_dorks = True
@@ -87,7 +88,8 @@ class TestParseTannerResponse(unittest.TestCase):
 
         self.loop.run_until_complete(test())
         real_result = [self.res1, self.res2, self.res3]
-        expected_result = [self.expected_content, self.headers, self.status_code]
+        expected_result = [self.expected_content,
+                           self.headers, self.status_code]
         self.assertCountEqual(real_result, expected_result)
 
     def test_parse_type_two(self):
@@ -107,7 +109,8 @@ class TestParseTannerResponse(unittest.TestCase):
 
         self.loop.run_until_complete(test())
         real_result = [self.res1, self.res2, self.res3]
-        expected_result = [self.expected_content, self.headers, self.status_code]
+        expected_result = [self.expected_content,
+                           self.headers, self.status_code]
         self.assertCountEqual(real_result, expected_result)
 
     def test_parse_type_two_with_headers(self):
@@ -123,7 +126,8 @@ class TestParseTannerResponse(unittest.TestCase):
         }
         self.expected_content = b'test.png'
         self.content_type = 'image/png'
-        self.headers = multidict.CIMultiDict([("Content-Type", "multipart/form-data")])
+        self.headers = multidict.CIMultiDict(
+            [("Content-Type", "multipart/form-data")])
 
         async def test():
             (self.res1, self.res2, self.res3) = \
@@ -132,7 +136,8 @@ class TestParseTannerResponse(unittest.TestCase):
 
         self.loop.run_until_complete(test())
         real_result = [self.res1, self.res2, self.res3]
-        expected_result = [self.expected_content, self.headers, self.status_code]
+        expected_result = [self.expected_content,
+                           self.headers, self.status_code]
 
         self.assertCountEqual(real_result, expected_result)
 
@@ -154,7 +159,8 @@ class TestParseTannerResponse(unittest.TestCase):
 
         self.loop.run_until_complete(test())
         real_result = [self.res1, self.res2, self.res3]
-        expected_result = [self.expected_content, self.headers, self.status_code]
+        expected_result = [self.expected_content,
+                           self.headers, self.status_code]
         self.assertCountEqual(real_result, expected_result)
 
     def test_parse_type_three(self):
@@ -176,7 +182,8 @@ class TestParseTannerResponse(unittest.TestCase):
 
         self.loop.run_until_complete(test())
         real_result = [self.res1, self.res2, self.res3]
-        expected_result = [self.expected_content, self.headers, self.status_code]
+        expected_result = [self.expected_content,
+                           self.headers, self.status_code]
         self.assertCountEqual(real_result, expected_result)
 
     def test_call_handle_html(self):

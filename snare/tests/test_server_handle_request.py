@@ -47,9 +47,11 @@ class TestHandleRequest(unittest.TestCase):
         }
         self.loop = asyncio.new_event_loop()
         self.response_content = '<html><body></body></html>'
-        self.response_headers = multidict.CIMultiDict([("Content-Type", "text/html")])
+        self.response_headers = multidict.CIMultiDict(
+            [("Content-Type", "text/html")])
         self.response_status = 200
-        event_result = dict(response=dict(message=dict(detection={'type': 1}, sess_uuid="test_uuid")))
+        event_result = dict(response=dict(message=dict(
+            detection={'type': 1}, sess_uuid="test_uuid")))
         RequestHandler = Mock()
         protocol = RequestHandler()
         message = RawRequestMessage(
@@ -61,8 +63,10 @@ class TestHandleRequest(unittest.TestCase):
             message=message, payload=None, protocol=protocol, payload_writer=None,
             task='POST', loop=self.loop
         )
-        self.handler.tanner_handler.create_data = Mock(return_value=self.request_data)
-        self.handler.tanner_handler.submit_data = AsyncMock(return_value=event_result)
+        self.handler.tanner_handler.create_data = Mock(
+            return_value=self.request_data)
+        self.handler.tanner_handler.submit_data = AsyncMock(
+            return_value=event_result)
         self.handler.submit_slurp = AsyncMock()
         web.Response.add_header = Mock()
         web.Response.write = Mock()
@@ -86,7 +90,8 @@ class TestHandleRequest(unittest.TestCase):
             await self.handler.handle_request(self.request)
 
         self.loop.run_until_complete(test())
-        self.handler.tanner_handler.submit_data.assert_called_with(self.request_data)
+        self.handler.tanner_handler.submit_data.assert_called_with(
+            self.request_data)
 
     def test_submit_request_slurp(self):
         async def test():
@@ -96,6 +101,26 @@ class TestHandleRequest(unittest.TestCase):
         self.handler.submit_slurp.assert_called_with(self.request.path_qs)
 
     def test_parse_response(self):
+        async def test():
+            await self.handler.handle_request(self.request)
+
+        self.loop.run_until_complete(test())
+        self.handler.tanner_handler.parse_tanner_response.assert_called_with(
+            self.request.path_qs, {'type': 1})
+
+    def test_no_prev_sess_uuid(self):
+        self.request_data = {
+            'method': 'GET',
+            'path': '/',
+            'headers': {
+                'Host': 'test_host',
+                'Content-Type': 'test_type',
+            },
+            'status': 200,
+        }
+        self.handler.tanner_handler.create_data = Mock(
+            return_value=self.request_data)
+
         async def test():
             await self.handler.handle_request(self.request)
 

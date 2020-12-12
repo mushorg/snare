@@ -37,7 +37,7 @@ from snare.utils.snare_helpers import check_privileges, check_meta_file, print_c
 def create_initial_config(base_path):
     cfg = configparser.ConfigParser()
     cfg['WEB-TOOLS'] = dict(google='', bing='')
-    with open(os.path.join(base_path,'snare.cfg'), 'w') as configfile:
+    with open(os.path.join(base_path, 'snare.cfg'), 'w') as configfile:
         cfg.write(configfile)
 
 
@@ -49,16 +49,16 @@ def snare_setup(base_path):
         print_color(err, 'WARNING')
         sys.exit(1)
 
-    if not os.path.exists(os.path.join(base_path,'pages')):
-        os.makedirs(os.path.join(base_path,'pages'))
+    if not os.path.exists(os.path.join(base_path, 'pages')):
+        os.makedirs(os.path.join(base_path, 'pages'))
     # Write pid to pid file
-    with open(os.path.join(base_path,'snare.pid'), 'wb') as pid_fh:
+    with open(os.path.join(base_path, 'snare.pid'), 'wb') as pid_fh:
         pid_fh.write(str(os.getpid()).encode('utf-8'))
     # Config file
-    if not os.path.exists(os.path.join(base_path,'snare.cfg')):
+    if not os.path.exists(os.path.join(base_path, 'snare.cfg')):
         create_initial_config(base_path)
     # Read or create the sensor id
-    uuid_file_path = os.path.join(base_path,'snare.uuid')
+    uuid_file_path = os.path.join(base_path, 'snare.uuid')
     if os.path.exists(uuid_file_path):
         with open(uuid_file_path, 'rb') as uuid_fh:
             snare_uuid = uuid_fh.read()
@@ -103,7 +103,8 @@ def compare_version_info(timeout):
                 repo.git.clean('-xdf')
                 repo.remotes.origin.pull()
                 pip.main(['install', '-r', 'requirements.txt'])
-                os.execv(sys.executable, [sys.executable, __file__] + sys.argv[1:])
+                os.execv(sys.executable, [
+                         sys.executable, __file__] + sys.argv[1:])
                 return
             else:
                 print_color('you are running the latest version', 'INFO')
@@ -148,19 +149,32 @@ if __name__ == '__main__':
         help="file name of the index page",
         default='index.html')
     parser.add_argument("--port", help="port to listen on", default='8080')
-    parser.add_argument("--host-ip", help="host ip to bind to", default='127.0.0.1')
-    parser.add_argument("--debug", help="run web server in debug mode", default=False)
-    parser.add_argument("--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
-    parser.add_argument("--skip-check-version", help="skip check for update", action='store_true')
-    parser.add_argument("--slurp-enabled", help="enable nsq logging", action='store_true')
-    parser.add_argument("--slurp-host", help="nsq logging host", default='slurp.mushmush.org')
-    parser.add_argument("--slurp-auth", help="nsq logging auth", default='slurp')
-    parser.add_argument("--config", help="snare config file", default='snare.cfg')
-    parser.add_argument("--auto-update", help="auto update SNARE if new version available ", default=True)
-    parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
-    parser.add_argument("--server-header", help="set server-header", default=None)
-    parser.add_argument("--no-dorks", help="disable the use of dorks", type=str_to_bool,  default=True)
-    parser.add_argument("--path", help="path to save the page to be cloned", required=False, default='/opt/')
+    parser.add_argument(
+        "--host-ip", help="host ip to bind to", default='127.0.0.1')
+    parser.add_argument(
+        "--debug", help="run web server in debug mode", default=False)
+    parser.add_argument(
+        "--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
+    parser.add_argument("--skip-check-version",
+                        help="skip check for update", action='store_true')
+    parser.add_argument("--slurp-enabled",
+                        help="enable nsq logging", action='store_true')
+    parser.add_argument("--slurp-host", help="nsq logging host",
+                        default='slurp.mushmush.org')
+    parser.add_argument(
+        "--slurp-auth", help="nsq logging auth", default='slurp')
+    parser.add_argument(
+        "--config", help="snare config file", default='snare.cfg')
+    parser.add_argument(
+        "--auto-update", help="auto update SNARE if new version available ", default=True)
+    parser.add_argument("--update-timeout",
+                        help="update snare every timeout ", default='24H')
+    parser.add_argument("--server-header",
+                        help="set server-header", default=None)
+    parser.add_argument(
+        "--no-dorks", help="disable the use of dorks", type=str_to_bool,  default=True)
+    parser.add_argument(
+        "--path", help="path to save the page to be cloned", required=False, default='/opt/')
 
     args = parser.parse_args()
     base_path = os.path.join(args.path, 'snare')
@@ -193,20 +207,23 @@ if __name__ == '__main__':
     if not os.path.exists(os.path.join(full_page_path, 'meta.json')):
         conv = snare_helpers.Converter()
         conv.convert(full_page_path)
-        print_color("pages were converted. Try to clone again for the better result.", 'WARNING')
+        print_color(
+            "pages were converted. Try to clone again for the better result.", 'WARNING')
 
     with open(os.path.join(full_page_path, 'meta.json')) as meta:
         meta_info = json.load(meta)
 
     if not check_meta_file(meta_info):
-        print_color("Error found in meta.json. Please clone the pages again.", "ERROR")
+        print_color(
+            "Error found in meta.json. Please clone the pages again.", "ERROR")
         exit()
 
     if not os.path.exists(os.path.join(full_page_path,
                                        os.path.join(meta_info[args.index_page]['hash']))):
         print_color('can\'t create meta tag', 'WARNING')
     else:
-        snare_helpers.add_meta_tag(args.page_dir, meta_info[args.index_page]['hash'], config, base_path)
+        snare_helpers.add_meta_tag(
+            args.page_dir, meta_info[args.index_page]['hash'], config, base_path)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(check_tanner())
 
@@ -224,7 +241,8 @@ if __name__ == '__main__':
         debug=args.debug,
         keep_alive=75)
 
-    print_color('serving with uuid {0}'.format(snare_uuid.decode('utf-8')), 'INFO')
+    print_color('serving with uuid {0}'.format(
+        snare_uuid.decode('utf-8')), 'INFO')
     print_color("Debug logs will be stored in {}".format(log_debug), 'INFO')
     print_color("Error logs will be stored in {}".format(log_err), 'INFO')
     loop = asyncio.get_event_loop()

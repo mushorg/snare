@@ -55,7 +55,8 @@ class Converter:
                     {"Content-Type": mimetypes.guess_type(file_name)[0]},
                 ],
             }
-            self.logger.debug('Converting the file as %s ', os.path.join(path, hash_name))
+            self.logger.debug('Converting the file as %s ',
+                              os.path.join(path, hash_name))
             shutil.copyfile(fn, os.path.join(path, hash_name))
             os.remove(fn)
 
@@ -70,7 +71,8 @@ def add_meta_tag(page_dir, index_page, config, base_path):
     if not google_content and not bing_content:
         return
 
-    main_page_path = os.path.join(os.path.join(base_path, 'pages'), page_dir, index_page)
+    main_page_path = os.path.join(os.path.join(
+        base_path, 'pages'), page_dir, index_page)
     with open(main_page_path) as main:
         main_page = main.read()
     soup = BeautifulSoup(main_page, 'html.parser')
@@ -151,6 +153,8 @@ def check_privileges(path):
         try:
             os.makedirs(path)
         except PermissionError:
-            raise PermissionError(f'Permission denied: \'{os.path.abspath(path)}\'')
+            raise PermissionError(
+                f'Permission denied: \'{os.path.abspath(path)}\'')
     if not os.access(path, os.W_OK):
-        raise PermissionError(f'Permission denied: \'{os.path.abspath(path)}\'')
+        raise PermissionError(
+            f'Permission denied: \'{os.path.abspath(path)}\'')
