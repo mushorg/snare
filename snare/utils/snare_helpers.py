@@ -154,7 +154,7 @@ def check_privileges(path):
             os.makedirs(path)
         except PermissionError:
             raise PermissionError(
-                f'Permission denied: \'{os.path.abspath(path)}\'')
+                f"Permission denied: \'{os.path.abspath(path)}\'")
     if not os.access(path, os.W_OK):
         raise PermissionError(
-            f'Permission denied: \'{os.path.abspath(path)}\'')
+            f"Permission denied: \'{os.path.abspath(path)}\'")
