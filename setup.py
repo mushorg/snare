@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-from setuptools import find_packages
-from distutils.core import setup
+from setuptools import find_packages, setup
 
 setup(name='Snare',
       version='0.3.0',
@@ -11,3 +10,4 @@ setup(name='Snare',
       packages=find_packages(exclude=['*.pyc']),
       scripts=['./bin/snare', './bin/clone'],
       )
+
