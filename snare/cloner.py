@@ -25,8 +25,7 @@ class Cloner(object):
         self.default_path = default_path
         if (self.root.host is None) or (len(self.root.host) < 4):
             sys.exit('invalid target {}'.format(self.root.host))
-        self.target_path = '{}/pages/{}'.format(
-            self.default_path, self.root.host)
+        self.target_path = '{}/pages/{}'.format(self.default_path, self.root.host)
 
         if not os.path.exists(self.target_path):
             os.makedirs(self.target_path)
@@ -42,8 +41,7 @@ class Cloner(object):
         new_url = yarl.URL(url)
         if not new_url.scheme:
             new_url = yarl.URL('http://' + url)
-        err_url = new_url.with_path(
-            '/status_404').with_query(None).with_fragment(None)
+        err_url = new_url.with_path('/status_404').with_query(None).with_fragment(None)
         return new_url, err_url
 
     @staticmethod
@@ -178,8 +176,7 @@ class Cloner(object):
                     soup = await self.replace_links(data, level)
                     data = str(soup).encode()
                 elif content_type == 'text/css':
-                    css = cssutils.parseString(
-                        data, validate=self.css_validate)
+                    css = cssutils.parseString(data, validate=self.css_validate)
                     for carved_url in cssutils.getUrls(css):
                         if carved_url.startswith('data'):
                             continue

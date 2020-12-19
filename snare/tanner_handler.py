@@ -57,12 +57,9 @@ class TannerHandler():
                 try:
                     event_result = await r.json()
                 except (json.decoder.JSONDecodeError, aiohttp.client_exceptions.ContentTypeError) as e:
-                    self.logger.error(
-                        'Error submitting data: {} {}'.format(e, data))
-                    event_result = {'version': '0.6.0', 'response': {'message': {'detection':
-                                                                                 {'name': 'index', 'order': 1,
-                                                                                     'type': 1, 'version': '0.6.0'},
-                                                                                 'sess_uuid': data['uuid']}}}
+                    self.logger.error('Error submitting data: {} {}'.format(e, data))
+                    event_result = {'version': '0.6.0', 'response': {'message': {'detection': {
+                        'name': 'index', 'order': 1, 'type': 1, 'version': '0.6.0'}, 'sess_uuid': data['uuid']}}}
                 finally:
                     await r.release()
         except Exception as e:
@@ -98,8 +95,7 @@ class TannerHandler():
                         for key, value in header.items():
                             headers.add(key, value)
                     # overwrite headers with legacy content-type if present and not none
-                    content_type = self.meta[requested_name].get(
-                        'content_type')
+                    content_type = self.meta[requested_name].get('content_type')
                     if content_type:
                         headers['Content-Type'] = content_type
                 except KeyError:
@@ -126,8 +122,7 @@ class TannerHandler():
                         for key, value in header.items():
                             headers.add(key, value)
                     # overwrite headers with legacy content-type if present and not none
-                    content_type = self.meta[payload_content['page']].get(
-                        'content_type')
+                    content_type = self.meta[payload_content['page']].get('content_type')
                     if content_type:
                         headers['Content-Type'] = content_type
                     page_path = os.path.join(self.dir, file_name)

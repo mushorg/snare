@@ -9,8 +9,7 @@ class TestClonerInitialization(unittest.TestCase):
         self.root = 'http://example.com'
         self.max_depth = sys.maxsize
         self.css_validate = 'false'
-        self.handler = Cloner(self.root, self.max_depth,
-                              self.css_validate, default_path='/tmp')
+        self.handler = Cloner(self.root, self.max_depth, self.css_validate, default_path='/tmp')
 
     def test_cloner_init(self):
         self.assertIsInstance(self.handler, Cloner)

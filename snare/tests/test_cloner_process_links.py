@@ -48,10 +48,7 @@ class TestProcessLinks(unittest.TestCase):
 
         self.loop.run_until_complete(test())
         self.assertEqual(self.return_content, '/foo/путь/')
-        self.assertEqual(
-            yarl.URL(
-                self.return_url).human_repr(),
-            self.expected_content)
+        self.assertEqual(yarl.URL(self.return_url).human_repr(), self.expected_content)
         self.assertEqual(self.return_level, self.level + 1)
 
         self.handler.moved_root = yarl.URL('http://example2.com')
@@ -59,10 +56,7 @@ class TestProcessLinks(unittest.TestCase):
 
         self.loop.run_until_complete(test())
         self.assertEqual(self.return_content, '/foo/путь/')
-        self.assertEqual(
-            yarl.URL(
-                self.return_url).human_repr(),
-            self.expected_content)
+        self.assertEqual(yarl.URL(self.return_url).human_repr(), self.expected_content)
         self.assertEqual(self.return_level, self.level + 1)
 
     def test_process_link_absolute(self):

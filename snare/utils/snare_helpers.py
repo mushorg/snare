@@ -23,8 +23,7 @@ class VersionManager:
     def check_compatibility(self, tanner_version):
         min_version = self.version_mapper[self.version][0]
         max_version = self.version_mapper[self.version][1]
-        if not (StrictVersion(min_version) <= StrictVersion(
-                tanner_version) <= StrictVersion(max_version)):
+        if not (StrictVersion(min_version) <= StrictVersion(tanner_version) <= StrictVersion(max_version)):
             self.logger.exception('Wrong tanner version %s', tanner_version)
             raise RuntimeError(
                 "Wrong tanner version: {}. Compatible versions are {} - {}" .format(
@@ -55,8 +54,7 @@ class Converter:
                     {"Content-Type": mimetypes.guess_type(file_name)[0]},
                 ],
             }
-            self.logger.debug('Converting the file as %s ',
-                              os.path.join(path, hash_name))
+            self.logger.debug('Converting the file as %s ', os.path.join(path, hash_name))
             shutil.copyfile(fn, os.path.join(path, hash_name))
             os.remove(fn)
 
@@ -71,8 +69,7 @@ def add_meta_tag(page_dir, index_page, config, base_path):
     if not google_content and not bing_content:
         return
 
-    main_page_path = os.path.join(os.path.join(
-        base_path, 'pages'), page_dir, index_page)
+    main_page_path = os.path.join(os.path.join(base_path, 'pages'), page_dir, index_page)
     with open(main_page_path) as main:
         main_page = main.read()
     soup = BeautifulSoup(main_page, 'html.parser')
@@ -98,8 +95,8 @@ def add_meta_tag(page_dir, index_page, config, base_path):
 
 
 def check_meta_file(meta_info):
-    for k, v in meta_info.items():
-        if 'hash' in v and any(l in v for l in ['content_type', 'headers']):
+    for key, val in meta_info.items():
+        if 'hash' in val and any(header in val for header in ['content_type', 'headers']):
             continue
         else:
             return False
@@ -153,8 +150,6 @@ def check_privileges(path):
         try:
             os.makedirs(path)
         except PermissionError:
-            raise PermissionError(
-                "Permission denied: \'" + os.path.abspath(path) + "\'")
+            raise PermissionError("Permission denied: \'" + os.path.abspath(path) + "\'")
     if not os.access(path, os.W_OK):
-        raise PermissionError(
-            "Permission denied: \'" + os.path.abspath(path) + "\'")
+        raise PermissionError("Permission denied: \'" + os.path.abspath(path) + "\'")
