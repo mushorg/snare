@@ -5,7 +5,9 @@ from aiohttp import web
 
 class SnareMiddleware():
 
-    def __init__(self, error_404, error_500=None, headers=[], server_header=''):
+    def __init__(self, error_404, error_500=None, headers=None, server_header=''):
+        if headers is None:
+            headers = []
         self.error_404 = error_404
         self.error_500 = error_500 if error_500 else '500.html'
 
