@@ -37,7 +37,7 @@ class TannerHandler():
         if request.path:
             # FIXME request.headers is a CIMultiDict, so items with the same
             # key will be overwritten when converting to dictionary
-            header = {key: value for (key, value) in request.headers.items()}
+            header = dict(request.headers.items())
             data['method'] = request.method
             data['headers'] = header
             data['path'] = request.path_qs
