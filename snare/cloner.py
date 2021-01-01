@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 animation = "|/-\\"
 
 
-class Cloner(object):
+class Cloner:
     def __init__(self, root, max_depth, css_validate, default_path='/opt/snare'):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
