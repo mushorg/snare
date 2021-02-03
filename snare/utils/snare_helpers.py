@@ -23,8 +23,7 @@ class VersionManager:
     def check_compatibility(self, tanner_version):
         min_version = self.version_mapper[self.version][0]
         max_version = self.version_mapper[self.version][1]
-        if not (StrictVersion(min_version) <= StrictVersion(
-                tanner_version) <= StrictVersion(max_version)):
+        if not (StrictVersion(min_version) <= StrictVersion(tanner_version) <= StrictVersion(max_version)):
             self.logger.exception('Wrong tanner version %s', tanner_version)
             raise RuntimeError(
                 "Wrong tanner version: {}. Compatible versions are {} - {}" .format(
@@ -96,8 +95,8 @@ def add_meta_tag(page_dir, index_page, config, base_path):
 
 
 def check_meta_file(meta_info):
-    for k, v in meta_info.items():
-        if 'hash' in v and any(l in v for l in ['content_type', 'headers']):
+    for key, val in meta_info.items():
+        if 'hash' in val and any(header in val for header in ['content_type', 'headers']):
             continue
         else:
             return False
@@ -151,6 +150,6 @@ def check_privileges(path):
         try:
             os.makedirs(path)
         except PermissionError:
-            raise PermissionError(f'Permission denied: \'{os.path.abspath(path)}\'')
+            raise PermissionError("Permission denied: \'" + os.path.abspath(path) + "\'")
     if not os.access(path, os.W_OK):
-        raise PermissionError(f'Permission denied: \'{os.path.abspath(path)}\'')
+        raise PermissionError("Permission denied: \'" + os.path.abspath(path) + "\'")

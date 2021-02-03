@@ -68,8 +68,7 @@ class TestHandleRequest(unittest.TestCase):
         web.Response.write = Mock()
         web.Response.send_headers = Mock()
         web.Response.write_eof = AsyncMock()
-        aiohttp.streams.EmptyStreamReader.read = AsyncMock(
-            return_value=b'con1=test1&con2=test2')
+        aiohttp.streams.EmptyStreamReader.read = AsyncMock(return_value=b'con1=test1&con2=test2')
         self.handler.tanner_handler.parse_tanner_response = AsyncMock(
             return_value=(self.response_content, self.response_headers, self.response_status))
 
@@ -78,8 +77,7 @@ class TestHandleRequest(unittest.TestCase):
             await self.handler.handle_request(self.request)
 
         self.loop.run_until_complete(test())
-        self.handler.tanner_handler.create_data.assert_called_with(
-            self.request, 200)
+        self.handler.tanner_handler.create_data.assert_called_with(self.request, 200)
 
     def test_submit_request_data(self):
         async def test():
@@ -100,8 +98,25 @@ class TestHandleRequest(unittest.TestCase):
             await self.handler.handle_request(self.request)
 
         self.loop.run_until_complete(test())
-        self.handler.tanner_handler.parse_tanner_response.assert_called_with(
-            self.request.path_qs, {'type': 1})
+        self.handler.tanner_handler.parse_tanner_response.assert_called_with(self.request.path_qs, {'type': 1})
+
+    def test_no_prev_sess_uuid(self):
+        self.request_data = {
+            'method': 'GET',
+            'path': '/',
+            'headers': {
+                'Host': 'test_host',
+                'Content-Type': 'test_type',
+            },
+            'status': 200,
+        }
+        self.handler.tanner_handler.create_data = Mock(return_value=self.request_data)
+
+        async def test():
+            await self.handler.handle_request(self.request)
+
+        self.loop.run_until_complete(test())
+        self.handler.tanner_handler.parse_tanner_response.assert_called_with(self.request.path_qs, {'type': 1})
 
     def tearDown(self):
         shutil.rmtree(self.main_page_path)

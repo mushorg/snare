@@ -37,7 +37,7 @@ class TestSubmitData(unittest.TestCase):
                 'Accept-Encoding': 'test_encoding',
                 'Accept-Language': 'test_lang',
                 'Cookie': 'test_cookie'
-                },
+            },
             'uuid': 'test_uuid',
             'peer': {
                 'ip': '::1',
@@ -106,9 +106,7 @@ class TestSubmitData(unittest.TestCase):
 
         with self.assertLogs(level='ERROR') as log:
             self.loop.run_until_complete(test())
-            self.assertIn(
-                'Error submitting data: ERROR: line 1 column 1 (char 0) {}'.format(
-                    self.data), log.output[0])
+            self.assertIn('Error submitting data: ERROR: line 1 column 1 (char 0) {}'.format(self.data), log.output[0])
 
     def test_event_result_exception(self):
         aiohttp.ClientResponse.json = AsyncMock(side_effect=Exception())

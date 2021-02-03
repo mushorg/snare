@@ -28,7 +28,7 @@ class TestParseTannerResponse(unittest.TestCase):
         with open(os.path.join(self.main_page_path, "meta.json"), 'w') as f:
             json.dump(meta_content, f)
         self.args = run_args.parse_args(['--page-dir', page_dir])
-        args_dict = vars(args)
+        args_dict = vars(self.args)
         args_dict['full_page_path'] = self.main_page_path
         self.args.index_page = '/index.html'
         self.args.no_dorks = True
@@ -37,8 +37,7 @@ class TestParseTannerResponse(unittest.TestCase):
         self.handler = TannerHandler(self.args, meta_content, self.uuid)
         self.requested_name = '/'
         self.loop = asyncio.get_event_loop()
-        self.handler.html_handler.handle_content = AsyncMock(
-            return_value=self.page_content)
+        self.handler.html_handler.handle_content = AsyncMock(return_value=self.page_content)
         self.res1 = None
         self.res2 = None
         self.res3 = None

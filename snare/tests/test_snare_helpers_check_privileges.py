@@ -25,7 +25,7 @@ class TestStrToBool(unittest.TestCase):
         except PermissionError:
             self.privileges = False
         assert self.privileges is True
-    
+
     def test_non_existent_root_path(self):
         self.path = '/snare'
         try:
@@ -34,7 +34,7 @@ class TestStrToBool(unittest.TestCase):
         except PermissionError:
             self.privileges = False
         assert self.privileges is False
-        
+
     def test_non_existent_home_path(self):
         self.path = join(expanduser('~'), 'snare')
         try:
