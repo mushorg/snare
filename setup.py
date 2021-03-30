@@ -10,4 +10,3 @@ setup(name='Snare',
       packages=find_packages(exclude=['*.pyc']),
       scripts=['./bin/snare', './bin/clone'],
       )
-
