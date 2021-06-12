@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from setuptools import find_packages, setup
 
+
 setup(
     name="Snare",
     version="0.3.0",
