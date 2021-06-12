@@ -19,14 +19,14 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip 
-          pip install coveralls black nose2
+          pip install coveralls black nose
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Lint with black
         run: |
           black . --line-length 120
       - name: Test with nose
         run: |
-          nose2 -w snare/tests -v --with-coverage --cover-inclusive --cover-package=snare
+          nosetests -w snare/tests -v --with-coverage --cover-inclusive --cover-package=snare
       - name: Coverage
         run: |
           coveralls
