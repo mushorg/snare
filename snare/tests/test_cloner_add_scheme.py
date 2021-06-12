@@ -9,17 +9,17 @@ from snare.utils.page_path_generator import generate_unique_path
 
 class TestCloner(unittest.TestCase):
     def setUp(self):
-        self.url = 'http://example.com'
+        self.url = "http://example.com"
         self.main_page_path = generate_unique_path()
         os.makedirs(self.main_page_path)
-        self.expected_new_url = yarl.URL('http://example.com')
-        self.expected_err_url = yarl.URL('http://example.com/status_404')
+        self.expected_new_url = yarl.URL("http://example.com")
+        self.expected_err_url = yarl.URL("http://example.com/status_404")
         self.max_depth = sys.maxsize
-        self.css_validate = 'false'
+        self.css_validate = "false"
         self.handler = Cloner(self.url, self.max_depth, self.css_validate)
 
     def test_trailing_slash(self):
-        self.url = 'http://example.com/'
+        self.url = "http://example.com/"
         new_url, err_url = self.handler.add_scheme(self.url)
         self.assertEqual(new_url, self.expected_new_url)
         self.assertEqual(err_url, self.expected_err_url)
@@ -31,7 +31,7 @@ class TestCloner(unittest.TestCase):
         self.assertEqual(err_url, self.expected_err_url)
 
     def test_no_scheme(self):
-        self.url = 'example.com'
+        self.url = "example.com"
         new_url, err_url = self.handler.add_scheme(self.url)
         self.assertEqual(new_url, self.expected_new_url)
         self.assertEqual(err_url, self.expected_err_url)
@@ -40,11 +40,11 @@ class TestCloner(unittest.TestCase):
         shutil.rmtree(self.main_page_path)
 
     def test_no_host(self):
-        self.url = 'http:/'
+        self.url = "http:/"
         with self.assertRaises(SystemExit):
             Cloner(self.url, self.max_depth, self.css_validate)
 
     def test_limited_length_host(self):
-        self.url = 'http://aaa'
+        self.url = "http://aaa"
         with self.assertRaises(SystemExit):
             Cloner(self.url, self.max_depth, self.css_validate)

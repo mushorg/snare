@@ -14,7 +14,7 @@ class TestServerStop(unittest.TestCase):
         meta = {
             "/status_404": {
                 "hash": "bacfa45149ffbe8dbff34609bf56d748",
-                "headers": [{"Content-Type": "text/html; charset=UTF-8"}]
+                "headers": [{"Content-Type": "text/html; charset=UTF-8"}],
             }
         }
         run_args = argparse.ArgumentParser()
@@ -22,9 +22,9 @@ class TestServerStop(unittest.TestCase):
         os.makedirs(self.main_page_path)
         args = run_args.parse_args([])
         args_dict = vars(args)
-        args_dict['full_page_path'] = self.main_page_path
-        uuid = '9c10172f-7ce2-4fb4-b1c6-abc70141db56'.encode('utf-8')
-        args.tanner = 'tanner.mushmush.org'
+        args_dict["full_page_path"] = self.main_page_path
+        uuid = "9c10172f-7ce2-4fb4-b1c6-abc70141db56".encode("utf-8")
+        args.tanner = "tanner.mushmush.org"
         args.no_dorks = True
         args.host_ip = "127.0.0.1"
         args.port = "80"

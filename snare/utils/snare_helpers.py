@@ -17,17 +17,19 @@ class VersionManager:
         self.version_mapper = {
             "0.1.0": ["0.1.0", "0.4.0"],
             "0.2.0": ["0.5.0", "0.5.0"],
-            "0.3.0": ["0.5.0", "0.6.0"]
+            "0.3.0": ["0.5.0", "0.6.0"],
         }
 
     def check_compatibility(self, tanner_version):
         min_version = self.version_mapper[self.version][0]
         max_version = self.version_mapper[self.version][1]
         if not (StrictVersion(min_version) <= StrictVersion(tanner_version) <= StrictVersion(max_version)):
-            self.logger.exception('Wrong tanner version %s', tanner_version)
+            self.logger.exception("Wrong tanner version %s", tanner_version)
             raise RuntimeError(
-                "Wrong tanner version: {}. Compatible versions are {} - {}" .format(
-                    tanner_version, min_version, max_version))
+                "Wrong tanner version: {}. Compatible versions are {} - {}".format(
+                    tanner_version, min_version, max_version
+                )
+            )
 
 
 class Converter:
@@ -46,47 +48,43 @@ class Converter:
             path_len = len(path)
             file_name = fn[path_len:]
             m = hashlib.md5()
-            m.update(fn.encode('utf-8'))
+            m.update(fn.encode("utf-8"))
             hash_name = m.hexdigest()
             self.meta[file_name] = {
-                'hash': hash_name,
-                'headers': [
+                "hash": hash_name,
+                "headers": [
                     {"Content-Type": mimetypes.guess_type(file_name)[0]},
                 ],
             }
-            self.logger.debug('Converting the file as %s ', os.path.join(path, hash_name))
+            self.logger.debug("Converting the file as %s ", os.path.join(path, hash_name))
             shutil.copyfile(fn, os.path.join(path, hash_name))
             os.remove(fn)
 
-        with open(os.path.join(path, 'meta.json'), 'w') as mj:
+        with open(os.path.join(path, "meta.json"), "w") as mj:
             json.dump(self.meta, mj)
 
 
 def add_meta_tag(page_dir, index_page, config, base_path):
-    google_content = config['WEB-TOOLS']['google']
-    bing_content = config['WEB-TOOLS']['bing']
+    google_content = config["WEB-TOOLS"]["google"]
+    bing_content = config["WEB-TOOLS"]["bing"]
 
     if not google_content and not bing_content:
         return
 
-    main_page_path = os.path.join(os.path.join(base_path, 'pages'), page_dir, index_page)
+    main_page_path = os.path.join(os.path.join(base_path, "pages"), page_dir, index_page)
     with open(main_page_path) as main:
         main_page = main.read()
-    soup = BeautifulSoup(main_page, 'html.parser')
+    soup = BeautifulSoup(main_page, "html.parser")
 
-    if google_content and soup.find(
-            "meta", attrs={
-            "name": "google-site-verification"}) is None:
-        google_meta = soup.new_tag('meta')
-        google_meta.attrs['name'] = 'google-site-verification'
-        google_meta.attrs['content'] = google_content
+    if google_content and soup.find("meta", attrs={"name": "google-site-verification"}) is None:
+        google_meta = soup.new_tag("meta")
+        google_meta.attrs["name"] = "google-site-verification"
+        google_meta.attrs["content"] = google_content
         soup.head.append(google_meta)
-    if bing_content and soup.find(
-            "meta", attrs={
-            "name": "msvalidate.01"}) is None:
-        bing_meta = soup.new_tag('meta')
-        bing_meta.attrs['name'] = 'msvalidate.01'
-        bing_meta.attrs['content'] = bing_content
+    if bing_content and soup.find("meta", attrs={"name": "msvalidate.01"}) is None:
+        bing_meta = soup.new_tag("meta")
+        bing_meta.attrs["name"] = "msvalidate.01"
+        bing_meta.attrs["content"] = bing_content
         soup.head.append(bing_meta)
 
     html = soup.prettify("utf-8")
@@ -96,7 +94,7 @@ def add_meta_tag(page_dir, index_page, config, base_path):
 
 def check_meta_file(meta_info):
     for key, val in meta_info.items():
-        if 'hash' in val and any(header in val for header in ['content_type', 'headers']):
+        if "hash" in val and any(header in val for header in ["content_type", "headers"]):
             continue
         else:
             return False
@@ -104,16 +102,12 @@ def check_meta_file(meta_info):
 
 
 def parse_timeout(timeout):
-    timeouts_coeff = {
-        'M': 60,
-        'H': 3600,
-        'D': 86400
-    }
+    timeouts_coeff = {"M": 60, "H": 3600, "D": 86400}
 
     form = timeout[-1]
     if form not in timeouts_coeff.keys():
-        print_color('Bad timeout format, default will be used', 'WARNING')
-        result = parse_timeout('24H')
+        print_color("Bad timeout format, default will be used", "WARNING")
+        result = parse_timeout("24H")
     else:
         result = int(timeout[:-1])
         result *= timeouts_coeff[form]
@@ -121,25 +115,25 @@ def parse_timeout(timeout):
 
 
 def str_to_bool(v):
-    if v.lower() == 'true':
+    if v.lower() == "true":
         return True
-    elif v.lower() == 'false':
+    elif v.lower() == "false":
         return False
     else:
-        raise argparse.ArgumentTypeError('Boolean value expected')
+        raise argparse.ArgumentTypeError("Boolean value expected")
 
 
-def print_color(msg, mode='INFO', end="\n"):
+def print_color(msg, mode="INFO", end="\n"):
     colors = {
-        'INFO': '\033[97m',  # white
-        'ERROR': '\033[31m',  # red
-        'WARNING': '\033[33m'  # yellow
+        "INFO": "\033[97m",  # white
+        "ERROR": "\033[31m",  # red
+        "WARNING": "\033[33m",  # yellow
     }
     try:
         color = colors[mode]
     except KeyError:
-        color = colors['INFO']
-    print(color + str(msg) + '\033[0m', end=end)
+        color = colors["INFO"]
+    print(color + str(msg) + "\033[0m", end=end)
 
 
 def check_privileges(path):
@@ -150,6 +144,6 @@ def check_privileges(path):
         try:
             os.makedirs(path)
         except PermissionError:
-            raise PermissionError("Permission denied: \'" + os.path.abspath(path) + "\'")
+            raise PermissionError(f"Failed to create path: {os.path.abspath(path)}")
     if not os.access(path, os.W_OK):
-        raise PermissionError("Permission denied: \'" + os.path.abspath(path) + "\'")
+        raise PermissionError(f"Failed to access path: {os.path.abspath(path)}")

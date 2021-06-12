@@ -8,11 +8,11 @@ from snare.cloner import Cloner
 
 class TestProcessLinks(unittest.TestCase):
     def setUp(self):
-        self.root = 'http://example.com'
+        self.root = "http://example.com"
         self.level = 0
         self.max_depth = sys.maxsize
         self.loop = asyncio.new_event_loop()
-        self.css_validate = 'false'
+        self.css_validate = "false"
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
         self.expected_content = None
         self.return_content = None
@@ -22,9 +22,10 @@ class TestProcessLinks(unittest.TestCase):
 
     def test_process_link_scheme(self):
         test_urls = [
-            'file://images/test.png',
-            'data://images/test.txt',
-            'javascript://alert(1)/']
+            "file://images/test.png",
+            "data://images/test.txt",
+            "javascript://alert(1)/",
+        ]
 
         async def test(url_param):
             self.return_content = await self.handler.process_link(url_param, self.level)
@@ -39,29 +40,29 @@ class TestProcessLinks(unittest.TestCase):
             self.assertEqual(self.qsize, self.return_size)
 
     def test_process_link_relative(self):
-        self.url = '/foo/путь/'
-        self.expected_content = 'http://example.com/foo/путь/'
+        self.url = "/foo/путь/"
+        self.expected_content = "http://example.com/foo/путь/"
 
         async def test():
             self.return_content = await self.handler.process_link(self.url, self.level)
             self.return_url, self.return_level = await self.handler.new_urls.get()
 
         self.loop.run_until_complete(test())
-        self.assertEqual(self.return_content, '/foo/путь/')
+        self.assertEqual(self.return_content, "/foo/путь/")
         self.assertEqual(yarl.URL(self.return_url).human_repr(), self.expected_content)
         self.assertEqual(self.return_level, self.level + 1)
 
-        self.handler.moved_root = yarl.URL('http://example2.com')
-        self.expected_content = 'http://example2.com/foo/путь/'
+        self.handler.moved_root = yarl.URL("http://example2.com")
+        self.expected_content = "http://example2.com/foo/путь/"
 
         self.loop.run_until_complete(test())
-        self.assertEqual(self.return_content, '/foo/путь/')
+        self.assertEqual(self.return_content, "/foo/путь/")
         self.assertEqual(yarl.URL(self.return_url).human_repr(), self.expected_content)
         self.assertEqual(self.return_level, self.level + 1)
 
     def test_process_link_absolute(self):
-        self.url = 'http://domain.com'
-        self.expected_content = ''
+        self.url = "http://domain.com"
+        self.expected_content = ""
 
         async def test():
             self.return_content = await self.handler.process_link(self.url, self.level)
@@ -73,7 +74,7 @@ class TestProcessLinks(unittest.TestCase):
         self.assertEqual(self.return_level, self.level + 1)
 
     def test_check_host(self):
-        self.url = 'http://foo.com'
+        self.url = "http://foo.com"
         self.return_size = 0
 
         async def test():
@@ -84,7 +85,7 @@ class TestProcessLinks(unittest.TestCase):
         self.assertEqual(self.return_content, None)
         self.assertEqual(self.qsize, self.return_size)
 
-    @mock.patch('yarl.URL')
+    @mock.patch("yarl.URL")
     def test_process_link_unicode_error(self, url):
 
         yarl.URL = mock.Mock(side_effect=UnicodeError)

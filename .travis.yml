@@ -5,11 +5,12 @@ python:
 
 install:
   - pip install coveralls
+  - pip install black
   - pip install -r requirements.txt
 
 script:
+    - black . --line-length 120
     - nosetests -w snare/tests -vv --with-coverage --cover-inclusive --cover-package=snare
-    - pycodestyle . --max-line-length=120
 
 after_success:
   - coveralls
