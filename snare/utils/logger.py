@@ -26,17 +26,13 @@ class Logger:
         )
 
         # ERROR log to 'snare.err'
-        error_log_handler = logging.handlers.RotatingFileHandler(
-            err_filename, encoding="utf-8"
-        )
+        error_log_handler = logging.handlers.RotatingFileHandler(err_filename, encoding="utf-8")
         error_log_handler.setLevel(logging.ERROR)
         error_log_handler.setFormatter(formatter)
         logger.addHandler(error_log_handler)
 
         # DEBUG log to 'snare.log'
-        debug_log_handler = logging.handlers.RotatingFileHandler(
-            debug_filename, encoding="utf-8"
-        )
+        debug_log_handler = logging.handlers.RotatingFileHandler(debug_filename, encoding="utf-8")
         debug_log_handler.setLevel(logging.DEBUG)
         debug_log_handler.setFormatter(formatter)
         max_level_filter = LevelFilter(logging.ERROR)
@@ -53,9 +49,7 @@ class Logger:
             datefmt="%Y-%m-%d %H:%M:%S",
         )
         # logs to 'clone.err'
-        debug_log_handler = logging.handlers.RotatingFileHandler(
-            log_filename, encoding="utf-8"
-        )
+        debug_log_handler = logging.handlers.RotatingFileHandler(log_filename, encoding="utf-8")
         debug_log_handler.setLevel(logging.DEBUG)
         debug_log_handler.setFormatter(formatter)
         logger.addHandler(debug_log_handler)

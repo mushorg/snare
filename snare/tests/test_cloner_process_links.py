@@ -78,9 +78,7 @@ class TestProcessLinks(unittest.TestCase):
         self.return_size = 0
 
         async def test():
-            self.return_content = await self.handler.process_link(
-                self.url, self.level, check_host=True
-            )
+            self.return_content = await self.handler.process_link(self.url, self.level, check_host=True)
             self.qsize = self.handler.new_urls.qsize()
 
         self.loop.run_until_complete(test())

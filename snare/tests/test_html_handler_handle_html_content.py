@@ -21,12 +21,8 @@ class TestHandleHtmlContent(unittest.TestCase):
                        """
         self.expected_content = '<html>\n <body>\n  <p style="color: red">\n'
         self.expected_content += '   <a href="test_dork1" style="color:red;text-decoration:none;cursor:text;">\n'
-        self.expected_content += (
-            "    A\n   </a>\n   paragraph to be tested\n  </p>\n </body>\n</html>\n"
-        )
-        self.no_dorks_content = (
-            '<html>\n <body>\n  <p style="color:red;">\n   A paragraph to be tested\n'
-        )
+        self.expected_content += "    A\n   </a>\n   paragraph to be tested\n  </p>\n </body>\n</html>\n"
+        self.no_dorks_content = '<html>\n <body>\n  <p style="color:red;">\n   A paragraph to be tested\n'
         self.no_dorks_content += "  </p>\n </body>\n</html>\n"
         self.loop = asyncio.new_event_loop()
         self.return_content = None

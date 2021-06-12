@@ -10,9 +10,7 @@ class TestClonerRun(unittest.TestCase):
         self.root = "http://example.com"
         self.max_depth = sys.maxsize
         self.css_validate = "false"
-        self.handler = Cloner(
-            self.root, self.max_depth, self.css_validate, default_path="/tmp"
-        )
+        self.handler = Cloner(self.root, self.max_depth, self.css_validate, default_path="/tmp")
         self.loop = asyncio.new_event_loop()
 
     def test_run(self):

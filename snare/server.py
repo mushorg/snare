@@ -10,9 +10,7 @@ from snare.tanner_handler import TannerHandler
 
 
 class HttpRequestHandler:
-    def __init__(
-        self, meta, run_args, snare_uuid, debug=False, keep_alive=75, **kwargs
-    ):
+    def __init__(self, meta, run_args, snare_uuid, debug=False, keep_alive=75, **kwargs):
         self.run_args = run_args
         self.dir = run_args.full_page_path
         self.meta = meta
@@ -23,9 +21,7 @@ class HttpRequestHandler:
 
     async def submit_slurp(self, data):
         try:
-            async with aiohttp.ClientSession(
-                connector=aiohttp.TCPConnector(verify_ssl=False)
-            ) as session:
+            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
                 r = await session.post(
                     "https://{0}:8080/api?auth={1}&chan=snare_test&msg={2}".format(
                         self.run_args.slurp_host, self.run_args.slurp_auth, data
@@ -67,16 +63,9 @@ class HttpRequestHandler:
         else:
             previous_sess_uuid = None
 
-        if (
-            event_result is not None
-            and "sess_uuid" in event_result["response"]["message"]
-        ):
+        if event_result is not None and "sess_uuid" in event_result["response"]["message"]:
             cur_sess_id = event_result["response"]["message"]["sess_uuid"]
-            if (
-                previous_sess_uuid is None
-                or not previous_sess_uuid.strip()
-                or previous_sess_uuid != cur_sess_id
-            ):
+            if previous_sess_uuid is None or not previous_sess_uuid.strip() or previous_sess_uuid != cur_sess_id:
                 headers.add("Set-Cookie", "sess_uuid=" + cur_sess_id)
 
         return web.Response(body=content, status=status_code, headers=headers)
@@ -98,10 +87,7 @@ class HttpRequestHandler:
 
         await site.start()
         names = sorted(str(s.name) for s in self.runner.sites)
-        print(
-            "======== Running on {} ========\n"
-            "(Press CTRL+C to quit)".format(", ".join(names))
-        )
+        print("======== Running on {} ========\n" "(Press CTRL+C to quit)".format(", ".join(names)))
 
     async def stop(self):
         await self.runner.cleanup()

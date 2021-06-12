@@ -17,9 +17,7 @@ class HtmlHandler:
         dorks = None
         try:
             async with aiohttp.ClientSession() as session:
-                r = await session.get(
-                    "http://{0}:8090/dorks".format(self.tanner), timeout=10.0
-                )
+                r = await session.get("http://{0}:8090/dorks".format(self.tanner), timeout=10.0)
                 try:
                     dorks = await r.json()
                 except json.decoder.JSONDecodeError as e:
@@ -51,9 +49,7 @@ class HtmlHandler:
                             "a",
                             href=self.dorks.pop(),
                             style="color:{color};text-decoration:none;cursor:text;".format(
-                                color=css.color
-                                if css and "color" in css.keys()
-                                else "#000000"
+                                color=css.color if css and "color" in css.keys() else "#000000"
                             ),
                         )
                         a_tag.string = word

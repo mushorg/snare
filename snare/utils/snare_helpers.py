@@ -23,11 +23,7 @@ class VersionManager:
     def check_compatibility(self, tanner_version):
         min_version = self.version_mapper[self.version][0]
         max_version = self.version_mapper[self.version][1]
-        if not (
-            StrictVersion(min_version)
-            <= StrictVersion(tanner_version)
-            <= StrictVersion(max_version)
-        ):
+        if not (StrictVersion(min_version) <= StrictVersion(tanner_version) <= StrictVersion(max_version)):
             self.logger.exception("Wrong tanner version %s", tanner_version)
             raise RuntimeError(
                 "Wrong tanner version: {}. Compatible versions are {} - {}".format(
@@ -60,9 +56,7 @@ class Converter:
                     {"Content-Type": mimetypes.guess_type(file_name)[0]},
                 ],
             }
-            self.logger.debug(
-                "Converting the file as %s ", os.path.join(path, hash_name)
-            )
+            self.logger.debug("Converting the file as %s ", os.path.join(path, hash_name))
             shutil.copyfile(fn, os.path.join(path, hash_name))
             os.remove(fn)
 
@@ -77,17 +71,12 @@ def add_meta_tag(page_dir, index_page, config, base_path):
     if not google_content and not bing_content:
         return
 
-    main_page_path = os.path.join(
-        os.path.join(base_path, "pages"), page_dir, index_page
-    )
+    main_page_path = os.path.join(os.path.join(base_path, "pages"), page_dir, index_page)
     with open(main_page_path) as main:
         main_page = main.read()
     soup = BeautifulSoup(main_page, "html.parser")
 
-    if (
-        google_content
-        and soup.find("meta", attrs={"name": "google-site-verification"}) is None
-    ):
+    if google_content and soup.find("meta", attrs={"name": "google-site-verification"}) is None:
         google_meta = soup.new_tag("meta")
         google_meta.attrs["name"] = "google-site-verification"
         google_meta.attrs["content"] = google_content
@@ -105,9 +94,7 @@ def add_meta_tag(page_dir, index_page, config, base_path):
 
 def check_meta_file(meta_info):
     for key, val in meta_info.items():
-        if "hash" in val and any(
-            header in val for header in ["content_type", "headers"]
-        ):
+        if "hash" in val and any(header in val for header in ["content_type", "headers"]):
             continue
         else:
             return False
@@ -157,6 +144,6 @@ def check_privileges(path):
         try:
             os.makedirs(path)
         except PermissionError:
-            raise PermissionError("Permission denied: '" + os.path.abspath(path) + "'")
+            raise PermissionError(f"Failed to create path: {os.path.abspath(path)}")
     if not os.access(path, os.W_OK):
-        raise PermissionError("Permission denied: '" + os.path.abspath(path) + "'")
+        raise PermissionError(f"Failed to access path: {os.path.abspath(path)}")

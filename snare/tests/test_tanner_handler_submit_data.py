@@ -64,9 +64,7 @@ class TestSubmitData(unittest.TestCase):
         self.result = None
 
     def test_post_data(self):
-        aiohttp.ClientResponse.json = AsyncMock(
-            return_value=dict(detection={"type": 1}, sess_uuid="test_uuid")
-        )
+        aiohttp.ClientResponse.json = AsyncMock(return_value=dict(detection={"type": 1}, sess_uuid="test_uuid"))
 
         async def test():
             self.result = await self.handler.submit_data(self.data)
@@ -77,22 +75,16 @@ class TestSubmitData(unittest.TestCase):
         )
 
     def test_event_result(self):
-        aiohttp.ClientResponse.json = AsyncMock(
-            return_value=dict(detection={"type": 1}, sess_uuid="test_uuid")
-        )
+        aiohttp.ClientResponse.json = AsyncMock(return_value=dict(detection={"type": 1}, sess_uuid="test_uuid"))
 
         async def test():
             self.result = await self.handler.submit_data(self.data)
 
         self.loop.run_until_complete(test())
-        self.assertEqual(
-            self.result, dict(detection={"type": 1}, sess_uuid="test_uuid")
-        )
+        self.assertEqual(self.result, dict(detection={"type": 1}, sess_uuid="test_uuid"))
 
     def test_submit_data_error(self):
-        aiohttp.ClientResponse.json = AsyncMock(
-            side_effect=JSONDecodeError("ERROR", "", 0)
-        )
+        aiohttp.ClientResponse.json = AsyncMock(side_effect=JSONDecodeError("ERROR", "", 0))
 
         async def test():
             self.result = await self.handler.submit_data(self.data)
@@ -100,9 +92,7 @@ class TestSubmitData(unittest.TestCase):
         with self.assertLogs(level="ERROR") as log:
             self.loop.run_until_complete(test())
             self.assertIn(
-                "Error submitting data: ERROR: line 1 column 1 (char 0) {}".format(
-                    self.data
-                ),
+                "Error submitting data: ERROR: line 1 column 1 (char 0) {}".format(self.data),
                 log.output[0],
             )
 

@@ -10,25 +10,25 @@ class TestStrToBool(unittest.TestCase):
         try:
             check_privileges(self.path)
         except PermissionError as e:
-            self.fail(f"failed permissions check{e}")
+            self.fail(f"failed permissions check: {e}")
 
     def test_privileges_in_home(self):
         self.path = expanduser("~")
         try:
             check_privileges(self.path)
         except PermissionError as e:
-            self.fail(f"failed permissions check{e}")
+            self.fail(f"failed permissions check: {e}")
 
     def test_non_existent_root_path(self):
         self.path = "/snare"
         try:
             check_privileges(self.path)
         except PermissionError as e:
-            self.fail(f"failed permissions check{e}")
+            self.fail(f"failed permissions check: {e}")
 
     def test_non_existent_home_path(self):
         self.path = join(expanduser("~"), "snare")
         try:
             check_privileges(self.path)
         except PermissionError as e:
-            self.fail(f"failed permissions check{e}")
+            self.fail(f"failed permissions check: {e}")

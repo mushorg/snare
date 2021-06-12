@@ -27,34 +27,24 @@ class TestReplaceLinks(unittest.TestCase):
         self.root = "http://example.com/test"
         self.content = '\n<html>\n<body>\n<a href="http://example.com/test"></a>\n</body>\n</html>\n'
 
-        self.expected_content = (
-            '\n<html>\n<body>\n<a href="/test"></a>\n</body>\n</html>\n'
-        )
+        self.expected_content = '\n<html>\n<body>\n<a href="/test"></a>\n</body>\n</html>\n'
 
         async def test():
-            self.return_content = await self.handler.replace_links(
-                self.content, self.level
-            )
+            self.return_content = await self.handler.replace_links(self.content, self.level)
 
         self.loop.run_until_complete(test())
         self.assertEqual(str(self.return_content), self.expected_content)
-        self.handler.process_link.assert_called_with(
-            self.root, self.level, check_host=True
-        )
+        self.handler.process_link.assert_called_with(self.root, self.level, check_host=True)
 
     def test_replace_image_links(self):
         self.handler.process_link = AsyncMock(return_value="/smiley.png")
         self.root = "http://example.com/smiley.png"
         self.content = '\n<html>\n<body>\n<img src="http://example.com/smiley.png"/>\n</body>\n</html>\n'
 
-        self.expected_content = (
-            '\n<html>\n<body>\n<img src="/smiley.png"/>\n</body>\n</html>\n'
-        )
+        self.expected_content = '\n<html>\n<body>\n<img src="/smiley.png"/>\n</body>\n</html>\n'
 
         async def test():
-            self.return_content = await self.handler.replace_links(
-                self.content, self.level
-            )
+            self.return_content = await self.handler.replace_links(self.content, self.level)
 
         self.loop.run_until_complete(test())
         self.assertEqual(str(self.return_content), self.expected_content)
@@ -65,14 +55,10 @@ class TestReplaceLinks(unittest.TestCase):
         self.root = "http://example.com/submit.php"
         self.content = '\n<html>\n<body>\n<form action="http://example.com/submit.php">\n</form>\n</body>\n</html>\n'
 
-        self.expected_content = (
-            '\n<html>\n<body>\n<form action="/submit.php">\n</form>\n</body>\n</html>\n'
-        )
+        self.expected_content = '\n<html>\n<body>\n<form action="/submit.php">\n</form>\n</body>\n</html>\n'
 
         async def test():
-            self.return_content = await self.handler.replace_links(
-                self.content, self.level
-            )
+            self.return_content = await self.handler.replace_links(self.content, self.level)
 
         self.loop.run_until_complete(test())
         self.assertEqual(str(self.return_content), self.expected_content)
@@ -86,14 +72,11 @@ class TestReplaceLinks(unittest.TestCase):
         )
 
         self.expected_content = (
-            '\n<html>\n<body>\n<p name="redirect" value="/home.html">Redirecting...</p>\n</body>\n'
-            "</html>\n"
+            '\n<html>\n<body>\n<p name="redirect" value="/home.html">Redirecting...</p>\n</body>\n' "</html>\n"
         )
 
         async def test():
-            self.return_content = await self.handler.replace_links(
-                self.content, self.level
-            )
+            self.return_content = await self.handler.replace_links(self.content, self.level)
 
         self.loop.run_until_complete(test())
         self.assertEqual(str(self.return_content), self.expected_content)

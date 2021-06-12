@@ -135,11 +135,7 @@ class Cloner(object):
             file_name = "/" + file_name
 
         if file_name == "/" or file_name == "":
-            if (
-                host == self.root.host
-                or self.moved_root is not None
-                and self.moved_root.host == host
-            ):
+            if host == self.root.host or self.moved_root is not None and self.moved_root.host == host:
                 file_name = "/index.html"
             else:
                 file_name = host
@@ -161,9 +157,7 @@ class Cloner(object):
             data = None
             content_type = None
             try:
-                response = await session.get(
-                    current_url, headers={"Accept": "text/html"}, timeout=10.0
-                )
+                response = await session.get(current_url, headers={"Accept": "text/html"}, timeout=10.0)
                 headers = self.get_headers(response)
                 content_type = response.content_type
                 data = await response.read()

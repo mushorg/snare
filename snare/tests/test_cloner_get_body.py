@@ -48,9 +48,7 @@ class TestGetBody(unittest.TestCase):
         )
 
     def test_get_body(self):
-        self.content = (
-            b"""<html><body><a href="http://example.com/test"></a></body></html>"""
-        )
+        self.content = b"""<html><body><a href="http://example.com/test"></a></body></html>"""
 
         aiohttp.ClientResponse._headers = {"Content-Type": "text/html"}
         aiohttp.ClientResponse.read = AsyncMock(return_value=self.content)

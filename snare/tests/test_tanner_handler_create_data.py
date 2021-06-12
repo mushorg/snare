@@ -55,9 +55,7 @@ class TestCreateData(unittest.TestCase):
             task="POST",
             loop=loop,
         )
-        self.request.transport.get_extra_info = Mock(
-            return_value=(["test_ip", "test_port"])
-        )
+        self.request.transport.get_extra_info = Mock(return_value=(["test_ip", "test_port"]))
         self.response_status = "test_status"
         self.data = None
         self.expected_data = {

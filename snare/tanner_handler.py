@@ -41,10 +41,7 @@ class TannerHandler:
             data["headers"] = header
             data["path"] = request.path_qs
             if "Cookie" in header:
-                data["cookies"] = {
-                    cookie.split("=")[0]: cookie.split("=")[1]
-                    for cookie in header["Cookie"].split(";")
-                }
+                data["cookies"] = {cookie.split("=")[0]: cookie.split("=")[1] for cookie in header["Cookie"].split(";")}
         return data
 
     async def submit_data(self, data):
@@ -139,9 +136,7 @@ class TannerHandler:
                         for key, value in header.items():
                             headers.add(key, value)
                     # overwrite headers with legacy content-type if present and not none
-                    content_type = self.meta[payload_content["page"]].get(
-                        "content_type"
-                    )
+                    content_type = self.meta[payload_content["page"]].get("content_type")
                     if content_type:
                         headers["Content-Type"] = content_type
                     page_path = os.path.join(self.dir, file_name)
@@ -153,9 +148,7 @@ class TannerHandler:
 
                 soup = BeautifulSoup(content, "html.parser")
                 script_tag = soup.new_tag("div")
-                script_tag.append(
-                    BeautifulSoup(payload_content["value"], "html.parser")
-                )
+                script_tag.append(BeautifulSoup(payload_content["value"], "html.parser"))
                 soup.body.append(script_tag)
                 content = str(soup).encode()
             else:
