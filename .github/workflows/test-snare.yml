@@ -1,6 +1,6 @@
 name: Unit and integration tests
 
-on: [push, "pull_request"]
+on: [push]
 
 jobs:
   test:
@@ -28,7 +28,7 @@ jobs:
         run: |
           nosetests -w snare/tests -v --with-coverage --cover-inclusive --cover-package=snare
       - name: Coveralls
-        with:
+        env:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         run: |
           coveralls
