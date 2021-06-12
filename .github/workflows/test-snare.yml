@@ -29,6 +29,6 @@ jobs:
           nosetests -w snare/tests -v --with-coverage --cover-inclusive --cover-package=snare
       - name: Coveralls
         env:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           coveralls
