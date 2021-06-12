@@ -2,15 +2,15 @@ import os
 import sys
 import logging
 import asyncio
-from asyncio import Queue
 import hashlib
 import json
 import re
-from collections import defaultdict
 import aiohttp
 import cssutils
 import yarl
 from bs4 import BeautifulSoup
+from asyncio import Queue
+from collections import defaultdict
 
 animation = "|/-\\"
 

@@ -1,11 +1,11 @@
 import os
-from os import walk
 import hashlib
 import mimetypes
 import json
 import shutil
 import argparse
 import logging
+from os import walk
 from distutils.version import StrictVersion
 from bs4 import BeautifulSoup
 

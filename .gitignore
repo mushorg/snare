@@ -10,8 +10,8 @@ docs/_build/
 
 # Developer
 .idea/
-.venv
-.vscode
+.venv/
+.vscode/
 
 Snare.egg-info/
 build/
