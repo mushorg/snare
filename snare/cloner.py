@@ -11,11 +11,12 @@ import aiohttp
 import cssutils
 import yarl
 from bs4 import BeautifulSoup
+
 animation = "|/-\\"
 
 
 class Cloner(object):
-    def __init__(self, root, max_depth, css_validate, default_path='/opt/snare'):
+    def __init__(self, root, max_depth, css_validate, default_path="/opt/snare"):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
         self.visited_urls = []
@@ -24,8 +25,8 @@ class Cloner(object):
         self.moved_root = None
         self.default_path = default_path
         if (self.root.host is None) or (len(self.root.host) < 4):
-            sys.exit('invalid target {}'.format(self.root.host))
-        self.target_path = '{}/pages/{}'.format(self.default_path, self.root.host)
+            sys.exit("invalid target {}".format(self.root.host))
+        self.target_path = "{}/pages/{}".format(self.default_path, self.root.host)
 
         if not os.path.exists(self.target_path):
             os.makedirs(self.target_path)
@@ -40,22 +41,22 @@ class Cloner(object):
     def add_scheme(url):
         new_url = yarl.URL(url)
         if not new_url.scheme:
-            new_url = yarl.URL('http://' + url)
-        err_url = new_url.with_path('/status_404').with_query(None).with_fragment(None)
+            new_url = yarl.URL("http://" + url)
+        err_url = new_url.with_path("/status_404").with_query(None).with_fragment(None)
         return new_url, err_url
 
     @staticmethod
     def get_headers(response):
         ignored_headers_lowercase = [
-            'age',
-            'cache-control',
-            'connection',
-            'content-encoding',
-            'content-length',
-            'date',
-            'etag',
-            'expires',
-            'x-cache',
+            "age",
+            "cache-control",
+            "connection",
+            "content-encoding",
+            "content-length",
+            "date",
+            "etag",
+            "expires",
+            "x-cache",
         ]
 
         headers = []
@@ -80,9 +81,11 @@ class Cloner(object):
         host = url.host
 
         if check_host:
-            if (host != self.root.host and self.moved_root is None) or \
-                    url.fragment or \
-                    (self.moved_root is not None and host != self.moved_root.host):
+            if (
+                (host != self.root.host and self.moved_root is None)
+                or url.fragment
+                or (self.moved_root is not None and host != self.moved_root.host)
+            ):
                 return None
         if url.human_repr() not in self.visited_urls and (level + 1) <= self.max_depth:
             await self.new_urls.put((url, level + 1))
@@ -95,33 +98,30 @@ class Cloner(object):
         return res
 
     async def replace_links(self, data, level):
-        soup = BeautifulSoup(data, 'html.parser')
+        soup = BeautifulSoup(data, "html.parser")
 
         # find all relative links
         for link in soup.findAll(href=True):
-            res = await self.process_link(link['href'], level, check_host=True)
+            res = await self.process_link(link["href"], level, check_host=True)
             if res is not None:
-                link['href'] = res
+                link["href"] = res
 
         # find all images and scripts
         for elem in soup.findAll(src=True):
-            res = await self.process_link(elem['src'], level)
+            res = await self.process_link(elem["src"], level)
             if res is not None:
-                elem['src'] = res
+                elem["src"] = res
 
         # find all action elements
         for act_link in soup.findAll(action=True):
-            res = await self.process_link(act_link['action'], level)
+            res = await self.process_link(act_link["action"], level)
             if res is not None:
-                act_link['action'] = res
+                act_link["action"] = res
 
         # prevent redirects
-        for redir in soup.findAll(
-            True, attrs={
-                'name': re.compile('redirect.*')}):
-            if redir['value'] != "":
-                redir['value'] = yarl.URL(
-                    redir['value']).relative().human_repr()
+        for redir in soup.findAll(True, attrs={"name": re.compile("redirect.*")}):
+            if redir["value"] != "":
+                redir["value"] = yarl.URL(redir["value"]).relative().human_repr()
 
         return soup
 
@@ -131,17 +131,20 @@ class Cloner(object):
             file_name = url.relative().human_repr()
         else:
             file_name = url.human_repr()
-        if not file_name.startswith('/'):
+        if not file_name.startswith("/"):
             file_name = "/" + file_name
 
-        if file_name == '/' or file_name == "":
-            if host == self.root.host or\
-                    self.moved_root is not None and self.moved_root.host == host:
-                file_name = '/index.html'
+        if file_name == "/" or file_name == "":
+            if (
+                host == self.root.host
+                or self.moved_root is not None
+                and self.moved_root.host == host
+            ):
+                file_name = "/index.html"
             else:
                 file_name = host
         m = hashlib.md5()
-        m.update(file_name.encode('utf-8'))
+        m.update(file_name.encode("utf-8"))
         hash_name = m.hexdigest()
         return file_name, hash_name
 
@@ -154,11 +157,13 @@ class Cloner(object):
                 continue
             self.visited_urls.append(current_url.human_repr())
             file_name, hash_name = self._make_filename(current_url)
-            self.logger.debug('Cloned file: %s', file_name)
+            self.logger.debug("Cloned file: %s", file_name)
             data = None
             content_type = None
             try:
-                response = await session.get(current_url, headers={'Accept': 'text/html'}, timeout=10.0)
+                response = await session.get(
+                    current_url, headers={"Accept": "text/html"}, timeout=10.0
+                )
                 headers = self.get_headers(response)
                 content_type = response.content_type
                 data = await response.read()
@@ -168,17 +173,17 @@ class Cloner(object):
                 await response.release()
 
             if data is not None:
-                self.meta[file_name]['hash'] = hash_name
-                self.meta[file_name]['headers'] = headers
+                self.meta[file_name]["hash"] = hash_name
+                self.meta[file_name]["headers"] = headers
                 self.counter = self.counter + 1
 
-                if content_type == 'text/html':
+                if content_type == "text/html":
                     soup = await self.replace_links(data, level)
                     data = str(soup).encode()
-                elif content_type == 'text/css':
+                elif content_type == "text/css":
                     css = cssutils.parseString(data, validate=self.css_validate)
                     for carved_url in cssutils.getUrls(css):
-                        if carved_url.startswith('data'):
+                        if carved_url.startswith("data"):
                             continue
                         carved_url = yarl.URL(carved_url)
                         if not carved_url.is_absolute():
@@ -186,7 +191,7 @@ class Cloner(object):
                         if carved_url.human_repr() not in self.visited_urls:
                             await self.new_urls.put((carved_url, level + 1))
 
-                with open(os.path.join(self.target_path, hash_name), 'wb') as index_fh:
+                with open(os.path.join(self.target_path, hash_name), "wb") as index_fh:
                     index_fh.write(data)
 
     async def get_root_host(self):
@@ -197,7 +202,7 @@ class Cloner(object):
                     self.moved_root = resp.url
                 resp.close()
         except aiohttp.ClientError as err:
-            self.logger.error("Can\'t connect to target host: %s", err)
+            self.logger.error("Can't connect to target host: %s", err)
             exit(-1)
 
     async def run(self):
@@ -209,6 +214,6 @@ class Cloner(object):
         except KeyboardInterrupt:
             raise
         finally:
-            with open(os.path.join(self.target_path, 'meta.json'), 'w') as mj:
+            with open(os.path.join(self.target_path, "meta.json"), "w") as mj:
                 json.dump(self.meta, mj)
             await session.close()

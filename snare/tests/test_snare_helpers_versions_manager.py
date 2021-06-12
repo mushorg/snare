@@ -3,7 +3,6 @@ from snare.utils.snare_helpers import VersionManager
 
 
 class TestVersion(unittest.TestCase):
-
     def setUp(self):
         self.vm = VersionManager()
         self.vm.version = "0.1.0"

@@ -14,13 +14,13 @@ class TestGetBody(unittest.TestCase):
     def setUp(self):
         self.main_page_path = generate_unique_path()
         os.makedirs(self.main_page_path)
-        self.root = 'http://example.com'
+        self.root = "http://example.com"
         self.level = 0
         self.max_depth = sys.maxsize
         self.loop = asyncio.new_event_loop()
-        self.css_validate = 'false'
+        self.css_validate = "false"
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
-        self.target_path = '/opt/snare/pages/{}'.format(yarl.URL(self.root).host)
+        self.target_path = "/opt/snare/pages/{}".format(yarl.URL(self.root).host)
         self.return_content = None
         self.expected_content = None
         self.filename = None
@@ -43,24 +43,28 @@ class TestGetBody(unittest.TestCase):
                 request_info=None,
                 traces=None,
                 loop=self.loop,
-                session=None))
+                session=None,
+            )
+        )
 
     def test_get_body(self):
-        self.content = b'''<html><body><a href="http://example.com/test"></a></body></html>'''
+        self.content = (
+            b"""<html><body><a href="http://example.com/test"></a></body></html>"""
+        )
 
-        aiohttp.ClientResponse._headers = {'Content-Type': 'text/html'}
+        aiohttp.ClientResponse._headers = {"Content-Type": "text/html"}
         aiohttp.ClientResponse.read = AsyncMock(return_value=self.content)
         self.filename, self.hashname = self.handler._make_filename(yarl.URL(self.root))
         self.expected_content = '<html><body><a href="/test"></a></body></html>'
 
         self.meta = {
-            '/index.html': {
-                'hash': 'd1546d731a9f30cc80127d57142a482b',
-                'headers': [{'Content-Type': 'text/html'}],
+            "/index.html": {
+                "hash": "d1546d731a9f30cc80127d57142a482b",
+                "headers": [{"Content-Type": "text/html"}],
             },
-            '/test': {
-                'hash': '4539330648b80f94ef3bf911f6d77ac9',
-                'headers': [{'Content-Type': 'text/html'}],
+            "/test": {
+                "hash": "4539330648b80f94ef3bf911f6d77ac9",
+                "headers": [{"Content-Type": "text/html"}],
             },
         }
 
@@ -68,34 +72,37 @@ class TestGetBody(unittest.TestCase):
             await self.handler.new_urls.put((yarl.URL(self.root), 0))
             await self.handler.get_body(self.session)
 
-        with self.assertLogs(level='DEBUG') as log:
+        with self.assertLogs(level="DEBUG") as log:
             self.loop.run_until_complete(test())
-            self.assertIn('DEBUG:snare.cloner:Cloned file: /test', ''.join(log.output))
+            self.assertIn("DEBUG:snare.cloner:Cloned file: /test", "".join(log.output))
 
         with open(os.path.join(self.target_path, self.hashname)) as f:
             self.return_content = f.read()
 
         self.assertEqual(self.return_content, self.expected_content)
-        self.assertEqual(self.handler.visited_urls[-2:], ['http://example.com/', 'http://example.com/test'])
+        self.assertEqual(
+            self.handler.visited_urls[-2:],
+            ["http://example.com/", "http://example.com/test"],
+        )
         self.assertEqual(self.handler.meta, self.meta)
 
     def test_get_body_css_validate(self):
-        aiohttp.ClientResponse._headers = {'Content-Type': 'text/css'}
+        aiohttp.ClientResponse._headers = {"Content-Type": "text/css"}
 
-        self.css_validate = 'true'
+        self.css_validate = "true"
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
-        self.content = b'''.banner { background: url("/example.png") }'''
+        self.content = b""".banner { background: url("/example.png") }"""
         aiohttp.ClientResponse.read = AsyncMock(return_value=self.content)
-        self.expected_content = 'http://example.com/example.png'
+        self.expected_content = "http://example.com/example.png"
         self.return_size = 0
         self.meta = {
-            '/example.png': {
-                'hash': '5a64beebcd2a6f1cbd00b8370debaa72',
-                'headers': [{'Content-Type': 'text/css'}],
+            "/example.png": {
+                "hash": "5a64beebcd2a6f1cbd00b8370debaa72",
+                "headers": [{"Content-Type": "text/css"}],
             },
-            '/index.html': {
-                'hash': 'd1546d731a9f30cc80127d57142a482b',
-                'headers': [{'Content-Type': 'text/css'}],
+            "/index.html": {
+                "hash": "d1546d731a9f30cc80127d57142a482b",
+                "headers": [{"Content-Type": "text/css"}],
             },
         }
 
@@ -110,21 +117,23 @@ class TestGetBody(unittest.TestCase):
         self.assertEqual(self.meta, self.handler.meta)
 
     def test_get_body_css_validate_scheme(self):
-        aiohttp.ClientResponse._headers = {'Content-Type': 'text/css'}
+        aiohttp.ClientResponse._headers = {"Content-Type": "text/css"}
 
-        self.css_validate = 'true'
+        self.css_validate = "true"
         self.return_size = 0
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
-        self.content = [b'''.banner { background: url("data://domain/test.txt") }''',
-                        b'''.banner { background: url("file://domain/test.txt") }''']
+        self.content = [
+            b""".banner { background: url("data://domain/test.txt") }""",
+            b""".banner { background: url("file://domain/test.txt") }""",
+        ]
         self.meta = {
-            '/index.html': {
-                'hash': 'd1546d731a9f30cc80127d57142a482b',
-                'headers': [{'Content-Type': 'text/css'}],
+            "/index.html": {
+                "hash": "d1546d731a9f30cc80127d57142a482b",
+                "headers": [{"Content-Type": "text/css"}],
             },
         }
 
-        self.expected_content = 'http://example.com/'
+        self.expected_content = "http://example.com/"
 
         async def test():
             await self.handler.new_urls.put((yarl.URL(self.root), 0))
@@ -145,9 +154,9 @@ class TestGetBody(unittest.TestCase):
             await self.handler.new_urls.put((yarl.URL(self.root), 0))
             await self.handler.get_body(self.session)
 
-        with self.assertLogs(level='ERROR') as log:
+        with self.assertLogs(level="ERROR") as log:
             self.loop.run_until_complete(test())
-            self.assertIn('ERROR:snare.cloner:', ''.join(log.output))
+            self.assertIn("ERROR:snare.cloner:", "".join(log.output))
 
     def tearDown(self):
         shutil.rmtree(self.main_page_path)
