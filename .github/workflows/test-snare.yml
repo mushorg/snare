@@ -26,7 +26,7 @@ jobs:
           black . --line-length 120
       - name: Test with nose
         run: |
-          nosetests -w snare/tests -v --with-coverage --cover-inclusive --cover-package=snare
+          nose2 -w snare/tests -v --with-coverage --cover-inclusive --cover-package=snare
       - name: Coverage
         run: |
           coveralls
