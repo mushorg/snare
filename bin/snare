@@ -22,12 +22,11 @@ import pwd
 import sys
 import time
 import uuid
-from concurrent.futures import ProcessPoolExecutor
-
 import aiohttp
 import pip
-
 import git
+from concurrent.futures import ProcessPoolExecutor
+
 from snare.server import HttpRequestHandler
 from snare.utils import snare_helpers
 from snare.utils.logger import Logger

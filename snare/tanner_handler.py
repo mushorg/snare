@@ -1,10 +1,11 @@
 import re
 import os
-from urllib.parse import unquote
 import multidict
 import json
 import logging
 import aiohttp
+
+from urllib.parse import unquote
 from bs4 import BeautifulSoup
 from snare.html_handler import HtmlHandler
 

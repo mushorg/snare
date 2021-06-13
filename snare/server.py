@@ -1,10 +1,11 @@
 import logging
-import json
 import aiohttp
-from aiohttp import web
-from aiohttp.web import StaticResource as StaticRoute
 import aiohttp_jinja2
 import jinja2
+
+from aiohttp import web
+from aiohttp.web import StaticResource as StaticRoute
+
 from snare.middlewares import SnareMiddleware
 from snare.tanner_handler import TannerHandler
 
