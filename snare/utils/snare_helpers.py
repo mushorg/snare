@@ -3,7 +3,6 @@ import hashlib
 import mimetypes
 import json
 import shutil
-import argparse
 import logging
 from os import walk
 from distutils.version import StrictVersion
@@ -112,15 +111,6 @@ def parse_timeout(timeout):
         result = int(timeout[:-1])
         result *= timeouts_coeff[form]
     return result
-
-
-def str_to_bool(v):
-    if v.lower() == "true":
-        return True
-    elif v.lower() == "false":
-        return False
-    else:
-        raise argparse.ArgumentTypeError("Boolean value expected")
 
 
 def print_color(msg, mode="INFO", end="\n"):

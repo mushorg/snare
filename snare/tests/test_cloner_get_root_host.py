@@ -16,7 +16,7 @@ class TestClonerGetRootHost(unittest.TestCase):
     def test_moved_root(self):
         self.root = "http://example.com"
         self.max_depth = sys.maxsize
-        self.css_validate = "false"
+        self.css_validate = False
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
         self.expected_moved_root = URL("http://www.example.com")
 
@@ -31,7 +31,7 @@ class TestClonerGetRootHost(unittest.TestCase):
     def test_clienterror(self, session):
         self.root = "http://example.com"
         self.max_depth = sys.maxsize
-        self.css_validate = "false"
+        self.css_validate = False
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
 
         aiohttp.ClientSession = mock.Mock(side_effect=aiohttp.ClientError)

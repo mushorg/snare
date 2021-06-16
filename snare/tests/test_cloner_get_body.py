@@ -18,7 +18,7 @@ class TestGetBody(unittest.TestCase):
         self.level = 0
         self.max_depth = sys.maxsize
         self.loop = asyncio.new_event_loop()
-        self.css_validate = "false"
+        self.css_validate = False
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
         self.target_path = "/opt/snare/pages/{}".format(yarl.URL(self.root).host)
         self.return_content = None
@@ -87,7 +87,7 @@ class TestGetBody(unittest.TestCase):
     def test_get_body_css_validate(self):
         aiohttp.ClientResponse._headers = {"Content-Type": "text/css"}
 
-        self.css_validate = "true"
+        self.css_validate = True
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
         self.content = b""".banner { background: url("/example.png") }"""
         aiohttp.ClientResponse.read = AsyncMock(return_value=self.content)
@@ -117,7 +117,7 @@ class TestGetBody(unittest.TestCase):
     def test_get_body_css_validate_scheme(self):
         aiohttp.ClientResponse._headers = {"Content-Type": "text/css"}
 
-        self.css_validate = "true"
+        self.css_validate = True
         self.return_size = 0
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
         self.content = [

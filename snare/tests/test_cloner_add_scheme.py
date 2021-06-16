@@ -15,7 +15,7 @@ class TestCloner(unittest.TestCase):
         self.expected_new_url = yarl.URL("http://example.com")
         self.expected_err_url = yarl.URL("http://example.com/status_404")
         self.max_depth = sys.maxsize
-        self.css_validate = "false"
+        self.css_validate = False
         self.handler = Cloner(self.url, self.max_depth, self.css_validate)
 
     def test_trailing_slash(self):
