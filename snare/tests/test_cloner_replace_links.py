@@ -16,7 +16,7 @@ class TestReplaceLinks(unittest.TestCase):
         self.level = 0
         self.max_depth = sys.maxsize
         self.loop = asyncio.new_event_loop()
-        self.css_validate = "false"
+        self.css_validate = False
         self.handler = Cloner(self.root, self.max_depth, self.css_validate)
         self.content = None
         self.expected_content = None

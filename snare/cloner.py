@@ -30,7 +30,13 @@ class Cloner(object):
 
         if not os.path.exists(self.target_path):
             os.makedirs(self.target_path)
+
         self.css_validate = css_validate
+        self.css_logger = logging.getLogger(__name__ + ".__handle")
+        cssutils.log.setLog(self.css_logger)
+        if not css_validate:
+            self.css_logger.setLevel(logging.CRITICAL)
+
         self.new_urls = Queue()
         self.meta = defaultdict(dict)
 
@@ -146,8 +152,8 @@ class Cloner(object):
 
     async def get_body(self, session):
         while not self.new_urls.empty():
-            print(animation[self.itr % len(animation)], end="\r")
-            self.itr = self.itr + 1
+            print(animation[self.itr], end="\r")
+            self.itr = (self.itr + 1) % len(animation)
             current_url, level = await self.new_urls.get()
             if current_url.human_repr() in self.visited_urls:
                 continue
@@ -155,6 +161,7 @@ class Cloner(object):
             file_name, hash_name = self._make_filename(current_url)
             self.logger.debug("Cloned file: %s", file_name)
             data = None
+            headers = []
             content_type = None
             try:
                 response = await session.get(current_url, headers={"Accept": "text/html"}, timeout=10.0)
