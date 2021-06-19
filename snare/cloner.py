@@ -11,6 +11,7 @@ import yarl
 from bs4 import BeautifulSoup
 from asyncio import Queue
 from collections import defaultdict
+from pyppeteer import launch
 
 animation = "|/-\\"
 
@@ -150,7 +151,25 @@ class Cloner(object):
         hash_name = m.hexdigest()
         return file_name, hash_name
 
-    async def get_body(self, session):
+    async def fetch_data(self, session, current_url):
+        data = None
+        headers = []
+        content_type = None
+        try:
+            response = await session.get(current_url, headers={"Accept": "text/html"}, timeout=10.0)
+            headers = self.get_headers(response)
+            content_type = response.content_type
+            data = await response.read()
+        except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
+            self.logger.error(client_error)
+        else:
+            await response.release()
+        return [data, headers, content_type]
+
+    async def get_body(self, session_or_browser):
+        """
+        session_or_browser: Cloner passes session and HeadlessCloner passes browser
+        """
         while not self.new_urls.empty():
             print(animation[self.itr], end="\r")
             self.itr = (self.itr + 1) % len(animation)
@@ -160,18 +179,7 @@ class Cloner(object):
             self.visited_urls.append(current_url.human_repr())
             file_name, hash_name = self._make_filename(current_url)
             self.logger.debug("Cloned file: %s", file_name)
-            data = None
-            headers = []
-            content_type = None
-            try:
-                response = await session.get(current_url, headers={"Accept": "text/html"}, timeout=10.0)
-                headers = self.get_headers(response)
-                content_type = response.content_type
-                data = await response.read()
-            except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
-                self.logger.error(client_error)
-            else:
-                await response.release()
+            data, headers, content_type = await self.fetch_data(session_or_browser, current_url)
 
             if data is not None:
                 self.meta[file_name]["hash"] = hash_name
@@ -192,8 +200,11 @@ class Cloner(object):
                         if carved_url.human_repr() not in self.visited_urls:
                             await self.new_urls.put((carved_url, level + 1))
 
-                with open(os.path.join(self.target_path, hash_name), "wb") as index_fh:
-                    index_fh.write(data)
+                try:
+                    with open(os.path.join(self.target_path, hash_name), "wb") as index_fh:
+                        index_fh.write(data)
+                except TypeError:
+                    await self.new_urls.put((current_url, level))
 
     async def get_root_host(self):
         try:
@@ -218,3 +229,47 @@ class Cloner(object):
             with open(os.path.join(self.target_path, "meta.json"), "w") as mj:
                 json.dump(self.meta, mj)
             await session.close()
+
+
+class HeadlessCloner(Cloner):
+    @staticmethod
+    def get_content_type(headers):
+        for header in headers:
+            for key, val in header.items():
+                if key.lower() == "content-type":
+                    return val.split(";")[0]
+        return None
+
+    async def fetch_data(self, browser, current_url):
+        data = None
+        headers = []
+        content_type = None
+        page = None
+        try:
+            page = await browser.newPage()
+            response = await page.goto(str(current_url))
+            headers = self.get_headers(response)
+            content_type = self.get_content_type(headers)
+            data = await response.buffer()
+        except Exception as err:
+            self.logger.error(err)
+        finally:
+            if page:
+                await page.close()
+
+        return [data, headers, content_type]
+
+    async def run(self):
+        browser = None
+        try:
+            browser = await launch()
+            await self.new_urls.put((self.root, 0))
+            await self.new_urls.put((self.error_page, 0))
+            await self.get_body(browser)
+        except KeyboardInterrupt:
+            raise
+        finally:
+            with open(os.path.join(self.target_path, "meta.json"), "w") as mj:
+                json.dump(self.meta, mj)
+            if browser:
+                await browser.close()
