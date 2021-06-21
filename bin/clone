@@ -19,7 +19,7 @@ import os
 import sys
 from datetime import datetime
 
-from snare.cloner import Cloner, HeadlessCloner
+from snare.cloner import CloneRunner
 from snare.utils import logger
 from snare.utils.snare_helpers import check_privileges, print_color
 
@@ -57,25 +57,22 @@ def main():
     print_color("  Logs will be stored in {}".format(log_file), "INFO", end="\r")
     cloner = None
     start = datetime.now()
+    cloner = CloneRunner(args.target, int(args.max_depth), args.css_validate, default_path, args.headless)
+    if not cloner or not cloner.runner:
+        print_color("Error initializing cloner, please try again", "ERROR")
+        return
     try:
-        if args.headless:
-            cloner = HeadlessCloner(args.target, int(args.max_depth), args.css_validate, default_path)
-        else:
-            cloner = Cloner(args.target, int(args.max_depth), args.css_validate, default_path)
-        loop.run_until_complete(cloner.get_root_host())
+        loop.run_until_complete(cloner.runner.get_root_host())
         loop.run_until_complete(cloner.run())
     except KeyboardInterrupt:
         print_color("\nKeyboardInterrupt received... Quitting", "ERROR")
     finally:
         end = datetime.now() - start
-        if not cloner:
-            print_color("Error initializing cloner, please try again", "ERROR")
-            return
         print("")
         print_color("-" * 36 + ">SUMMARY<" + "-" * 36, "INFO")
-        print_color("\tTotal number of URLs cloned: {}".format(str(cloner.counter)), "INFO")
+        print_color("\tTotal number of URLs cloned: {}".format(str(cloner.runner.counter)), "INFO")
         print_color("\tTime elapsed: {}".format(str(end)), "INFO")
-        print_color("\tCloned directory: {}".format(cloner.target_path), "INFO")
+        print_color("\tCloned directory: {}".format(cloner.runner.target_path), "INFO")
         print_color("-" * 82, "INFO")
 
 
