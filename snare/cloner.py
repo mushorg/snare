@@ -3,7 +3,6 @@ import sys
 import logging
 import asyncio
 import hashlib
-import json
 import re
 import aiohttp
 import cssutils
@@ -137,14 +136,16 @@ class Cloner(object):
             file_name = url.relative().human_repr()
         else:
             file_name = url.human_repr()
+
+        # url = https://website.com/example/ -> https://website.com/example/index.html
+        if file_name.endswith("/") or file_name == "":
+            if host == self.root.host or self.moved_root is not None and self.moved_root.host == host:
+                file_name += "index.html"
+            else:
+                file_name = host
         if not file_name.startswith("/"):
             file_name = "/" + file_name
 
-        if file_name == "/" or file_name == "":
-            if host == self.root.host or self.moved_root is not None and self.moved_root.host == host:
-                file_name = "/index.html"
-            else:
-                file_name = host
         m = hashlib.md5()
         m.update(file_name.encode("utf-8"))
         hash_name = m.hexdigest()
@@ -158,8 +159,6 @@ class Cloner(object):
             if current_url.human_repr() in self.visited_urls:
                 continue
             self.visited_urls.append(current_url.human_repr())
-            file_name, hash_name = self._make_filename(current_url)
-            self.logger.debug("Cloned file: %s", file_name)
             data = None
             headers = []
             content_type = None
@@ -174,6 +173,8 @@ class Cloner(object):
                 await response.release()
 
             if data is not None:
+                file_name, hash_name = self._make_filename(current_url)
+                self.logger.debug("Cloned file: %s", file_name)
                 self.meta[file_name]["hash"] = hash_name
                 self.meta[file_name]["headers"] = headers
                 self.counter = self.counter + 1
@@ -215,6 +216,4 @@ class Cloner(object):
         except KeyboardInterrupt:
             raise
         finally:
-            with open(os.path.join(self.target_path, "meta.json"), "w") as mj:
-                json.dump(self.meta, mj)
             await session.close()

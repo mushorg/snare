@@ -15,6 +15,7 @@ GNU General Public License for more details.
 """
 import argparse
 import asyncio
+import json
 import os
 import sys
 from datetime import datetime
@@ -65,6 +66,8 @@ def main():
         if not cloner:
             print_color("Error initializing cloner, please try again", "ERROR")
             return
+        with open(os.path.join(cloner.target_path, "meta.json"), "w") as mj:
+            json.dump(cloner.meta, mj)
         print("")
         print_color("-" * 36 + ">SUMMARY<" + "-" * 36, "INFO")
         print_color("\tTotal number of URLs cloned: {}".format(str(cloner.counter)), "INFO")
