@@ -11,11 +11,12 @@ import yarl
 from bs4 import BeautifulSoup
 from asyncio import Queue
 from collections import defaultdict
+from pyppeteer import launch
 
 animation = "|/-\\"
 
 
-class Cloner(object):
+class BaseCloner:
     def __init__(self, root, max_depth, css_validate, default_path="/opt/snare"):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
@@ -150,7 +151,10 @@ class Cloner(object):
         hash_name = m.hexdigest()
         return file_name, hash_name
 
-    async def get_body(self, session):
+    async def fetch_data(self, driver, current_url):
+        raise NotImplementedError
+
+    async def get_body(self, driver):
         while not self.new_urls.empty():
             print(animation[self.itr], end="\r")
             self.itr = (self.itr + 1) % len(animation)
@@ -160,18 +164,7 @@ class Cloner(object):
             self.visited_urls.append(current_url.human_repr())
             file_name, hash_name = self._make_filename(current_url)
             self.logger.debug("Cloned file: %s", file_name)
-            data = None
-            headers = []
-            content_type = None
-            try:
-                response = await session.get(current_url, headers={"Accept": "text/html"}, timeout=10.0)
-                headers = self.get_headers(response)
-                content_type = response.content_type
-                data = await response.read()
-            except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
-                self.logger.error(client_error)
-            else:
-                await response.release()
+            data, headers, content_type = await self.fetch_data(driver, current_url)
 
             if data is not None:
                 self.meta[file_name]["hash"] = hash_name
@@ -192,8 +185,11 @@ class Cloner(object):
                         if carved_url.human_repr() not in self.visited_urls:
                             await self.new_urls.put((carved_url, level + 1))
 
-                with open(os.path.join(self.target_path, hash_name), "wb") as index_fh:
-                    index_fh.write(data)
+                try:
+                    with open(os.path.join(self.target_path, hash_name), "wb") as index_fh:
+                        index_fh.write(data)
+                except TypeError:
+                    await self.new_urls.put((current_url, level))
 
     async def get_root_host(self):
         try:
@@ -206,15 +202,79 @@ class Cloner(object):
             self.logger.error("Can't connect to target host: %s", err)
             exit(-1)
 
-    async def run(self):
-        session = aiohttp.ClientSession()
+
+class SimpleCloner(BaseCloner):
+    async def fetch_data(self, session, current_url):
+        data = None
+        headers = []
+        content_type = None
         try:
-            await self.new_urls.put((self.root, 0))
-            await self.new_urls.put((self.error_page, 0))
-            await self.get_body(session)
+            response = await session.get(current_url, headers={"Accept": "text/html"}, timeout=10.0)
+            headers = self.get_headers(response)
+            content_type = response.content_type
+            data = await response.read()
+        except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
+            self.logger.error(client_error)
+        else:
+            await response.release()
+        return [data, headers, content_type]
+
+
+class HeadlessCloner(BaseCloner):
+    @staticmethod
+    def get_content_type(headers):
+        for header in headers:
+            for key, val in header.items():
+                if key.lower() == "content-type":
+                    return val.split(";")[0]
+        return None
+
+    async def fetch_data(self, browser, current_url):
+        data = None
+        headers = []
+        content_type = None
+        page = None
+        try:
+            page = await browser.newPage()
+            response = await page.goto(str(current_url))
+            headers = self.get_headers(response)
+            content_type = self.get_content_type(headers)
+            data = await response.buffer()
+        except Exception as err:
+            self.logger.error(err)
+        finally:
+            if page:
+                await page.close()
+
+        return [data, headers, content_type]
+
+
+class CloneRunner:
+    def __init__(self, root, max_depth, css_validate, default_path="/opt/snare", headless=False):
+        self.runner = None
+        if headless:
+            self.runner = HeadlessCloner(root, max_depth, css_validate, default_path)
+        else:
+            self.runner = SimpleCloner(root, max_depth, css_validate, default_path)
+        if not self.runner:
+            raise Exception("Error initializing cloner!")
+
+    async def run(self):
+        if not self.runner:
+            raise Exception("Error initializing runner!")
+        driver = None
+        if type(self.runner) == SimpleCloner:
+            driver = aiohttp.ClientSession()
+        else:
+            driver = await launch()
+        try:
+            await self.runner.new_urls.put((self.runner.root, 0))
+            await self.runner.new_urls.put((self.runner.error_page, 0))
+            await self.runner.get_body(driver)
         except KeyboardInterrupt:
             raise
         finally:
-            with open(os.path.join(self.target_path, "meta.json"), "w") as mj:
-                json.dump(self.meta, mj)
-            await session.close()
+            with open(os.path.join(self.runner.target_path, "meta.json"), "w") as mj:
+                json.dump(self.runner.meta, mj)
+            if driver:
+                await driver.close()
