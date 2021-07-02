@@ -101,8 +101,6 @@ class TannerHandler:
             for requested_name in possible_requests:
                 if requested_name == "/":
                     requested_name = self.run_args.index_page
-                if requested_name[-1] == "/":
-                    requested_name = requested_name[:-1]
                 requested_name = unquote(requested_name)
                 try:
                     file_name = self.meta[requested_name]["hash"]

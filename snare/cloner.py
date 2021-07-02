@@ -13,6 +13,8 @@ from asyncio import Queue
 from collections import defaultdict
 from pyppeteer import launch
 
+from snare.utils.snare_helpers import print_color
+
 animation = "|/-\\"
 
 
@@ -133,7 +135,6 @@ class BaseCloner:
         return soup
 
     def _make_filename(self, url):
-        host = url.host
         if url.is_absolute():
             file_name = url.relative().human_repr()
         else:
@@ -141,11 +142,6 @@ class BaseCloner:
         if not file_name.startswith("/"):
             file_name = "/" + file_name
 
-        if file_name == "/" or file_name == "":
-            if host == self.root.host or self.moved_root is not None and self.moved_root.host == host:
-                file_name = "/index.html"
-            else:
-                file_name = host
         m = hashlib.md5()
         m.update(file_name.encode("utf-8"))
         hash_name = m.hexdigest()
@@ -196,10 +192,9 @@ class BaseCloner:
     async def get_root_host(self):
         try:
             async with aiohttp.ClientSession() as session:
-                resp = await session.get(self.root)
-                if resp.host != self.root.host:
-                    self.moved_root = resp.url
-                resp.close()
+                async with session.get(self.root) as resp:
+                    if resp.host != self.root.host:
+                        self.moved_root = resp.url
         except aiohttp.ClientError as err:
             self.logger.error("Can't connect to target host: %s", err)
             exit(-1)
@@ -247,14 +242,18 @@ class HeadlessCloner(BaseCloner):
             self.logger.error(err)
             await self.new_urls.put({"url": current_url, "level": level, "try_count": try_count + 1})
         finally:
-            if page:
-                await page.close()
+            try:
+                if page:
+                    await page.close()
+            except Exception as err:
+                print_color(str(err), "WARNING")
 
         return [data, headers, content_type]
 
 
 class CloneRunner:
     def __init__(self, root, max_depth, css_validate, default_path="/opt/snare", headless=False):
+        self.driver = None
         self.runner = None
         if headless:
             self.runner = HeadlessCloner(root, max_depth, css_validate, default_path)
@@ -265,20 +264,24 @@ class CloneRunner:
 
     async def run(self):
         if not self.runner:
-            raise Exception("Error initializing runner!")
-        driver = None
+            raise Exception("Error initializing cloner!")
         if type(self.runner) == SimpleCloner:
-            driver = aiohttp.ClientSession()
+            self.driver = aiohttp.ClientSession()
         else:
-            driver = await launch()
+            # close and handle SIGINIT manually with `except KeyboardInterrupt`
+            self.driver = await launch(autoClose=False, handleSIGINT=False)
         try:
             await self.runner.new_urls.put({"url": self.runner.root, "level": 0, "try_count": 0})
             await self.runner.new_urls.put({"url": self.runner.error_page, "level": 0, "try_count": 0})
-            await self.runner.get_body(driver)
+            await self.runner.get_body(self.driver)
         except KeyboardInterrupt:
-            raise
-        finally:
-            with open(os.path.join(self.runner.target_path, "meta.json"), "w") as mj:
-                json.dump(self.runner.meta, mj)
-            if driver:
-                await driver.close()
+            # in most cases, the exception is caught in `bin/clone`
+            print_color("\nKeyboardInterrupt received... Quitting", "ERROR")
+
+    async def close(self):
+        if not self.runner:
+            raise Exception("Error initializing cloner!")
+        with open(os.path.join(self.runner.target_path, "meta.json"), "w") as mj:
+            json.dump(self.runner.meta, mj)
+        if self.driver:
+            await self.driver.close()
