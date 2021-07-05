@@ -30,13 +30,13 @@ from concurrent.futures import ProcessPoolExecutor
 from snare.server import HttpRequestHandler
 from snare.utils import snare_helpers
 from snare.utils.logger import Logger
-from snare.utils.snare_helpers import check_privileges, check_meta_file, print_color, str_to_bool
+from snare.utils.snare_helpers import check_privileges, check_meta_file, print_color
 
 
 def create_initial_config(base_path):
     cfg = configparser.ConfigParser()
-    cfg['WEB-TOOLS'] = dict(google='', bing='')
-    with open(os.path.join(base_path, 'snare.cfg'), 'w') as configfile:
+    cfg["WEB-TOOLS"] = dict(google="", bing="")
+    with open(os.path.join(base_path, "snare.cfg"), "w") as configfile:
         cfg.write(configfile)
 
 
@@ -45,32 +45,32 @@ def snare_setup(base_path):
         # Create folders
         check_privileges(base_path)
     except PermissionError as err:
-        print_color(err, 'WARNING')
+        print_color(err, "WARNING")
         sys.exit(1)
 
-    if not os.path.exists(os.path.join(base_path, 'pages')):
-        os.makedirs(os.path.join(base_path, 'pages'))
+    if not os.path.exists(os.path.join(base_path, "pages")):
+        os.makedirs(os.path.join(base_path, "pages"))
     # Write pid to pid file
-    with open(os.path.join(base_path, 'snare.pid'), 'wb') as pid_fh:
-        pid_fh.write(str(os.getpid()).encode('utf-8'))
+    with open(os.path.join(base_path, "snare.pid"), "wb") as pid_fh:
+        pid_fh.write(str(os.getpid()).encode("utf-8"))
     # Config file
-    if not os.path.exists(os.path.join(base_path, 'snare.cfg')):
+    if not os.path.exists(os.path.join(base_path, "snare.cfg")):
         create_initial_config(base_path)
     # Read or create the sensor id
-    uuid_file_path = os.path.join(base_path, 'snare.uuid')
+    uuid_file_path = os.path.join(base_path, "snare.uuid")
     if os.path.exists(uuid_file_path):
-        with open(uuid_file_path, 'rb') as uuid_fh:
+        with open(uuid_file_path, "rb") as uuid_fh:
             snare_uuid = uuid_fh.read()
         return snare_uuid
     else:
-        with open(uuid_file_path, 'wb') as uuid_fh:
-            snare_uuid = str(uuid.uuid4()).encode('utf-8')
+        with open(uuid_file_path, "wb") as uuid_fh:
+            snare_uuid = str(uuid.uuid4()).encode("utf-8")
             uuid_fh.write(snare_uuid)
         return snare_uuid
 
 
 def drop_privileges():
-    uid_name = 'nobody'
+    uid_name = "nobody"
     wanted_user = pwd.getpwnam(uid_name)
     gid_name = grp.getgrgid(wanted_user.pw_gid).gr_name
     wanted_group = grp.getgrnam(gid_name)
@@ -78,7 +78,7 @@ def drop_privileges():
     os.setuid(wanted_user.pw_uid)
     new_user = pwd.getpwuid(os.getuid())
     new_group = grp.getgrgid(os.getgid())
-    print_color('privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name), 'INFO')
+    print_color('privileges dropped, running as "{}:{}"'.format(new_user.pw_name, new_group.gr_name), "INFO")
 
 
 def compare_version_info(timeout):
@@ -89,69 +89,72 @@ def compare_version_info(timeout):
             res = rem.fetch()
             diff_list = res[0].commit.diff(repo.heads.master)
         except TimeoutError:
-            print_color('timeout fetching the repository version', 'ERROR')
+            print_color("timeout fetching the repository version", "ERROR")
         else:
             if diff_list:
-                print_color('you are running an outdated version, SNARE will be updated and restarted', 'INFO')
-                repo.git.reset('--hard')
+                print_color("you are running an outdated version, SNARE will be updated and restarted", "INFO")
+                repo.git.reset("--hard")
                 repo.heads.master.checkout()
-                repo.git.clean('-xdf')
+                repo.git.clean("-xdf")
                 repo.remotes.origin.pull()
-                pip.main(['install', '-r', 'requirements.txt'])
+                pip.main(["install", "-r", "requirements.txt"])
                 os.execv(sys.executable, [sys.executable, __file__] + sys.argv[1:])
                 return
             else:
-                print_color('you are running the latest version', 'INFO')
+                print_color("you are running the latest version", "INFO")
             time.sleep(timeout)
 
 
 async def check_tanner():
     vm = snare_helpers.VersionManager()
     async with aiohttp.ClientSession() as client:
-        req_url = 'http://{}:8090/version'.format(args.tanner)
+        req_url = "http://{}:8090/version".format(args.tanner)
         try:
             resp = await client.get(req_url)
             result = await resp.json()
             version = result["version"]
             vm.check_compatibility(version)
         except aiohttp.ClientOSError:
-            print_color("Can't connect to tanner host {}".format(req_url), 'ERROR')
+            print_color("Can't connect to tanner host {}".format(req_url), "ERROR")
             exit(1)
         else:
             await resp.release()
 
-if __name__ == '__main__':
-    print(r"""
+
+if __name__ == "__main__":
+    print(
+        r"""
    _____ _   _____    ____  ______
   / ___// | / /   |  / __ \/ ____/
   \__ \/  |/ / /| | / /_/ / __/
  ___/ / /|  / ___ |/ _, _/ /___
 /____/_/ |_/_/  |_/_/ |_/_____/
-    """)
+    """
+    )
     parser = argparse.ArgumentParser()
     page_group = parser.add_mutually_exclusive_group(required=True)
     page_group.add_argument("--page-dir", help="name of the folder to be served")
-    page_group.add_argument("--list-pages", help="list available pages", action='store_true')
-    parser.add_argument("--index-page", help="file name of the index page", default='index.html')
-    parser.add_argument("--port", help="port to listen on", default='8080')
-    parser.add_argument("--host-ip", help="host ip to bind to", default='127.0.0.1')
+    page_group.add_argument("--list-pages", help="list available pages", action="store_true")
+    parser.add_argument("--index-page", help="file name of the index page", default="")
+    parser.add_argument("--port", help="port to listen on", default="8080")
+    parser.add_argument("--host-ip", help="host ip to bind to", default="127.0.0.1")
     parser.add_argument("--debug", help="run web server in debug mode", default=False)
-    parser.add_argument("--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
-    parser.add_argument("--skip-check-version", help="skip check for update", action='store_true')
-    parser.add_argument("--slurp-enabled", help="enable nsq logging", action='store_true')
-    parser.add_argument("--slurp-host", help="nsq logging host", default='slurp.mushmush.org')
-    parser.add_argument("--slurp-auth", help="nsq logging auth", default='slurp')
-    parser.add_argument("--config", help="snare config file", default='snare.cfg')
+    parser.add_argument("--tanner", help="ip of the tanner service", default="tanner.mushmush.org")
+    parser.add_argument("--skip-check-version", help="skip check for update", action="store_true")
+    parser.add_argument("--slurp-enabled", help="enable nsq logging", action="store_true")
+    parser.add_argument("--slurp-host", help="nsq logging host", default="slurp.mushmush.org")
+    parser.add_argument("--slurp-auth", help="nsq logging auth", default="slurp")
+    parser.add_argument("--config", help="snare config file", default="snare.cfg")
     parser.add_argument("--auto-update", help="auto update SNARE if new version available ", default=True)
-    parser.add_argument("--update-timeout", help="update snare every timeout ", default='24H')
+    parser.add_argument("--update-timeout", help="update snare every timeout ", default="24H")
     parser.add_argument("--server-header", help="set server-header", default=None)
-    parser.add_argument("--no-dorks", help="disable the use of dorks", type=str_to_bool,  default=True)
-    parser.add_argument("--path", help="path to save the page to be cloned", required=False, default='/opt/')
+    parser.add_argument("--no-dorks", help="disable the use of dorks", action="store_false", default=True)
+    parser.add_argument("--path", help="path to save the page to be cloned", required=False, default="/opt/")
 
     args = parser.parse_args()
-    base_path = os.path.join(args.path, 'snare')
-    if(not os.path.isabs(args.page_dir)):
-        base_page_path = os.path.join(base_path, 'pages')
+    base_path = os.path.join(args.path, "snare")
+    if not os.path.isabs(args.page_dir):
+        base_page_path = os.path.join(base_path, "pages")
         full_page_path = os.path.join(base_page_path, args.page_dir)
     else:
         base_page_path = os.path.dirname(args.page_dir)
@@ -159,38 +162,38 @@ if __name__ == '__main__':
     snare_uuid = snare_setup(base_path)
     config = configparser.ConfigParser()
     config.read(os.path.join(base_path, args.config))
-    log_debug = os.path.join(base_path, 'snare.log')
-    log_err = os.path.join(base_path, 'snare.err')
+    log_debug = os.path.join(base_path, "snare.log")
+    log_err = os.path.join(base_path, "snare.err")
     Logger.create_logger(log_debug, log_err, __package__)
     if args.list_pages:
-        print_color('Available pages:\n', 'INFO')
+        print_color("Available pages:\n", "INFO")
         for page in os.listdir(base_page_path):
-            print_color('\t- {}'.format(page), 'INFO')
-        print_color('\nuse with --page-dir {page_name}\n\n', 'INFO')
+            print_color("\t- {}".format(page), "INFO")
+        print_color("\nuse with --page-dir {page_name}\n\n", "INFO")
         exit()
     args_dict = vars(args)
-    args_dict['full_page_path'] = os.path.realpath(full_page_path)
+    args_dict["full_page_path"] = os.path.realpath(full_page_path)
     if not os.path.exists(full_page_path):
-        print_color("--page-dir: {0} does not exist".format(args.page_dir), 'ERROR')
+        print_color("--page-dir: {0} does not exist".format(args.page_dir), "ERROR")
         exit()
     args.index_page = os.path.join("/", args.index_page)
 
-    if not os.path.exists(os.path.join(full_page_path, 'meta.json')):
+    if not os.path.exists(os.path.join(full_page_path, "meta.json")):
         conv = snare_helpers.Converter()
         conv.convert(full_page_path)
-        print_color("pages were converted. Try to clone again for the better result.", 'WARNING')
+        print_color("pages were converted. Try to clone again for the better result.", "WARNING")
 
-    with open(os.path.join(full_page_path, 'meta.json')) as meta:
+    with open(os.path.join(full_page_path, "meta.json")) as meta:
         meta_info = json.load(meta)
 
     if not check_meta_file(meta_info):
         print_color("Error found in meta.json. Please clone the pages again.", "ERROR")
         exit()
 
-    if not os.path.exists(os.path.join(full_page_path, os.path.join(meta_info[args.index_page]['hash']))):
-        print_color('can\'t create meta tag', 'WARNING')
+    if not os.path.exists(os.path.join(full_page_path, os.path.join(meta_info[args.index_page]["hash"]))):
+        print_color("can't create meta tag", "WARNING")
     else:
-        snare_helpers.add_meta_tag(args.page_dir, meta_info[args.index_page]['hash'], config, base_path)
+        snare_helpers.add_meta_tag(args.page_dir, meta_info[args.index_page]["hash"], config, base_path)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(check_tanner())
 
@@ -202,9 +205,9 @@ if __name__ == '__main__':
 
     app = HttpRequestHandler(meta_info, args, snare_uuid, debug=args.debug, keep_alive=75)
 
-    print_color('serving with uuid {0}'.format(snare_uuid.decode('utf-8')), 'INFO')
-    print_color("Debug logs will be stored in {}".format(log_debug), 'INFO')
-    print_color("Error logs will be stored in {}".format(log_err), 'INFO')
+    print_color("serving with uuid {0}".format(snare_uuid.decode("utf-8")), "INFO")
+    print_color("Debug logs will be stored in {}".format(log_debug), "INFO")
+    print_color("Error logs will be stored in {}".format(log_err), "INFO")
     loop = asyncio.get_event_loop()
     try:
         loop.run_until_complete(app.start())
@@ -213,7 +216,7 @@ if __name__ == '__main__':
         loop.run_forever()
     except (KeyboardInterrupt, TypeError) as e:
         loop.run_until_complete(app.stop())
-        print_color(e, 'ERROR')
+        print_color(e, "ERROR")
     finally:
         if compare_version_fut:
             compare_version_fut.cancel()

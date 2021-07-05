@@ -68,6 +68,8 @@ def main():
         print_color("\nKeyboardInterrupt received... Quitting", "ERROR")
     finally:
         end = datetime.now() - start
+        loop.run_until_complete(cloner.close())
+        loop.close()
         print("")
         print_color("-" * 36 + ">SUMMARY<" + "-" * 36, "INFO")
         print_color("\tTotal number of URLs cloned: {}".format(str(cloner.runner.counter)), "INFO")
