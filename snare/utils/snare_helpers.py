@@ -92,8 +92,10 @@ def add_meta_tag(page_dir, index_page, config, base_path):
 
 
 def check_meta_file(meta_info):
-    for key, val in meta_info.items():
+    for _, val in meta_info.items():
         if "hash" in val and any(header in val for header in ["content_type", "headers"]):
+            continue
+        elif val.get("redirect"):
             continue
         else:
             return False
