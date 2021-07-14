@@ -66,8 +66,6 @@ def main():
         loop.run_until_complete(cloner.run())
     except KeyboardInterrupt:
         print_color("\nKeyboardInterrupt received... Quitting", "ERROR")
-    except AssertionError:
-        print_color("\nConnection closed by the website... Quitting", "ERROR")
     finally:
         end = datetime.now() - start
         loop.run_until_complete(cloner.close())

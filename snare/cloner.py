@@ -224,7 +224,7 @@ class SimpleCloner(BaseCloner):
             if response_url.with_scheme("http") != current_url.with_scheme("http"):
                 redirect_url = response_url
             data = await response.read()
-        except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
+        except (aiohttp.ClientError, asyncio.TimeoutError, AssertionError) as client_error:
             self.logger.error(client_error)
             await self.new_urls.put({"url": current_url, "level": level, "try_count": try_count + 1})
         else:
