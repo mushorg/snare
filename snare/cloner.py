@@ -43,7 +43,6 @@ class BaseCloner:
         self.new_urls = Queue()
         self.meta = defaultdict(dict)
 
-        self.counter = 0
         self.itr = 0
 
     @staticmethod
@@ -65,6 +64,7 @@ class BaseCloner:
             "date",
             "etag",
             "expires",
+            "transfer-encoding",
             "x-cache",
         ]
 
@@ -96,7 +96,7 @@ class BaseCloner:
                 or (self.moved_root is not None and host != self.moved_root.host)
             ):
                 return None
-        if url.human_repr() not in self.visited_urls and (level + 1) <= self.max_depth:
+        if url.with_scheme("http").human_repr() not in self.visited_urls and (level + 1) <= self.max_depth:
             await self.new_urls.put({"url": url, "level": level + 1, "try_count": 0})
 
         res = None
@@ -139,6 +139,7 @@ class BaseCloner:
             file_name = url.relative().human_repr()
         else:
             file_name = url.human_repr()
+
         if not file_name.startswith("/"):
             file_name = "/" + file_name
 
@@ -157,44 +158,53 @@ class BaseCloner:
             current_url, level, try_count = (await self.new_urls.get()).values()
             if try_count > 2:
                 continue
-            if current_url.human_repr() in self.visited_urls:
+            if current_url.with_scheme("http").human_repr() in self.visited_urls:
                 continue
-            self.visited_urls.append(current_url.human_repr())
-            file_name, hash_name = self._make_filename(current_url)
+            self.visited_urls.append(current_url.with_scheme("http").human_repr())
+            redirect_url, data, headers, content_type = await self.fetch_data(driver, current_url, level, try_count)
+
+            if not data:
+                continue
+
+            if redirect_url:
+                file_name, hash_name = self._make_filename(redirect_url)
+                old_file_name, _ = self._make_filename(current_url)
+                if old_file_name != file_name:
+                    self.meta[old_file_name]["redirect"] = file_name
+                    self.visited_urls.append(redirect_url.with_scheme("http").human_repr())
+            else:
+                file_name, hash_name = self._make_filename(current_url)
             self.logger.debug("Cloned file: %s", file_name)
-            data, headers, content_type = await self.fetch_data(driver, current_url, level, try_count)
+            self.meta[file_name]["hash"] = hash_name
+            self.meta[file_name]["headers"] = headers
 
-            if data is not None:
-                self.meta[file_name]["hash"] = hash_name
-                self.meta[file_name]["headers"] = headers
-                self.counter = self.counter + 1
+            if content_type == "text/html":
+                soup = await self.replace_links(data, level)
+                data = str(soup).encode()
+            elif content_type == "text/css":
+                css = cssutils.parseString(data, validate=self.css_validate)
+                for carved_url in cssutils.getUrls(css):
+                    if carved_url.startswith("data"):
+                        continue
+                    carved_url = yarl.URL(carved_url)
+                    if not carved_url.is_absolute():
+                        carved_url = self.root.join(carved_url)
+                    if carved_url.with_scheme("http").human_repr() not in self.visited_urls:
+                        await self.new_urls.put({"url": carved_url, "level": level + 1, "try_count": 0})
 
-                if content_type == "text/html":
-                    soup = await self.replace_links(data, level)
-                    data = str(soup).encode()
-                elif content_type == "text/css":
-                    css = cssutils.parseString(data, validate=self.css_validate)
-                    for carved_url in cssutils.getUrls(css):
-                        if carved_url.startswith("data"):
-                            continue
-                        carved_url = yarl.URL(carved_url)
-                        if not carved_url.is_absolute():
-                            carved_url = self.root.join(carved_url)
-                        if carved_url.human_repr() not in self.visited_urls:
-                            await self.new_urls.put({"url": carved_url, "level": level + 1, "try_count": 0})
-
-                try:
-                    with open(os.path.join(self.target_path, hash_name), "wb") as index_fh:
-                        index_fh.write(data)
-                except TypeError:
-                    await self.new_urls.put({"url": current_url, "level": level, "try_count": try_count + 1})
+            try:
+                with open(os.path.join(self.target_path, hash_name), "wb") as index_fh:
+                    index_fh.write(data)
+            except TypeError:
+                await self.new_urls.put({"url": current_url, "level": level, "try_count": try_count + 1})
 
     async def get_root_host(self):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.root) as resp:
-                    if resp.host != self.root.host:
-                        self.moved_root = resp.url
+                    resp_url = yarl.URL(resp.url)
+                    if resp_url.host != self.root.host or resp_url.path != self.root.path:
+                        self.moved_root = resp_url
         except aiohttp.ClientError as err:
             self.logger.error("Can't connect to target host: %s", err)
             exit(-1)
@@ -205,17 +215,21 @@ class SimpleCloner(BaseCloner):
         data = None
         headers = []
         content_type = None
+        redirect_url = None
         try:
             response = await session.get(current_url, headers={"Accept": "text/html"}, timeout=10.0)
             headers = self.get_headers(response)
             content_type = response.content_type
+            response_url = yarl.URL(response.url)
+            if response_url.with_scheme("http") != current_url.with_scheme("http"):
+                redirect_url = response_url
             data = await response.read()
-        except (aiohttp.ClientError, asyncio.TimeoutError) as client_error:
+        except (aiohttp.ClientError, asyncio.TimeoutError, AssertionError) as client_error:
             self.logger.error(client_error)
             await self.new_urls.put({"url": current_url, "level": level, "try_count": try_count + 1})
         else:
             await response.release()
-        return [data, headers, content_type]
+        return [redirect_url, data, headers, content_type]
 
 
 class HeadlessCloner(BaseCloner):
@@ -232,11 +246,15 @@ class HeadlessCloner(BaseCloner):
         headers = []
         content_type = None
         page = None
+        redirect_url = None
         try:
             page = await browser.newPage()
             response = await page.goto(str(current_url))
             headers = self.get_headers(response)
             content_type = self.get_content_type(headers)
+            response_url = yarl.URL(response.url)
+            if response_url.with_scheme("http") != current_url.with_scheme("http"):
+                redirect_url = response_url
             data = await response.buffer()
         except Exception as err:
             self.logger.error(err)
@@ -248,7 +266,7 @@ class HeadlessCloner(BaseCloner):
             except Exception as err:
                 print_color(str(err), "WARNING")
 
-        return [data, headers, content_type]
+        return [redirect_url, data, headers, content_type]
 
 
 class CloneRunner:

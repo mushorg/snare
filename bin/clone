@@ -72,7 +72,7 @@ def main():
         loop.close()
         print("")
         print_color("-" * 36 + ">SUMMARY<" + "-" * 36, "INFO")
-        print_color("\tTotal number of URLs cloned: {}".format(str(cloner.runner.counter)), "INFO")
+        print_color("\tTotal number of URLs cloned: {}".format(str(len(cloner.runner.visited_urls))), "INFO")
         print_color("\tTime elapsed: {}".format(str(end)), "INFO")
         print_color("\tCloned directory: {}".format(cloner.runner.target_path), "INFO")
         print_color("-" * 82, "INFO")
