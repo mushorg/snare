@@ -37,8 +37,6 @@ class HttpRequestHandler:
 
     async def handle_request(self, request):
         self.logger.info("Request path: {0}".format(request.path_qs))
-        if self.meta[request.path_qs].get("redirect"):
-            raise web.HTTPFound(self.meta[request.path_qs]["redirect"])
         data = self.tanner_handler.create_data(request, 200)
         if request.method == "POST":
             post_data = await request.post()
