@@ -1,10 +1,12 @@
-import unittest
+import configparser
 import os
 import shutil
-import configparser
+import unittest
+
 from bs4 import BeautifulSoup
-from snare.utils.snare_helpers import add_meta_tag
+
 from snare.utils.page_path_generator import generate_unique_path
+from snare.utils.snare_helpers import add_meta_tag
 
 
 class TestAddMetaTag(unittest.TestCase):

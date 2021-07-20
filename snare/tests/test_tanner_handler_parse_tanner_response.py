@@ -1,13 +1,15 @@
-import unittest
-import asyncio
 import argparse
-import shutil
-import os
+import asyncio
 import json
+import os
+import shutil
+import unittest
+
 import multidict
+
+from snare.tanner_handler import TannerHandler
 from snare.utils.asyncmock import AsyncMock
 from snare.utils.page_path_generator import generate_unique_path
-from snare.tanner_handler import TannerHandler
 
 
 class TestParseTannerResponse(unittest.TestCase):

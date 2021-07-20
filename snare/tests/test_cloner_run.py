@@ -1,13 +1,13 @@
-import unittest
-import sys
-from snare.cloner import CloneRunner
-import shutil
 import asyncio
 import os
+import shutil
+import sys
+import unittest
 from unittest.mock import patch
 
-from snare.utils.page_path_generator import generate_unique_path
+from snare.cloner import CloneRunner
 from snare.utils.asyncmock import AsyncMock
+from snare.utils.page_path_generator import generate_unique_path
 
 
 class TestClonerRun(unittest.TestCase):

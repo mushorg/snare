@@ -15,9 +15,9 @@ GNU General Public License for more details.
 """
 import argparse
 import asyncio
+from datetime import datetime
 import os
 import sys
-from datetime import datetime
 
 from snare.cloner import CloneRunner
 from snare.utils import logger

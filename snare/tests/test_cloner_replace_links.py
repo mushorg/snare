@@ -1,11 +1,12 @@
-import unittest
-import sys
+import asyncio
 import os
 import shutil
-import asyncio
+import sys
+import unittest
+
 from snare.cloner import BaseCloner
-from snare.utils.page_path_generator import generate_unique_path
 from snare.utils.asyncmock import AsyncMock
+from snare.utils.page_path_generator import generate_unique_path
 
 
 class TestReplaceLinks(unittest.TestCase):

@@ -1,8 +1,10 @@
-import unittest
-import sys
 import os
-import yarl
 import shutil
+import sys
+import unittest
+
+import yarl
+
 from snare.cloner import BaseCloner
 from snare.utils.page_path_generator import generate_unique_path
 

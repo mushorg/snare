@@ -1,5 +1,6 @@
-from aiohttp import web
 import unittest
+
+from aiohttp import web
 
 from snare.middlewares import SnareMiddleware
 

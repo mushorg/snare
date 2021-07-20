@@ -1,18 +1,18 @@
 import asyncio
-import aiohttp
-import unittest
-import sys
 import os
-import yarl
 import shutil
+import sys
+import unittest
 
+import aiohttp
 from pyppeteer import launch
 from pyppeteer.browser import Browser
 from pyppeteer.errors import BrowserError
+import yarl
 
-from snare.cloner import BaseCloner, SimpleCloner, HeadlessCloner
-from snare.utils.page_path_generator import generate_unique_path
+from snare.cloner import BaseCloner, HeadlessCloner, SimpleCloner
 from snare.utils.asyncmock import AsyncMock
+from snare.utils.page_path_generator import generate_unique_path
 
 
 class TestCloner(unittest.TestCase):

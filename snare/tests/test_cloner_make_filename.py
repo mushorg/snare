@@ -1,9 +1,11 @@
-import unittest
-import sys
+import asyncio
 import os
 import shutil
+import sys
+import unittest
+
 import yarl
-import asyncio
+
 from snare.cloner import BaseCloner
 from snare.utils.page_path_generator import generate_unique_path
 

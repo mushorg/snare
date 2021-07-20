@@ -1,7 +1,8 @@
-import unittest
-import sys
-from snare.cloner import BaseCloner, HeadlessCloner, SimpleCloner, CloneRunner
 import shutil
+import sys
+import unittest
+
+from snare.cloner import BaseCloner, CloneRunner, HeadlessCloner, SimpleCloner
 
 
 class TestClonerInitialization(unittest.TestCase):

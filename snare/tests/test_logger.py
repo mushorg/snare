@@ -1,7 +1,8 @@
-import unittest
-from snare.utils.logger import Logger, LevelFilter
 import logging
 import os
+import unittest
+
+from snare.utils.logger import LevelFilter, Logger
 
 
 class TestLogger(unittest.TestCase):

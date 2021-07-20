@@ -1,5 +1,5 @@
-import unittest
 from os.path import expanduser, join
+import unittest
 
 from snare.utils.snare_helpers import check_privileges
 

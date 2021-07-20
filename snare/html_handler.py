@@ -1,9 +1,10 @@
 import asyncio
 import json
 import logging
-import cssutils
+
 import aiohttp
 from bs4 import BeautifulSoup
+import cssutils
 
 
 class HtmlHandler:

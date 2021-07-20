@@ -1,18 +1,19 @@
-import os
-import sys
-import logging
 import asyncio
-import hashlib
-import json
-import re
-import aiohttp
-import cssutils
-import yarl
-from bs4 import BeautifulSoup
 from asyncio import Queue
 from collections import defaultdict
+import hashlib
+import json
+import logging
+import os
+import re
+import sys
+
+import aiohttp
+from bs4 import BeautifulSoup
+import cssutils
 from pyppeteer import launch
-from pyppeteer.errors import PageError, NetworkError, TimeoutError
+from pyppeteer.errors import NetworkError, PageError, TimeoutError
+import yarl
 
 from snare.utils.snare_helpers import print_color
 
@@ -148,7 +149,7 @@ class BaseCloner:
             file_name = "/" + file_name
 
         host = url.host
-        if file_name == "/" and (host!=self.root.host or (self.moved_root and host!=self.moved_root.host)):
+        if file_name == "/" and (host != self.root.host or (self.moved_root and host != self.moved_root.host)):
             file_name = host
 
         m = hashlib.md5()

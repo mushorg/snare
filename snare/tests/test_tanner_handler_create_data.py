@@ -1,13 +1,15 @@
+import argparse
+import asyncio
+import os
+import shutil
 import unittest
 from unittest.mock import Mock
-import shutil
-import os
-import asyncio
-import argparse
-from yarl import URL
+
 from aiohttp import HttpVersion
 from aiohttp import web
 from aiohttp.http_parser import RawRequestMessage
+from yarl import URL
+
 from snare.tanner_handler import TannerHandler
 from snare.utils.page_path_generator import generate_unique_path
 

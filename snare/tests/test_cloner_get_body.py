@@ -1,14 +1,16 @@
-import unittest
-import aiohttp
-import yarl
-import sys
+import asyncio
 import os
 import shutil
-import asyncio
+import sys
+import unittest
+from unittest.mock import patch
+
+import aiohttp
+import yarl
+
 from snare.cloner import CloneRunner
 from snare.utils.asyncmock import AsyncMock
 from snare.utils.page_path_generator import generate_unique_path
-from unittest.mock import patch, MagicMock
 
 
 class TestGetBody(unittest.TestCase):
@@ -34,7 +36,8 @@ class TestGetBody(unittest.TestCase):
         self.q_size = None
 
         self.session = aiohttp.ClientSession
-        self.session.get = AsyncMock(return_value=aiohttp.ClientResponse(
+        self.session.get = AsyncMock(
+            return_value=aiohttp.ClientResponse(
                 url=yarl.URL("http://example.com"),
                 method="GET",
                 writer=None,
@@ -44,39 +47,48 @@ class TestGetBody(unittest.TestCase):
                 traces=None,
                 loop=self.loop,
                 session=None,
-            ))
+            )
+        )
 
     def test_get_body(self):
         self.index_page_content = b"""<html><body><a href="http://example.com/test"></a></body></html>"""
         self.test_page_content = b"""<html><body><p>Test</p></body></html>"""
 
         self.session.get = AsyncMock(
-            side_effect=[aiohttp.ClientResponse(
-                url=yarl.URL("http://example.com"),
-                method="GET",
-                writer=None,
-                continue100=1,
-                timer=None,
-                request_info=None,
-                traces=None,
-                loop=self.loop,
-                session=None,
-            ), aiohttp.ClientResponse(
-                url=yarl.URL("http://example.com/test"),
-                method="GET",
-                writer=None,
-                continue100=1,
-                timer=None,
-                request_info=None,
-                traces=None,
-                loop=self.loop,
-                session=None,
-            )]
+            side_effect=[
+                aiohttp.ClientResponse(
+                    url=yarl.URL("http://example.com"),
+                    method="GET",
+                    writer=None,
+                    continue100=1,
+                    timer=None,
+                    request_info=None,
+                    traces=None,
+                    loop=self.loop,
+                    session=None,
+                ),
+                aiohttp.ClientResponse(
+                    url=yarl.URL("http://example.com/test"),
+                    method="GET",
+                    writer=None,
+                    continue100=1,
+                    timer=None,
+                    request_info=None,
+                    traces=None,
+                    loop=self.loop,
+                    session=None,
+                ),
+            ]
         )
 
         patches = []
         patches.append(patch("aiohttp.ClientResponse._headers", new={"Content-Type": "text/html"}))
-        patches.append(patch("aiohttp.ClientResponse.read", new=AsyncMock(side_effect=[self.index_page_content, self.test_page_content])))
+        patches.append(
+            patch(
+                "aiohttp.ClientResponse.read",
+                new=AsyncMock(side_effect=[self.index_page_content, self.test_page_content]),
+            )
+        )
         for p in patches:
             p.start()
 
@@ -132,27 +144,30 @@ class TestGetBody(unittest.TestCase):
             p.start()
 
         self.session.get = AsyncMock(
-            side_effect=[aiohttp.ClientResponse(
-                url=yarl.URL("http://example.com"),
-                method="GET",
-                writer=None,
-                continue100=1,
-                timer=None,
-                request_info=None,
-                traces=None,
-                loop=self.loop,
-                session=None,
-            ), aiohttp.ClientResponse(
-                url=yarl.URL("http://example.com/example.png"),
-                method="GET",
-                writer=None,
-                continue100=1,
-                timer=None,
-                request_info=None,
-                traces=None,
-                loop=self.loop,
-                session=None,
-            )]
+            side_effect=[
+                aiohttp.ClientResponse(
+                    url=yarl.URL("http://example.com"),
+                    method="GET",
+                    writer=None,
+                    continue100=1,
+                    timer=None,
+                    request_info=None,
+                    traces=None,
+                    loop=self.loop,
+                    session=None,
+                ),
+                aiohttp.ClientResponse(
+                    url=yarl.URL("http://example.com/example.png"),
+                    method="GET",
+                    writer=None,
+                    continue100=1,
+                    timer=None,
+                    request_info=None,
+                    traces=None,
+                    loop=self.loop,
+                    session=None,
+                ),
+            ]
         )
         self.expected_content = "http://example.com/example.png"
         self.return_size = 0

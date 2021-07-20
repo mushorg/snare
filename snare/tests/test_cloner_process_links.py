@@ -1,8 +1,10 @@
-import unittest
 import asyncio
 import sys
-import yarl
+import unittest
 from unittest import mock
+
+import yarl
+
 from snare.cloner import BaseCloner
 
 

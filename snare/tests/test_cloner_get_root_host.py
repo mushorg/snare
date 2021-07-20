@@ -1,11 +1,12 @@
+import asyncio
+import sys
 import unittest
 from unittest import mock
-import sys
-from snare.cloner import BaseCloner
-import shutil
-import yarl
-import asyncio
+
 import aiohttp
+import yarl
+
+from snare.cloner import BaseCloner
 from snare.utils.asyncmock import AsyncMock
 
 
@@ -20,17 +21,21 @@ class TestClonerGetRootHost(unittest.TestCase):
         self.handler = BaseCloner(self.root, self.max_depth, self.css_validate)
         self.expected_moved_root = yarl.URL("http://www.example.com")
 
-        p = mock.patch("aiohttp.ClientSession.get", new=AsyncMock(return_value=aiohttp.ClientResponse(
-                url=yarl.URL("http://www.example.com"),
-                method="GET",
-                writer=None,
-                continue100=1,
-                timer=None,
-                request_info=None,
-                traces=None,
-                loop=self.loop,
-                session=None,
-            ))
+        p = mock.patch(
+            "aiohttp.ClientSession.get",
+            new=AsyncMock(
+                return_value=aiohttp.ClientResponse(
+                    url=yarl.URL("http://www.example.com"),
+                    method="GET",
+                    writer=None,
+                    continue100=1,
+                    timer=None,
+                    request_info=None,
+                    traces=None,
+                    loop=self.loop,
+                    session=None,
+                )
+            ),
         )
         p.start()
 
