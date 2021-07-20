@@ -19,13 +19,10 @@ class TestParseTannerResponse(unittest.TestCase):
         os.makedirs(self.main_page_path)
         page_dir = self.main_page_path.rsplit("/")[-1]
         meta_content = {
-            "/index.html": {
-                "hash": "hash_name",
-                "headers": [{"Content-Type": "text/html"}],
-            }
+            "/index.html": {"hash": "hash_name", "headers": [{"Server": "Apache"}], "content_type": "text/html"}
         }
         self.page_content = "<html><body></body></html>"
-        self.headers = multidict.CIMultiDict([("Content-Type", "text/html")])
+        self.headers = multidict.CIMultiDict([("Server", "Apache"), ("Content-Type", "text/html")])
         self.status_code = 200
         self.content_type = "text/html"
         with open(os.path.join(self.main_page_path, "hash_name"), "w") as f:
@@ -160,6 +157,7 @@ class TestParseTannerResponse(unittest.TestCase):
         }
         self.expected_content = b"<html><body><div>test</div></body></html>"
         self.content_type = r"text/html"
+        self.headers = multidict.CIMultiDict([("Content-Type", "text/html")])
 
         async def test():
             (
