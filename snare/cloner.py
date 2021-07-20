@@ -147,6 +147,10 @@ class BaseCloner:
         if not file_name.startswith("/"):
             file_name = "/" + file_name
 
+        host = url.host
+        if file_name == "/" and (host!=self.root.host or (self.moved_root and host!=self.moved_root.host)):
+            file_name = host
+
         m = hashlib.md5()
         m.update(file_name.encode("utf-8"))
         hash_name = m.hexdigest()
