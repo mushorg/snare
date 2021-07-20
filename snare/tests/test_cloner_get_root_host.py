@@ -1,9 +1,9 @@
 import unittest
 from unittest import mock
 import sys
-from snare.cloner import Cloner
+from snare.cloner import BaseCloner
 import shutil
-from yarl import URL
+import yarl
 import asyncio
 import aiohttp
 from snare.utils.asyncmock import AsyncMock
@@ -17,26 +17,48 @@ class TestClonerGetRootHost(unittest.TestCase):
         self.root = "http://example.com"
         self.max_depth = sys.maxsize
         self.css_validate = False
-        self.handler = Cloner(self.root, self.max_depth, self.css_validate)
-        self.expected_moved_root = URL("http://www.example.com")
+        self.handler = BaseCloner(self.root, self.max_depth, self.css_validate)
+        self.expected_moved_root = yarl.URL("http://www.example.com")
+
+        p = mock.patch("aiohttp.ClientSession.get", new=AsyncMock(return_value=aiohttp.ClientResponse(
+                url=yarl.URL("http://www.example.com"),
+                method="GET",
+                writer=None,
+                continue100=1,
+                timer=None,
+                request_info=None,
+                traces=None,
+                loop=self.loop,
+                session=None,
+            ))
+        )
+        p.start()
 
         async def test():
+            if not self.handler:
+                raise Exception("Error initializing Cloner!")
             await self.handler.get_root_host()
 
         self.loop.run_until_complete(test())
 
+        if not self.handler:
+            raise Exception("Error initializing Cloner!")
+
         self.assertEqual(self.handler.moved_root, self.expected_moved_root)
+        p.stop()
 
     @mock.patch("aiohttp.ClientSession")
     def test_clienterror(self, session):
         self.root = "http://example.com"
         self.max_depth = sys.maxsize
         self.css_validate = False
-        self.handler = Cloner(self.root, self.max_depth, self.css_validate)
+        self.handler = BaseCloner(self.root, self.max_depth, self.css_validate)
 
         aiohttp.ClientSession = mock.Mock(side_effect=aiohttp.ClientError)
 
         async def test():
+            if not self.handler:
+                raise Exception("Error initializing Cloner!")
             await self.handler.get_root_host()
 
         with self.assertRaises(SystemExit):

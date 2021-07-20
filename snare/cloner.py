@@ -214,10 +214,10 @@ class BaseCloner:
     async def get_root_host(self):
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(self.root) as resp:
-                    resp_url = yarl.URL(resp.url)
-                    if resp_url.host != self.root.host or resp_url.path != self.root.path:
-                        self.moved_root = resp_url
+                resp = await session.get(self.root)
+                if resp.url.host != self.root.host or resp.url.path != self.root.path:
+                    self.moved_root = resp.url
+                resp.close()
         except aiohttp.ClientError as err:
             self.logger.error("Can't connect to target host: %s", err)
             exit(-1)
