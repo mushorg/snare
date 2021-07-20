@@ -3,7 +3,7 @@ import sys
 import os
 import shutil
 import asyncio
-from snare.cloner import Cloner
+from snare.cloner import BaseCloner
 from snare.utils.page_path_generator import generate_unique_path
 from snare.utils.asyncmock import AsyncMock
 
@@ -17,12 +17,14 @@ class TestReplaceLinks(unittest.TestCase):
         self.max_depth = sys.maxsize
         self.loop = asyncio.new_event_loop()
         self.css_validate = False
-        self.handler = Cloner(self.root, self.max_depth, self.css_validate)
+        self.handler = BaseCloner(self.root, self.max_depth, self.css_validate)
         self.content = None
         self.expected_content = None
         self.return_content = None
 
     def test_replace_relative_links(self):
+        if not self.handler:
+            raise Exception("Error initializing Cloner!")
         self.handler.process_link = AsyncMock(return_value="/test")
         self.root = "http://example.com/test"
         self.content = '\n<html>\n<body>\n<a href="http://example.com/test"></a>\n</body>\n</html>\n'
@@ -30,6 +32,8 @@ class TestReplaceLinks(unittest.TestCase):
         self.expected_content = '\n<html>\n<body>\n<a href="/test"></a>\n</body>\n</html>\n'
 
         async def test():
+            if not self.handler:
+                raise Exception("Error initializing Cloner!")
             self.return_content = await self.handler.replace_links(self.content, self.level)
 
         self.loop.run_until_complete(test())
@@ -37,6 +41,8 @@ class TestReplaceLinks(unittest.TestCase):
         self.handler.process_link.assert_called_with(self.root, self.level, check_host=True)
 
     def test_replace_image_links(self):
+        if not self.handler:
+            raise Exception("Error initializing Cloner!")
         self.handler.process_link = AsyncMock(return_value="/smiley.png")
         self.root = "http://example.com/smiley.png"
         self.content = '\n<html>\n<body>\n<img src="http://example.com/smiley.png"/>\n</body>\n</html>\n'
@@ -44,6 +50,8 @@ class TestReplaceLinks(unittest.TestCase):
         self.expected_content = '\n<html>\n<body>\n<img src="/smiley.png"/>\n</body>\n</html>\n'
 
         async def test():
+            if not self.handler:
+                raise Exception("Error initializing Cloner!")
             self.return_content = await self.handler.replace_links(self.content, self.level)
 
         self.loop.run_until_complete(test())
@@ -51,6 +59,8 @@ class TestReplaceLinks(unittest.TestCase):
         self.handler.process_link.assert_called_with(self.root, self.level)
 
     def test_replace_action_links(self):
+        if not self.handler:
+            raise Exception("Error initializing Cloner!")
         self.handler.process_link = AsyncMock(return_value="/submit.php")
         self.root = "http://example.com/submit.php"
         self.content = '\n<html>\n<body>\n<form action="http://example.com/submit.php">\n</form>\n</body>\n</html>\n'
@@ -58,6 +68,8 @@ class TestReplaceLinks(unittest.TestCase):
         self.expected_content = '\n<html>\n<body>\n<form action="/submit.php">\n</form>\n</body>\n</html>\n'
 
         async def test():
+            if not self.handler:
+                raise Exception("Error initializing Cloner!")
             self.return_content = await self.handler.replace_links(self.content, self.level)
 
         self.loop.run_until_complete(test())
@@ -76,6 +88,8 @@ class TestReplaceLinks(unittest.TestCase):
         )
 
         async def test():
+            if not self.handler:
+                raise Exception("Error initializing Cloner!")
             self.return_content = await self.handler.replace_links(self.content, self.level)
 
         self.loop.run_until_complete(test())
