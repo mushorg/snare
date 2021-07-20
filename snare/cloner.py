@@ -233,9 +233,8 @@ class SimpleCloner(BaseCloner):
             response = await session.get(current_url, headers={"Accept": "text/html"}, timeout=10.0)
             headers, _ = self.get_headers(response)
             content_type = response.content_type
-            response_url = yarl.URL(response.url)
-            if response_url.with_scheme("http") != current_url.with_scheme("http"):
-                redirect_url = response_url
+            if response.url.with_scheme("http") != current_url.with_scheme("http"):
+                redirect_url = response.url
             data = await response.read()
         except (aiohttp.ClientError, asyncio.TimeoutError, AssertionError) as client_error:
             self.logger.error(client_error)
