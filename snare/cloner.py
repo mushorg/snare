@@ -294,13 +294,6 @@ class CloneRunner:
     async def close(self):
         if not self.runner:
             raise Exception("Error initializing cloner!")
-        error_file_name, error_file_hash = self.runner._make_filename(self.runner.error_page)
-        # create empty file for 404 page if not present and add meta info
-        if not self.runner.meta.get(error_file_name):
-            with open(os.path.join(self.runner.target_path, error_file_hash), "wb") as _:
-                pass
-            self.runner.meta[error_file_name]["hash"] = error_file_hash
-            self.runner.meta[error_file_name]["content_type"] = "text/html"
         with open(os.path.join(self.runner.target_path, "meta.json"), "w") as mj:
             json.dump(self.runner.meta, mj)
         if self.driver:
