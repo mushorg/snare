@@ -68,11 +68,14 @@ class BaseCloner:
             "x-cache",
         ]
 
+        content_type = None
         headers = []
         for key, value in response.headers.items():
-            if key.lower() not in ignored_headers_lowercase:
+            if key.lower() == "content-type":
+                content_type = value
+            elif key.lower() not in ignored_headers_lowercase:
                 headers.append({key: value})
-        return headers
+        return [headers, content_type]
 
     async def process_link(self, url, level, check_host=False):
         try:
@@ -177,6 +180,7 @@ class BaseCloner:
             self.logger.debug("Cloned file: %s", file_name)
             self.meta[file_name]["hash"] = hash_name
             self.meta[file_name]["headers"] = headers
+            self.meta[file_name]["content_type"] = content_type
 
             if content_type == "text/html":
                 soup = await self.replace_links(data, level)
@@ -218,7 +222,7 @@ class SimpleCloner(BaseCloner):
         redirect_url = None
         try:
             response = await session.get(current_url, headers={"Accept": "text/html"}, timeout=10.0)
-            headers = self.get_headers(response)
+            headers, _ = self.get_headers(response)
             content_type = response.content_type
             response_url = yarl.URL(response.url)
             if response_url.with_scheme("http") != current_url.with_scheme("http"):
@@ -233,14 +237,6 @@ class SimpleCloner(BaseCloner):
 
 
 class HeadlessCloner(BaseCloner):
-    @staticmethod
-    def get_content_type(headers):
-        for header in headers:
-            for key, val in header.items():
-                if key.lower() == "content-type":
-                    return val.split(";")[0]
-        return None
-
     async def fetch_data(self, browser, current_url, level, try_count):
         data = None
         headers = []
@@ -250,8 +246,7 @@ class HeadlessCloner(BaseCloner):
         try:
             page = await browser.newPage()
             response = await page.goto(str(current_url))
-            headers = self.get_headers(response)
-            content_type = self.get_content_type(headers)
+            headers, content_type = self.get_headers(response)
             response_url = yarl.URL(response.url)
             if response_url.with_scheme("http") != current_url.with_scheme("http"):
                 redirect_url = response_url

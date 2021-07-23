@@ -3,7 +3,9 @@ import os
 import multidict
 import json
 import logging
+
 import aiohttp
+from aiohttp import web
 
 from urllib.parse import unquote
 from bs4 import BeautifulSoup
@@ -103,6 +105,8 @@ class TannerHandler:
                     requested_name = self.run_args.index_page
                 requested_name = unquote(requested_name)
                 try:
+                    if self.meta.get(requested_name) and self.meta[requested_name].get("redirect"):
+                        raise web.HTTPFound(self.meta[requested_name]["redirect"])
                     file_name = self.meta[requested_name]["hash"]
                     for header in self.meta[requested_name].get("headers", []):
                         for key, value in header.items():
@@ -117,6 +121,8 @@ class TannerHandler:
                     break
 
             if not file_name:
+                if self.meta.get("/status_404") and self.meta["/status_404"].get("redirect"):
+                    raise web.HTTPFound(self.meta["/status_404"]["redirect"])
                 status_code = 404
             else:
                 path = os.path.join(self.dir, file_name)

@@ -37,8 +37,6 @@ class HttpRequestHandler:
 
     async def handle_request(self, request):
         self.logger.info("Request path: {0}".format(request.path_qs))
-        if self.meta[request.path_qs].get("redirect"):
-            raise web.HTTPFound(self.meta[request.path_qs]["redirect"])
         data = self.tanner_handler.create_data(request, 200)
         if request.method == "POST":
             post_data = await request.post()
@@ -71,18 +69,22 @@ class HttpRequestHandler:
             if previous_sess_uuid is None or not previous_sess_uuid.strip() or previous_sess_uuid != cur_sess_id:
                 headers.add("Set-Cookie", "sess_uuid=" + cur_sess_id)
 
+        if status_code == 404:
+            raise web.HTTPNotFound(headers=headers)
+
         return web.Response(body=content, status=status_code, headers=headers)
 
     async def start(self):
         app = web.Application()
         app.add_routes([web.route("*", "/{tail:.*}", self.handle_request)])
         aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(self.dir))
-        middleware = SnareMiddleware(
-            error_404=self.meta["/status_404"].get("hash"),
-            headers=self.meta["/status_404"].get("headers", []),
-            server_header=self.run_args.server_header,
-        )
-        middleware.setup_middlewares(app)
+        if self.meta.get("/status_404"):
+            middleware = SnareMiddleware(
+                error_404=self.meta["/status_404"].get("hash"),
+                headers=self.meta["/status_404"].get("headers", []),
+                server_header=self.run_args.server_header,
+            )
+            middleware.setup_middlewares(app)
 
         self.runner = web.AppRunner(app)
         await self.runner.setup()
