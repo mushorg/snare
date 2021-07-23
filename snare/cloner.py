@@ -183,10 +183,12 @@ class BaseCloner:
             self.meta[file_name]["headers"] = headers
             self.meta[file_name]["content_type"] = content_type
 
-            if content_type == "text/html":
+            if not content_type:
+                pass
+            elif "text/html" in content_type:
                 soup = await self.replace_links(data, level)
                 data = str(soup).encode()
-            elif content_type == "text/css":
+            elif "text/css" in content_type:
                 css = cssutils.parseString(data, validate=self.css_validate)
                 for carved_url in cssutils.getUrls(css):
                     if carved_url.startswith("data"):
