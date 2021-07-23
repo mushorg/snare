@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from asyncio import Queue
 from collections import defaultdict
 from pyppeteer import launch
-from pyppeteer.errors import PageError
+from pyppeteer.errors import PageError, NetworkError, TimeoutError
 
 from snare.utils.snare_helpers import print_color
 
@@ -254,7 +254,7 @@ class HeadlessCloner(BaseCloner):
             if response_url.with_scheme("http") != current_url.with_scheme("http"):
                 redirect_url = response_url
             data = await response.buffer()
-        except Exception as err:
+        except (ConnectionError, NetworkError, TimeoutError, PageError) as err:
             self.logger.error(err)
             await self.new_urls.put({"url": current_url, "level": level, "try_count": try_count + 1})
         finally:
