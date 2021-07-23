@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from asyncio import Queue
 from collections import defaultdict
 from pyppeteer import launch
+from pyppeteer.errors import PageError
 
 from snare.utils.snare_helpers import print_color
 
@@ -258,8 +259,8 @@ class HeadlessCloner(BaseCloner):
             try:
                 if page:
                     await page.close()
-            except Exception as err:
-                print_color(str(err), "WARNING")
+            except PageError as err: # when KeyboardInterrupt is raised midway cloning
+                self.logger.error(err)
 
         return [redirect_url, data, headers, content_type]
 
