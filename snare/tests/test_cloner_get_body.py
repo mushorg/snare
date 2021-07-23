@@ -82,7 +82,7 @@ class TestGetBody(unittest.TestCase):
         )
 
         patches = []
-        patches.append(patch("aiohttp.ClientResponse._headers", new={"Content-Type": "text/html"}))
+        patches.append(patch("aiohttp.ClientResponse._headers", new={"Content-Type": "text/html", "Server": "Apache"}))
         patches.append(
             patch(
                 "aiohttp.ClientResponse.read",
@@ -100,11 +100,13 @@ class TestGetBody(unittest.TestCase):
         self.meta = {
             "/": {
                 "hash": "6666cd76f96956469e7be39d750cc7d9",
-                "headers": [{"Content-Type": "text/html"}],
+                "headers": [{"Server": "Apache"}],
+                "content_type": "text/html",
             },
             "/test": {
                 "hash": "4539330648b80f94ef3bf911f6d77ac9",
-                "headers": [{"Content-Type": "text/html"}],
+                "headers": [{"Server": "Apache"}],
+                "content_type": "text/html",
             },
         }
 
@@ -138,7 +140,7 @@ class TestGetBody(unittest.TestCase):
         self.content = b""".banner { background: url("/example.png") }"""
 
         patches = []
-        patches.append(patch("aiohttp.ClientResponse._headers", new={"Content-Type": "text/css"}))
+        patches.append(patch("aiohttp.ClientResponse._headers", new={"Content-Type": "text/css", "Server": "Apache"}))
         patches.append(patch("aiohttp.ClientResponse.read", new=AsyncMock(return_value=self.content)))
         for p in patches:
             p.start()
@@ -174,11 +176,13 @@ class TestGetBody(unittest.TestCase):
         self.meta = {
             "/example.png": {
                 "hash": "5a64beebcd2a6f1cbd00b8370debaa72",
-                "headers": [{"Content-Type": "text/css"}],
+                "headers": [{"Server": "Apache"}],
+                "content_type": "text/css",
             },
             "/": {
                 "hash": "6666cd76f96956469e7be39d750cc7d9",
-                "headers": [{"Content-Type": "text/css"}],
+                "headers": [{"Server": "Apache"}],
+                "content_type": "text/css",
             },
         }
 
@@ -202,7 +206,7 @@ class TestGetBody(unittest.TestCase):
 
     def test_get_body_css_validate_scheme(self):
         patches = []
-        patches.append(patch("aiohttp.ClientResponse._headers", new={"Content-Type": "text/css"}))
+        patches.append(patch("aiohttp.ClientResponse._headers", new={"Content-Type": "text/css", "Server": "Apache"}))
         for p in patches:
             p.start()
 
@@ -216,7 +220,8 @@ class TestGetBody(unittest.TestCase):
         self.meta = {
             "/": {
                 "hash": "6666cd76f96956469e7be39d750cc7d9",
-                "headers": [{"Content-Type": "text/css"}],
+                "headers": [{"Server": "Apache"}],
+                "content_type": "text/css",
             },
         }
 
