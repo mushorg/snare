@@ -1,6 +1,7 @@
 import shutil
 import sys
 import unittest
+from unittest.mock import patch
 
 from snare.cloner import BaseCloner, CloneRunner, HeadlessCloner, SimpleCloner
 
@@ -29,6 +30,15 @@ class TestClonerInitialization(unittest.TestCase):
     def test_clone_runner_init(self):
         self.handler = CloneRunner(self.root, self.max_depth, self.css_validate, default_path="/tmp")
         self.assertIsInstance(self.handler, CloneRunner)
+
+    def test_clone_runner_init_error(self):
+        p = patch("snare.cloner.SimpleCloner", return_value=None)
+        p.start()
+
+        with self.assertRaises(Exception):
+            self.handler = CloneRunner(self.root, self.max_depth, self.css_validate, default_path="/tmp")
+
+        p.stop()
 
     def tearDown(self):
         if self.target_path:

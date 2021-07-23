@@ -37,11 +37,25 @@ class TestClonerRun(unittest.TestCase):
 
     def test_no_cloner_run(self):
         self.handler = CloneRunner(self.root, self.max_depth, self.css_validate, default_path="/tmp", headless=True)
+        temp_runner = self.handler.runner
         self.handler.runner = None
         with self.assertRaises(Exception):
             self.loop.run_until_complete(self.handler.run())
+        # set runner back to normal
+        self.handler.runner = temp_runner
+
+    def test_no_cloner_close(self):
+        self.handler = CloneRunner(self.root, self.max_depth, self.css_validate, default_path="/tmp", headless=True)
+        temp_runner = self.handler.runner
+        self.handler.runner = None
+        with self.assertRaises(Exception):
+            self.loop.run_until_complete(self.handler.close())
+        # set runner back to normal
+        self.handler.runner = temp_runner
 
     def tearDown(self):
         shutil.rmtree(self.main_page_path)
-        self.handler.close()
+        async def close():
+            await self.handler.close()
+        self.loop.run_until_complete(close())
         self.loop.close()
