@@ -1,7 +1,7 @@
-aiohttp==3.7.4
-aiohttp_jinja2==1.1.0
-beautifulsoup4==4.6.3
-cssutils==1.0.2
-gitpython==3.1.0
-pycodestyle==2.4.0
-pyppeteer==0.2.5
+aiohttp~=3.7
+aiohttp-jinja2~=1.4
+beautifulsoup4~=4.9
+cssutils~=2.3
+GitPython~=3.1
+pycodestyle~=2.7
+pyppeteer~=0.2
