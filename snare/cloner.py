@@ -195,6 +195,8 @@ class BaseCloner:
                         carved_url = self.root.join(carved_url)
                     if carved_url.with_scheme("http").human_repr() not in self.visited_urls:
                         await self.new_urls.put({"url": carved_url, "level": level + 1, "try_count": 0})
+            if type(data) == str:
+                data = data.encode()
 
             try:
                 with open(os.path.join(self.target_path, hash_name), "wb") as index_fh:
