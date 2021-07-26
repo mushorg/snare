@@ -55,7 +55,9 @@ class TestClonerRun(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.main_page_path)
+
         async def close():
             await self.handler.close()
+
         self.loop.run_until_complete(close())
         self.loop.close()

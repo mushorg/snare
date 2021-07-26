@@ -3,7 +3,7 @@ import os
 import shutil
 import sys
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import aiohttp
 from pyppeteer import launch
