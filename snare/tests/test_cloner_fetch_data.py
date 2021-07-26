@@ -3,10 +3,10 @@ import os
 import shutil
 import sys
 import unittest
+from unittest.mock import Mock, patch
 
 import aiohttp
 from pyppeteer import launch
-from pyppeteer.browser import Browser
 from pyppeteer.errors import BrowserError
 import yarl
 
@@ -60,15 +60,37 @@ class TestCloner(unittest.TestCase):
 
         self.loop.run_until_complete(test())
 
-    def test_headlesscloner_fetch_data_exception(self):
-        Browser.newPage = AsyncMock(side_effect=BrowserError("Failed to create new page"))
+    @patch("pyppeteer.browser.Browser")
+    def test_headlesscloner_fetch_data_exception(self, mock_browser):
+        mock_browser.newPage = AsyncMock(side_effect=BrowserError("Failed to create new page"))
 
         async def test():
-            await self.headless_handler.fetch_data(Browser, self.url, 0, 0)
+            await self.headless_handler.fetch_data(mock_browser, self.url, 0, 0)
 
         with self.assertLogs(level="ERROR") as log:
             self.loop.run_until_complete(test())
             self.assertIn("ERROR:snare.cloner:Failed to create new page", "".join(log.output))
+
+    def test_headlesscloner_fetch_data_redirect(self):
+        self.expected_redirect_url = yarl.URL("http://www.example.com")
+        p = patch("pyppeteer.network_manager.Response.url", new=self.expected_redirect_url)
+        p.start()
+
+        self.redirect_url = None
+
+        async def test():
+            browser = None
+            try:
+                browser = await launch()
+                self.redirect_url, _, _, _ = await self.headless_handler.fetch_data(browser, self.url, 0, 0)
+            finally:
+                if browser:
+                    await browser.close()
+
+        self.loop.run_until_complete(test())
+        self.assertEqual(self.redirect_url, self.expected_redirect_url)
+
+        p.stop()
 
     def tearDown(self):
         shutil.rmtree(self.main_page_path)
