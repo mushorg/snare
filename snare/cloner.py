@@ -280,7 +280,7 @@ class CloneRunner:
 
     async def run(self):
         if not self.runner:
-            raise Exception("Error initializing cloner!")
+            raise Exception("Error running cloner! - Cloner instance is None")
         if type(self.runner) == SimpleCloner:
             self.driver = aiohttp.ClientSession()
         else:
@@ -296,7 +296,7 @@ class CloneRunner:
 
     async def close(self):
         if not self.runner:
-            raise Exception("Error initializing cloner!")
+            raise Exception("Error closing cloner! - Cloner instance is None")
         with open(os.path.join(self.runner.target_path, "meta.json"), "w") as mj:
             json.dump(self.runner.meta, mj)
         if self.driver:
