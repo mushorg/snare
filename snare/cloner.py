@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from asyncio import Queue
 from collections import defaultdict
 from pyppeteer import launch
+from pyppeteer.errors import PageError, NetworkError, TimeoutError
 
 from snare.utils.snare_helpers import print_color
 
@@ -182,10 +183,12 @@ class BaseCloner:
             self.meta[file_name]["headers"] = headers
             self.meta[file_name]["content_type"] = content_type
 
-            if content_type == "text/html":
+            if not content_type:
+                pass
+            elif "text/html" in content_type:
                 soup = await self.replace_links(data, level)
                 data = str(soup).encode()
-            elif content_type == "text/css":
+            elif "text/css" in content_type:
                 css = cssutils.parseString(data, validate=self.css_validate)
                 for carved_url in cssutils.getUrls(css):
                     if carved_url.startswith("data"):
@@ -253,15 +256,15 @@ class HeadlessCloner(BaseCloner):
             if response_url.with_scheme("http") != current_url.with_scheme("http"):
                 redirect_url = response_url
             data = await response.buffer()
-        except Exception as err:
+        except (ConnectionError, NetworkError, TimeoutError, PageError) as err:
             self.logger.error(err)
             await self.new_urls.put({"url": current_url, "level": level, "try_count": try_count + 1})
         finally:
             try:
                 if page:
                     await page.close()
-            except Exception as err:
-                print_color(str(err), "WARNING")
+            except PageError as err: # when KeyboardInterrupt is raised midway cloning
+                self.logger.error(err)
 
         return [redirect_url, data, headers, content_type]
 
@@ -279,7 +282,7 @@ class CloneRunner:
 
     async def run(self):
         if not self.runner:
-            raise Exception("Error initializing cloner!")
+            raise Exception("Error running cloner! - Cloner instance is None")
         if type(self.runner) == SimpleCloner:
             self.driver = aiohttp.ClientSession()
         else:
@@ -295,7 +298,7 @@ class CloneRunner:
 
     async def close(self):
         if not self.runner:
-            raise Exception("Error initializing cloner!")
+            raise Exception("Error closing cloner! - Cloner instance is None")
         with open(os.path.join(self.runner.target_path, "meta.json"), "w") as mj:
             json.dump(self.runner.meta, mj)
         if self.driver:
