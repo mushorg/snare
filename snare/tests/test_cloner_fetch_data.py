@@ -38,25 +38,17 @@ class TestCloner(unittest.TestCase):
 
     def test_simplecloner_fetch_data(self):
         async def test():
-            session = None
-            try:
-                session = aiohttp.ClientSession()
-                await self.simple_handler.fetch_data(session, self.url, 0, 0)
-            finally:
-                if session:
-                    await session.close()
+            session = aiohttp.ClientSession()
+            await self.simple_handler.fetch_data(session, self.url, 0, 0)
+            await session.close()
 
         self.loop.run_until_complete(test())
 
     def test_headlesscloner_fetch_data(self):
         async def test():
-            browser = None
-            try:
-                browser = await launch()
-                await self.headless_handler.fetch_data(browser, self.url, 0, 0)
-            finally:
-                if browser:
-                    await browser.close()
+            browser = await launch()
+            await self.headless_handler.fetch_data(browser, self.url, 0, 0)
+            await browser.close()
 
         self.loop.run_until_complete(test())
 
