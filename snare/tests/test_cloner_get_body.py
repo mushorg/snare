@@ -14,6 +14,20 @@ from snare.utils.page_path_generator import generate_unique_path
 
 
 class TestGetBody(unittest.TestCase):
+    @staticmethod
+    def create_client_response(url, loop):
+        return aiohttp.ClientResponse(
+            url=yarl.URL(url),
+            method="GET",
+            writer=None,
+            continue100=1,
+            timer=None,
+            request_info=None,
+            traces=None,
+            loop=loop,
+            session=None,
+        )
+
     def setUp(self):
         self.main_page_path = generate_unique_path()
         os.makedirs(self.main_page_path)
@@ -38,19 +52,7 @@ class TestGetBody(unittest.TestCase):
         self.q_size = None
 
         self.session = aiohttp.ClientSession
-        self.session.get = AsyncMock(
-            return_value=aiohttp.ClientResponse(
-                url=yarl.URL("http://example.com"),
-                method="GET",
-                writer=None,
-                continue100=1,
-                timer=None,
-                request_info=None,
-                traces=None,
-                loop=self.loop,
-                session=None,
-            )
-        )
+        self.session.get = AsyncMock(return_value=self.create_client_response("http://example.com", self.loop))
 
     def test_get_body(self):
         self.index_page_content = b"""<html><body><a href="http://example.com/test"></a></body></html>"""
@@ -58,28 +60,8 @@ class TestGetBody(unittest.TestCase):
 
         self.session.get = AsyncMock(
             side_effect=[
-                aiohttp.ClientResponse(
-                    url=yarl.URL("http://example.com"),
-                    method="GET",
-                    writer=None,
-                    continue100=1,
-                    timer=None,
-                    request_info=None,
-                    traces=None,
-                    loop=self.loop,
-                    session=None,
-                ),
-                aiohttp.ClientResponse(
-                    url=yarl.URL("http://example.com/test"),
-                    method="GET",
-                    writer=None,
-                    continue100=1,
-                    timer=None,
-                    request_info=None,
-                    traces=None,
-                    loop=self.loop,
-                    session=None,
-                ),
+                self.create_client_response("http://example.com", self.loop),
+                self.create_client_response("http://example.com/test", self.loop),
             ]
         )
 
@@ -145,28 +127,8 @@ class TestGetBody(unittest.TestCase):
 
         self.session.get = AsyncMock(
             side_effect=[
-                aiohttp.ClientResponse(
-                    url=yarl.URL("http://example.com"),
-                    method="GET",
-                    writer=None,
-                    continue100=1,
-                    timer=None,
-                    request_info=None,
-                    traces=None,
-                    loop=self.loop,
-                    session=None,
-                ),
-                aiohttp.ClientResponse(
-                    url=yarl.URL("http://example.com/example.png"),
-                    method="GET",
-                    writer=None,
-                    continue100=1,
-                    timer=None,
-                    request_info=None,
-                    traces=None,
-                    loop=self.loop,
-                    session=None,
-                ),
+                self.create_client_response("http://example.com", self.loop),
+                self.create_client_response("http://example.com/example.png", self.loop),
             ]
         )
         self.expected_content = "http://example.com/example.png"
