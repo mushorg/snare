@@ -23,6 +23,8 @@ class TestGetBody(unittest.TestCase):
         self.loop = asyncio.new_event_loop()
         self.css_validate = False
         self.handler = CloneRunner(self.root, self.max_depth, self.css_validate)
+        if not self.handler.runner:
+            raise Exception("Error initializing CloneRunner!")
         self.target_path = "/opt/snare/pages/{}".format(yarl.URL(self.root).host)
         self.return_content = None
         self.expected_content = None
@@ -92,8 +94,6 @@ class TestGetBody(unittest.TestCase):
         for p in patches:
             p.start()
 
-        if not self.handler.runner:
-            raise Exception("Error initializing Cloner!")
         self.filename, self.hashname = self.handler.runner._make_filename(yarl.URL(self.root))
         self.expected_content = '<html><body><a href="/test"></a></body></html>'
 
@@ -111,8 +111,6 @@ class TestGetBody(unittest.TestCase):
         }
 
         async def test():
-            if not self.handler.runner:
-                raise Exception("Error initializing Cloner!")
             await self.handler.runner.new_urls.put({"url": yarl.URL(self.root), "level": 0, "try_count": 0})
             await self.handler.runner.get_body(self.session)
 
@@ -187,14 +185,9 @@ class TestGetBody(unittest.TestCase):
         }
 
         async def test():
-            if not self.handler.runner:
-                raise Exception("Error initializing Cloner!")
             await self.handler.runner.new_urls.put({"url": yarl.URL(self.root), "level": 0, "try_count": 0})
             await self.handler.runner.get_body(self.session)
             self.q_size = self.handler.runner.new_urls.qsize()
-
-        if not self.handler.runner:
-            raise Exception("Error initializing Cloner!")
 
         self.loop.run_until_complete(test())
         self.assertEqual(self.handler.runner.visited_urls[-1], self.expected_content)
@@ -228,14 +221,9 @@ class TestGetBody(unittest.TestCase):
         self.expected_content = "http://example.com/"
 
         async def test():
-            if not self.handler.runner:
-                raise Exception("Error initializing Cloner!")
             await self.handler.runner.new_urls.put({"url": yarl.URL(self.root), "level": 0, "try_count": 0})
             await self.handler.runner.get_body(self.session)
             self.q_size = self.handler.runner.new_urls.qsize()
-
-        if not self.handler.runner:
-            raise Exception("Error initializing Cloner!")
 
         for content in self.content:
             p = patch("aiohttp.ClientResponse.read", new=AsyncMock(return_value=content))
@@ -253,8 +241,6 @@ class TestGetBody(unittest.TestCase):
         self.session.get = AsyncMock(side_effect=aiohttp.ClientError)
 
         async def test():
-            if not self.handler.runner:
-                raise Exception("Error initializing Cloner!")
             await self.handler.runner.new_urls.put({"url": yarl.URL(self.root), "level": 0, "try_count": 0})
             await self.handler.runner.get_body(self.session)
 
@@ -264,13 +250,9 @@ class TestGetBody(unittest.TestCase):
 
     def test_try_count(self):
         async def test():
-            if not self.handler.runner:
-                raise Exception("Error initializing Cloner!")
             await self.handler.runner.new_urls.put({"url": yarl.URL(self.root), "level": 0, "try_count": 3})
             await self.handler.runner.get_body(None)
 
-        if not self.handler.runner:
-            raise Exception("Error initializing Cloner!")
         self.loop.run_until_complete(test())
         self.assertFalse(self.root in self.handler.runner.visited_urls)
 
