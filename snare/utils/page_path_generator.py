@@ -1,6 +1,6 @@
-import string
-import random
 import os
+import random
+import string
 
 
 def directory_generator(size=9, chars=string.ascii_lowercase + string.digits):

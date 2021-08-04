@@ -1,15 +1,17 @@
+import argparse
+import asyncio
+import os
+import shutil
 import unittest
 from unittest.mock import Mock
-import asyncio
-import argparse
-import shutil
-import multidict
-import os
+
 import aiohttp
-from aiohttp.http_parser import RawRequestMessage
 from aiohttp import HttpVersion
 from aiohttp import web
+from aiohttp.http_parser import RawRequestMessage
+import multidict
 from yarl import URL
+
 from snare.server import HttpRequestHandler
 from snare.utils.asyncmock import AsyncMock
 from snare.utils.page_path_generator import generate_unique_path

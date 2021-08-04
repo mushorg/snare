@@ -1,10 +1,12 @@
-import unittest
-import sys
+import asyncio
 import os
 import shutil
+import sys
+import unittest
+
 import yarl
-import asyncio
-from snare.cloner import Cloner
+
+from snare.cloner import BaseCloner
 from snare.utils.page_path_generator import generate_unique_path
 
 
@@ -17,7 +19,9 @@ class TestMakeFilename(unittest.TestCase):
         self.max_depth = sys.maxsize
         self.loop = asyncio.new_event_loop()
         self.css_validate = False
-        self.handler = Cloner(self.root, self.max_depth, self.css_validate)
+        self.handler = BaseCloner(self.root, self.max_depth, self.css_validate)
+        if not self.handler:
+            raise Exception("Error initializing BaseCloner!")
         self.filename = None
         self.hashname = None
 
@@ -28,8 +32,8 @@ class TestMakeFilename(unittest.TestCase):
 
     def test_make_filename_same_host(self):
         self.filename, self.hashname = self.handler._make_filename(yarl.URL(self.root))
-        self.assertEqual(self.filename, "/index.html")
-        self.assertEqual(self.hashname, "d1546d731a9f30cc80127d57142a482b")
+        self.assertEqual(self.filename, "/")
+        self.assertEqual(self.hashname, "6666cd76f96956469e7be39d750cc7d9")
 
     def test_make_filename_relative(self):
         self.url = yarl.URL("/images")

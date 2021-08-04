@@ -1,11 +1,12 @@
-import unittest
-import sys
+import asyncio
 import os
 import shutil
-import asyncio
-from snare.cloner import Cloner
-from snare.utils.page_path_generator import generate_unique_path
+import sys
+import unittest
+
+from snare.cloner import BaseCloner
 from snare.utils.asyncmock import AsyncMock
+from snare.utils.page_path_generator import generate_unique_path
 
 
 class TestReplaceLinks(unittest.TestCase):
@@ -17,7 +18,9 @@ class TestReplaceLinks(unittest.TestCase):
         self.max_depth = sys.maxsize
         self.loop = asyncio.new_event_loop()
         self.css_validate = False
-        self.handler = Cloner(self.root, self.max_depth, self.css_validate)
+        self.handler = BaseCloner(self.root, self.max_depth, self.css_validate)
+        if not self.handler:
+            raise Exception("Error initializing BaseCloner!")
         self.content = None
         self.expected_content = None
         self.return_content = None

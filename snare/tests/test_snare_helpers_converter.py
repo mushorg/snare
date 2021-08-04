@@ -1,7 +1,8 @@
-import unittest
+import json
 import os
 import shutil
-import json
+import unittest
+
 from snare.utils.snare_helpers import Converter
 
 

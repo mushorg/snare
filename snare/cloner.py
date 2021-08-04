@@ -1,18 +1,19 @@
-import os
-import sys
-import logging
 import asyncio
-import hashlib
-import json
-import re
-import aiohttp
-import cssutils
-import yarl
-from bs4 import BeautifulSoup
 from asyncio import Queue
 from collections import defaultdict
+import hashlib
+import json
+import logging
+import os
+import re
+import sys
+
+import aiohttp
+from bs4 import BeautifulSoup
+import cssutils
 from pyppeteer import launch
-from pyppeteer.errors import PageError, NetworkError, TimeoutError
+from pyppeteer.errors import NetworkError, PageError, TimeoutError
+import yarl
 
 from snare.utils.snare_helpers import print_color
 
@@ -147,6 +148,10 @@ class BaseCloner:
         if not file_name.startswith("/"):
             file_name = "/" + file_name
 
+        host = url.host
+        if file_name == "/" and (host != self.root.host or (self.moved_root and host != self.moved_root.host)):
+            file_name = host
+
         m = hashlib.md5()
         m.update(file_name.encode("utf-8"))
         hash_name = m.hexdigest()
@@ -210,10 +215,10 @@ class BaseCloner:
     async def get_root_host(self):
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(self.root) as resp:
-                    resp_url = yarl.URL(resp.url)
-                    if resp_url.host != self.root.host or resp_url.path != self.root.path:
-                        self.moved_root = resp_url
+                resp = await session.get(self.root)
+                if resp.url.host != self.root.host or resp.url.path != self.root.path:
+                    self.moved_root = resp.url
+                resp.close()
         except aiohttp.ClientError as err:
             self.logger.error("Can't connect to target host: %s", err)
             exit(-1)
@@ -229,9 +234,8 @@ class SimpleCloner(BaseCloner):
             response = await session.get(current_url, headers={"Accept": "text/html"}, timeout=10.0)
             headers, _ = self.get_headers(response)
             content_type = response.content_type
-            response_url = yarl.URL(response.url)
-            if response_url.with_scheme("http") != current_url.with_scheme("http"):
-                redirect_url = response_url
+            if response.url.with_scheme("http") != current_url.with_scheme("http"):
+                redirect_url = response.url
             data = await response.read()
         except (aiohttp.ClientError, asyncio.TimeoutError, AssertionError) as client_error:
             self.logger.error(client_error)

@@ -1,9 +1,9 @@
-import unittest
-from unittest.mock import Mock
-import asyncio
 import argparse
-import shutil
+import asyncio
 import os
+import shutil
+import unittest
+
 from snare.server import HttpRequestHandler
 from snare.utils.asyncmock import AsyncMock
 from snare.utils.page_path_generator import generate_unique_path

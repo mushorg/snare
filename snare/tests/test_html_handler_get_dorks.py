@@ -1,12 +1,14 @@
-import unittest
 import asyncio
-import shutil
-import os
-import yarl
-import aiohttp
 from json import JSONDecodeError
-from snare.utils.asyncmock import AsyncMock
+import os
+import shutil
+import unittest
+
+import aiohttp
+import yarl
+
 from snare.html_handler import HtmlHandler
+from snare.utils.asyncmock import AsyncMock
 from snare.utils.page_path_generator import generate_unique_path
 
 

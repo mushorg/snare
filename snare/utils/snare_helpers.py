@@ -1,11 +1,12 @@
-import os
-import hashlib
-import mimetypes
-import json
-import shutil
-import logging
-from os import walk
 from distutils.version import StrictVersion
+import hashlib
+import json
+import logging
+import mimetypes
+import os
+from os import walk
+import shutil
+
 from bs4 import BeautifulSoup
 
 

@@ -1,7 +1,9 @@
-import unittest
-import sys
-from snare.cloner import Cloner
 import shutil
+import sys
+import unittest
+from unittest.mock import patch
+
+from snare.cloner import CloneRunner
 
 
 class TestClonerInitialization(unittest.TestCase):
@@ -9,10 +11,18 @@ class TestClonerInitialization(unittest.TestCase):
         self.root = "http://example.com"
         self.max_depth = sys.maxsize
         self.css_validate = False
-        self.handler = Cloner(self.root, self.max_depth, self.css_validate, default_path="/tmp")
+        self.target_path = None
+        self.handler = None
 
-    def test_cloner_init(self):
-        self.assertIsInstance(self.handler, Cloner)
+    def test_clone_runner_init_error(self):
+        p = patch("snare.cloner.SimpleCloner", return_value=None)
+        p.start()
+
+        with self.assertRaises(Exception):
+            self.handler = CloneRunner(self.root, self.max_depth, self.css_validate, default_path="/tmp")
+
+        p.stop()
 
     def tearDown(self):
-        shutil.rmtree(self.handler.target_path)
+        if self.target_path:
+            shutil.rmtree(self.target_path)

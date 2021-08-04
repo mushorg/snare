@@ -1,13 +1,15 @@
-import unittest
-import asyncio
 import argparse
-import shutil
-import os
+import asyncio
 import json
+import os
+import shutil
+import unittest
+
 import multidict
+
+from snare.tanner_handler import TannerHandler
 from snare.utils.asyncmock import AsyncMock
 from snare.utils.page_path_generator import generate_unique_path
-from snare.tanner_handler import TannerHandler
 
 
 class TestParseTannerResponse(unittest.TestCase):
@@ -19,13 +21,10 @@ class TestParseTannerResponse(unittest.TestCase):
         os.makedirs(self.main_page_path)
         page_dir = self.main_page_path.rsplit("/")[-1]
         meta_content = {
-            "/index.html": {
-                "hash": "hash_name",
-                "headers": [{"Content-Type": "text/html"}],
-            }
+            "/index.html": {"hash": "hash_name", "headers": [{"Server": "Apache"}], "content_type": "text/html"}
         }
         self.page_content = "<html><body></body></html>"
-        self.headers = multidict.CIMultiDict([("Content-Type", "text/html")])
+        self.headers = multidict.CIMultiDict([("Server", "Apache"), ("Content-Type", "text/html")])
         self.status_code = 200
         self.content_type = "text/html"
         with open(os.path.join(self.main_page_path, "hash_name"), "w") as f:
@@ -160,6 +159,7 @@ class TestParseTannerResponse(unittest.TestCase):
         }
         self.expected_content = b"<html><body><div>test</div></body></html>"
         self.content_type = r"text/html"
+        self.headers = multidict.CIMultiDict([("Content-Type", "text/html")])
 
         async def test():
             (

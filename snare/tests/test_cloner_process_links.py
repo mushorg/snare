@@ -1,9 +1,11 @@
-import unittest
 import asyncio
 import sys
-import yarl
+import unittest
 from unittest import mock
-from snare.cloner import Cloner
+
+import yarl
+
+from snare.cloner import BaseCloner
 
 
 class TestProcessLinks(unittest.TestCase):
@@ -13,11 +15,14 @@ class TestProcessLinks(unittest.TestCase):
         self.max_depth = sys.maxsize
         self.loop = asyncio.new_event_loop()
         self.css_validate = False
-        self.handler = Cloner(self.root, self.max_depth, self.css_validate)
+        self.handler = BaseCloner(self.root, self.max_depth, self.css_validate)
+        if not self.handler:
+            raise Exception("Error initializing BaseCloner!")
         self.expected_content = None
         self.return_content = None
         self.return_url = None
         self.return_level = None
+        self.return_try_count = 0
         self.qsize = None
 
     def test_process_link_scheme(self):
@@ -45,12 +50,15 @@ class TestProcessLinks(unittest.TestCase):
 
         async def test():
             self.return_content = await self.handler.process_link(self.url, self.level)
-            self.return_url, self.return_level = await self.handler.new_urls.get()
+            self.return_url, self.return_level, self.return_try_count = (await self.handler.new_urls.get()).values()
 
         self.loop.run_until_complete(test())
         self.assertEqual(self.return_content, "/foo/путь/")
+        if not self.return_url:
+            raise Exception("URL returned is None!")
         self.assertEqual(yarl.URL(self.return_url).human_repr(), self.expected_content)
         self.assertEqual(self.return_level, self.level + 1)
+        self.assertLess(self.return_try_count, 2)
 
         self.handler.moved_root = yarl.URL("http://example2.com")
         self.expected_content = "http://example2.com/foo/путь/"
@@ -66,12 +74,13 @@ class TestProcessLinks(unittest.TestCase):
 
         async def test():
             self.return_content = await self.handler.process_link(self.url, self.level)
-            self.return_url, self.return_level = await self.handler.new_urls.get()
+            self.return_url, self.return_level, self.return_try_count = (await self.handler.new_urls.get()).values()
 
         self.loop.run_until_complete(test())
         self.assertEqual(self.return_content, self.expected_content)
         self.assertEqual(yarl.URL(self.url), self.return_url)
         self.assertEqual(self.return_level, self.level + 1)
+        self.assertLess(self.return_try_count, 2)
 
     def test_check_host(self):
         self.url = "http://foo.com"

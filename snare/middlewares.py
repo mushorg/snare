@@ -1,6 +1,6 @@
+from aiohttp import web
 import aiohttp_jinja2
 import multidict
-from aiohttp import web
 
 
 class SnareMiddleware:

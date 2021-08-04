@@ -1,4 +1,5 @@
 import unittest
+
 from snare.utils.snare_helpers import check_meta_file
 
 

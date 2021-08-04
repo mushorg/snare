@@ -1,14 +1,14 @@
-import re
-import os
-import multidict
 import json
 import logging
+import os
+import re
+from urllib.parse import unquote
 
 import aiohttp
 from aiohttp import web
-
-from urllib.parse import unquote
 from bs4 import BeautifulSoup
+import multidict
+
 from snare.html_handler import HtmlHandler
 
 

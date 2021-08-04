@@ -1,10 +1,12 @@
-import unittest
 import asyncio
-import shutil
 import os
+import shutil
+import unittest
+
 from bs4 import BeautifulSoup
-from snare.utils.asyncmock import AsyncMock
+
 from snare.html_handler import HtmlHandler
+from snare.utils.asyncmock import AsyncMock
 from snare.utils.page_path_generator import generate_unique_path
 
 
@@ -12,18 +14,43 @@ class TestHandleHtmlContent(unittest.TestCase):
     def setUp(self):
         self.main_page_path = generate_unique_path()
         os.makedirs(self.main_page_path)
-        self.content = """
-                          <html>
-                                <body>
-                                <p style="color:red;">A paragraph to be tested</p>
-                                </body>
-                          </html>
-                       """
-        self.expected_content = '<html>\n <body>\n  <p style="color: red">\n'
-        self.expected_content += '   <a href="test_dork1" style="color:red;text-decoration:none;cursor:text;">\n'
-        self.expected_content += "    A\n   </a>\n   paragraph to be tested\n  </p>\n </body>\n</html>\n"
-        self.no_dorks_content = '<html>\n <body>\n  <p style="color:red;">\n   A paragraph to be tested\n'
-        self.no_dorks_content += "  </p>\n </body>\n</html>\n"
+        self.content = (
+            "\n"
+            "    <html>"
+            "        <body>"
+            '        <p>A <p style="color:red;">paragraph to</p> be tested</p>'
+            "        </body>"
+            "    </html>"
+        )
+        self.expected_content = (
+            "<html>\n"
+            " <body>\n"
+            "  <p>\n"
+            "   A\n"
+            '   <p style="color: red">\n'
+            '    <a href="test_dork1" style="color:red;text-decoration:none;cursor:text;">\n'
+            "     paragraph\n"
+            "    </a>\n"
+            "    to\n"
+            "   </p>\n"
+            "   be tested\n"
+            "  </p>\n"
+            " </body>\n"
+            "</html>"
+        )
+        self.no_dorks_content = (
+            "<html>\n"
+            " <body>\n"
+            "  <p>\n"
+            "   A\n"
+            '   <p style="color:red;">\n'
+            "    paragraph to\n"
+            "   </p>\n"
+            "   be tested\n"
+            "  </p>\n"
+            " </body>\n"
+            "</html>"
+        )
         self.loop = asyncio.new_event_loop()
         self.return_content = None
         no_dorks = True
