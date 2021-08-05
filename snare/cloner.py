@@ -267,7 +267,7 @@ class HeadlessCloner(BaseCloner):
             try:
                 if page:
                     await page.close()
-            except PageError as err: # when KeyboardInterrupt is raised midway cloning
+            except PageError as err:  # when KeyboardInterrupt is raised midway cloning
                 self.logger.error(err)
 
         return [redirect_url, data, headers, content_type]
