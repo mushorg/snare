@@ -69,22 +69,27 @@ class HttpRequestHandler:
             if previous_sess_uuid is None or not previous_sess_uuid.strip() or previous_sess_uuid != cur_sess_id:
                 headers.add("Set-Cookie", "sess_uuid=" + cur_sess_id)
 
-        if status_code == 404:
-            raise web.HTTPNotFound(headers=headers)
+        if status_code == 404 and not content:
+            raise web.HTTPNotFound()
 
         return web.Response(body=content, status=status_code, headers=headers)
+
+    @staticmethod
+    async def remove_default_server_header(_, response):
+        if response.headers.get("Server") and "aiohttp" in response.headers["Server"]:
+            del response.headers["Server"]
 
     async def start(self):
         app = web.Application()
         app.add_routes([web.route("*", "/{tail:.*}", self.handle_request)])
+        app.on_response_prepare.append(self.remove_default_server_header)
         aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(self.dir))
-        if self.meta.get("/status_404"):
-            middleware = SnareMiddleware(
-                error_404=self.meta["/status_404"].get("hash"),
-                headers=self.meta["/status_404"].get("headers", []),
-                server_header=self.run_args.server_header,
-            )
-            middleware.setup_middlewares(app)
+        middleware = SnareMiddleware(
+            error_404=self.meta["/status_404"].get("hash") if self.meta.get("/status_404") else None,
+            headers=self.meta["/status_404"].get("headers", []) if self.meta.get("/status_404") else [],
+            server_header=self.run_args.server_header,
+        )
+        middleware.setup_middlewares(app)
 
         self.runner = web.AppRunner(app)
         await self.runner.setup()
