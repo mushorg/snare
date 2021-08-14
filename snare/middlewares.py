@@ -4,9 +4,8 @@ import multidict
 
 
 class SnareMiddleware:
-    def __init__(self, error_404, error_500=None, headers=[], server_header=""):
+    def __init__(self, error_404, headers=[], server_header=""):
         self.error_404 = error_404
-        self.error_500 = error_500 if error_500 else "500.html"
 
         self.headers = multidict.CIMultiDict()
         for header in headers:
@@ -17,10 +16,15 @@ class SnareMiddleware:
             self.headers["Server"] = server_header
 
     async def handle_404(self, request):
-        return aiohttp_jinja2.render_template(self.error_404, request, {})
+        if not self.error_404:
+            raise web.HTTPNotFound(headers=self.headers)
+        response = aiohttp_jinja2.render_template(self.error_404, request, {}, status=404)
+        for key, val in self.headers.items():
+            response.headers[key] = val
+        return response
 
-    async def handle_500(self, request):
-        return aiohttp_jinja2.render_template(self.error_500, request, {})
+    async def handle_500(self, _):
+        raise web.HTTPInternalServerError(headers=self.headers)
 
     def create_error_middleware(self, overrides):
         @web.middleware
