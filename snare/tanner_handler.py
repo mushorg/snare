@@ -1,8 +1,10 @@
+import argparse
 import json
 import logging
 import os
 import re
 from urllib.parse import unquote
+from typing import Dict, Literal, Tuple, Union
 
 import aiohttp
 from aiohttp import web
@@ -13,7 +15,16 @@ from snare.html_handler import HtmlHandler
 
 
 class TannerHandler:
-    def __init__(self, run_args, meta, snare_uuid):
+    def __init__(self, run_args: argparse.Namespace, meta: Dict, snare_uuid: bytes) -> None:
+        """Class for handling Tanner communication
+
+        :param run_args: Runtime CLI arguments
+        :type run_args: argparse.Namespace
+        :param meta: Meta info from meta.json
+        :type meta: Dict
+        :param snare_uuid: UUID of Snare instance
+        :type snare_uuid: bytes
+        """
         self.run_args = run_args
         self.meta = meta
         self.dir = run_args.full_page_path
@@ -21,7 +32,16 @@ class TannerHandler:
         self.html_handler = HtmlHandler(run_args.no_dorks, run_args.tanner)
         self.logger = logging.getLogger(__name__)
 
-    def create_data(self, request, response_status):
+    def create_data(self, request: web.Request, response_status: int) -> Dict:
+        """Create data to be sent to Tanner from request
+
+        :param request: Incoming request to Snare server
+        :type request: web.Request
+        :param response_status: Reponse's status code
+        :type response_status: int
+        :return: Data to be sent to Tanner
+        :rtype: Dict
+        """
         data = dict(
             method=None,
             path=None,
@@ -47,7 +67,15 @@ class TannerHandler:
                 data["cookies"] = {cookie.split("=")[0]: cookie.split("=")[1] for cookie in header["Cookie"].split(";")}
         return data
 
-    async def submit_data(self, data):
+    async def submit_data(self, data: Dict[str, Union[str, int, Dict[str, str]]]) -> Union[None, Dict]:
+        """Submit data to Tanner and fetch response
+
+        :param data: Data to be sent to Tanner
+        :type data: Dict[str, Union[str, int, Dict[str, str]]]
+        :raises e: If there is an error sending data to Tanner
+        :return: Response from Tanner
+        :rtype: Union[None, Dict]
+        """
         event_result = None
         try:
             async with aiohttp.ClientSession() as session:
@@ -84,7 +112,18 @@ class TannerHandler:
             raise e
         return event_result
 
-    async def parse_tanner_response(self, requested_name, detection):
+    async def parse_tanner_response(self, requested_name: str, detection: Dict[str, Union[str, int]]) -> Tuple[Union[None, bytes], multidict.CIMultiDict, Literal[200, 404]]:
+        """Parse Tanner's response to prepare Snare's response
+
+        :param requested_name: Requested path
+        :type requested_name: str
+        :param detection: Tanner detection info
+        :type detection: Dict[str, Union[str, int]]
+        :raises web.HTTPFound: If page redirects
+        :raises web.HTTPFound: If error page redirects
+        :return: Response content, headers and status code
+        :rtype: Tuple[Union[None, bytes], multidict.CIMultiDict, int]
+        """
         content = None
         status_code = 200
         headers = multidict.CIMultiDict()
