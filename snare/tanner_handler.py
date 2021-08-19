@@ -4,7 +4,7 @@ import logging
 import os
 import re
 from urllib.parse import unquote
-from typing import Dict, Literal, Tuple, Union
+from typing import Dict, Tuple, Union
 
 import aiohttp
 from aiohttp import web
@@ -112,7 +112,7 @@ class TannerHandler:
             raise e
         return event_result
 
-    async def parse_tanner_response(self, requested_name: str, detection: Dict[str, Union[str, int]]) -> Tuple[Union[None, bytes], multidict.CIMultiDict, Literal[200, 404]]:
+    async def parse_tanner_response(self, requested_name: str, detection: Dict[str, Union[str, int]]) -> Tuple[Union[None, bytes], multidict.CIMultiDict, int]:
         """Parse Tanner's response to prepare Snare's response
 
         :param requested_name: Requested path
