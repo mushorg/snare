@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+from typing import Dict, List, Union
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -8,13 +9,25 @@ import cssutils
 
 
 class HtmlHandler:
-    def __init__(self, no_dorks, tanner):
+    def __init__(self, no_dorks: bool, tanner: str):
+        """Class to handle HTML contents of pages
+
+        :param no_dorks: Disable dorks
+        :type no_dorks: bool
+        :param tanner: Tanner host address
+        :type tanner: str
+        """
         self.no_dorks = no_dorks
         self.dorks = []
         self.logger = logging.getLogger(__name__)
         self.tanner = tanner
 
-    async def get_dorks(self):
+    async def get_dorks(self) -> List[Dict[str, str]]:
+        """Fetch all dorks from Tanner
+
+        :return: Dorks
+        :rtype: List[Dict[str, str]]
+        """
         dorks = None
         try:
             async with aiohttp.ClientSession() as session:
@@ -29,7 +42,14 @@ class HtmlHandler:
             self.logger.error("Dorks timeout error: %s", error)
         return dorks["response"]["dorks"] if dorks else []
 
-    async def handle_content(self, content):
+    async def handle_content(self, content: Union[str, bytes, None]) -> bytes:
+        """Parse and fix CSS and add dorks to page content
+
+        :param content: Page content
+        :type content: Union[str, bytes, None]
+        :return: Modified page content to be served
+        :rtype: bytes
+        """
         soup = BeautifulSoup(content, "html.parser")
         if self.no_dorks is not True:
             for p_elem in soup.find_all("p"):
