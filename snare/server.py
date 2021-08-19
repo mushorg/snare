@@ -4,14 +4,29 @@ import aiohttp
 from aiohttp import web
 from aiohttp.web import StaticResource as StaticRoute
 import aiohttp_jinja2
+import argparse
 import jinja2
+from typing import Dict
 
 from snare.middlewares import SnareMiddleware
 from snare.tanner_handler import TannerHandler
 
 
 class HttpRequestHandler:
-    def __init__(self, meta, run_args, snare_uuid, debug=False, keep_alive=75, **kwargs):
+    def __init__(self, meta: Dict, run_args: argparse.Namespace, snare_uuid: bytes, debug: bool = False, keep_alive: int = 75, **kwargs: Dict[str, str]) -> None:
+        """HTTP request handler class
+
+        :param meta: Meta info from `meta.json`
+        :type meta: Dict
+        :param run_args: Runtime CLI arguments
+        :type run_args: argparse.Namespace
+        :param snare_uuid: UUID of Snare instance
+        :type snare_uuid: bytes
+        :param debug: Enable debugging with verbose logs, defaults to False
+        :type debug: bool, optional
+        :param keep_alive: HTTP connection persistence duration, defaults to 75
+        :type keep_alive: int, optional
+        """
         self.run_args = run_args
         self.dir = run_args.full_page_path
         self.meta = meta
@@ -20,7 +35,12 @@ class HttpRequestHandler:
         self.sroute = StaticRoute(name=None, prefix="/", directory=self.dir)
         self.tanner_handler = TannerHandler(run_args, meta, snare_uuid)
 
-    async def submit_slurp(self, data):
+    async def submit_slurp(self, data: str) -> None:
+        """Log request URL to Slurp service
+
+        :param data: Request URL
+        :type data: str
+        """
         try:
             async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
                 r = await session.post(
@@ -35,7 +55,15 @@ class HttpRequestHandler:
         except Exception as e:
             self.logger.error("Error submitting slurp: %s", e)
 
-    async def handle_request(self, request):
+    async def handle_request(self, request: web.Request) -> web.Response:
+        """Communicate with Tanner to prepare response to incoming requests
+
+        :param request: Incoming request
+        :type request: web.Request
+        :raises web.HTTPNotFound: If requested URL/page cannot be found (Status code: 404)
+        :return: Response
+        :rtype: web.Response
+        """
         self.logger.info("Request path: {0}".format(request.path_qs))
         data = self.tanner_handler.create_data(request, 200)
         if request.method == "POST":
@@ -75,11 +103,20 @@ class HttpRequestHandler:
         return web.Response(body=content, status=status_code, headers=headers)
 
     @staticmethod
-    async def remove_default_server_header(_, response):
+    async def remove_default_server_header(_: web.Request, response: web.Response) -> None:
+        """Remove the default aiohttp server header (anti-fingerprinting defense)
+
+        :param _: Incoming request
+        :type _: web.Request
+        :param response: Response to be sent
+        :type response: web.Response
+        """
         if response.headers.get("Server") and "aiohttp" in response.headers["Server"]:
             del response.headers["Server"]
 
-    async def start(self):
+    async def start(self) -> None:
+        """Start Snare web server
+        """
         app = web.Application()
         app.add_routes([web.route("*", "/{tail:.*}", self.handle_request)])
         app.on_response_prepare.append(self.remove_default_server_header)
@@ -99,5 +136,7 @@ class HttpRequestHandler:
         names = sorted(str(s.name) for s in self.runner.sites)
         print("======== Running on {} ========\n" "(Press CTRL+C to quit)".format(", ".join(names)))
 
-    async def stop(self):
+    async def stop(self) -> None:
+        """Clean up and close connections
+        """
         await self.runner.cleanup()
