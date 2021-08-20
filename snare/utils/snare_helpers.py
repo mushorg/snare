@@ -11,7 +11,9 @@ from bs4 import BeautifulSoup
 
 
 class VersionManager:
-    def __init__(self):
+    def __init__(self) -> None:
+        """Version manager class for Snare-Tanner compatibility checking
+        """
         self.logger = logging.getLogger(__name__)
         self.version = "0.3.0"
         self.version_mapper = {
@@ -20,7 +22,13 @@ class VersionManager:
             "0.3.0": ["0.5.0", "0.6.0"],
         }
 
-    def check_compatibility(self, tanner_version):
+    def check_compatibility(self, tanner_version: str) -> None:
+        """Check Snare compatibility with Tanner
+
+        :param tanner_version: Tanner version
+        :type tanner_version: str
+        :raises RuntimeError: If Tanner and Snare versions are compatible
+        """
         min_version = self.version_mapper[self.version][0]
         max_version = self.version_mapper[self.version][1]
         if not (StrictVersion(min_version) <= StrictVersion(tanner_version) <= StrictVersion(max_version)):
@@ -33,11 +41,18 @@ class VersionManager:
 
 
 class Converter:
-    def __init__(self):
+    def __init__(self) -> None:
+        """Converter class
+        """
         self.logger = logging.getLogger(__name__)
         self.meta = {}
 
-    def convert(self, path):
+    def convert(self, path: str) -> None:
+        """Convert all pages to a Snare-friendly form and write meta info
+
+        :param path: Page files storage directory
+        :type path: str
+        """
         files_to_convert = []
 
         for (dirpath, dirnames, filenames) in walk(path):
@@ -64,7 +79,18 @@ class Converter:
             json.dump(self.meta, mj)
 
 
-def add_meta_tag(page_dir, index_page, config, base_path):
+def add_meta_tag(page_dir: str, index_page: str, config: dict, base_path: str) -> None:
+    """Add meta tags to index page
+
+    :param page_dir: Page files storage directory
+    :type page_dir: str
+    :param index_page: Index page file name
+    :type index_page: str
+    :param config: Configuration settings
+    :type config: dict
+    :param base_path: Base path of files
+    :type base_path: str
+    """
     google_content = config["WEB-TOOLS"]["google"]
     bing_content = config["WEB-TOOLS"]["bing"]
 
@@ -92,7 +118,14 @@ def add_meta_tag(page_dir, index_page, config, base_path):
         file.write(html)
 
 
-def check_meta_file(meta_info):
+def check_meta_file(meta_info: dict) -> bool:
+    """Verify meta info
+
+    :param meta_info: Meta info from meta.json
+    :type meta_info: Dict
+    :return: True if contents are properly present
+    :rtype: bool
+    """
     for _, val in meta_info.items():
         if "hash" in val and any(header in val for header in ["content_type", "headers"]):
             continue
@@ -103,7 +136,14 @@ def check_meta_file(meta_info):
     return True
 
 
-def parse_timeout(timeout):
+def parse_timeout(timeout: str) -> int:
+    """Parse auto-update timeout duration string
+
+    :param timeout: Timeout duration
+    :type timeout: str
+    :return: Timeout duration in seconds
+    :rtype: int
+    """
     timeouts_coeff = {"M": 60, "H": 3600, "D": 86400}
 
     form = timeout[-1]
@@ -116,7 +156,16 @@ def parse_timeout(timeout):
     return result
 
 
-def print_color(msg, mode="INFO", end="\n"):
+def print_color(msg: str, mode: str = "INFO", end: str = "\n") -> None:
+    """Color printing
+
+    :param msg: Message to be printed
+    :type msg: str
+    :param mode: Mode/level of message, defaults to "INFO"
+    :type mode: str, optional
+    :param end: Ending character(s), defaults to "\n"
+    :type end: str, optional
+    """
     colors = {
         "INFO": "\033[97m",  # white
         "ERROR": "\033[31m",  # red
@@ -129,9 +178,13 @@ def print_color(msg, mode="INFO", end="\n"):
     print(color + str(msg) + "\033[0m", end=end)
 
 
-def check_privileges(path):
-    """
-    Checks if the user has privileges to the path passed as argument.
+def check_privileges(path: str) -> None:
+    """Create the given directory if it doesn't exist and Check if user has access to it
+
+    :param path: Directory location (will be created if it doesn't exist already)
+    :type path: str
+    :raises PermissionError: If directory cannot be created
+    :raises PermissionError: If directory does not have write access
     """
     if not os.path.exists(path):
         try:

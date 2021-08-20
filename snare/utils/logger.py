@@ -5,10 +5,22 @@ import logging.handlers
 class LevelFilter(logging.Filter):
     """Filters (lets through) all messages with level < LEVEL"""
 
-    def __init__(self, level):
+    def __init__(self, level: int) -> None:
+        """Initialize level filter with level
+
+        :param level: Log level
+        :type level: int
+        """
         self.level = level
 
-    def filter(self, record):
+    def filter(self, record: logging.LogRecord) -> bool:
+        """Filter record by log level
+
+        :param record: Log record
+        :type record: logging.LogRecord
+        :return: True if record's level is lesser than the set level
+        :rtype: bool
+        """
         return record.levelno < self.level
 
     # "<" instead of "<=": since logger.setLevel is inclusive, this should be exclusive
@@ -16,7 +28,18 @@ class LevelFilter(logging.Filter):
 
 class Logger:
     @staticmethod
-    def create_logger(debug_filename, err_filename, logger_name):
+    def create_logger(debug_filename: str, err_filename: str, logger_name: str) -> logging.Logger:
+        """Create logger with debugging and error level handlers for Snare
+
+        :param debug_filename: Debug log filename
+        :type debug_filename: str
+        :param err_filename: Error log filename
+        :type err_filename: str
+        :param logger_name: Logger name
+        :type logger_name: str
+        :return: Logger with handlers and format set
+        :rtype: logging.Logger
+        """
         logger = logging.getLogger(logger_name)
         logger.setLevel(logging.DEBUG)
         logger.propagate = False
@@ -42,7 +65,14 @@ class Logger:
         return logger
 
     @staticmethod
-    def create_clone_logger(log_filename, logger_name):
+    def create_clone_logger(log_filename: str, logger_name: str) -> None:
+        """Create logger for Cloner
+
+        :param log_filename: Log filename
+        :type log_filename: str
+        :param logger_name: Logger name
+        :type logger_name: str
+        """
         logger = logging.getLogger(logger_name)
         formatter = logging.Formatter(
             fmt="%(asctime)s %(levelname)s:%(name)s:%(funcName)s: %(message)s",
