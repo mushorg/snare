@@ -1,19 +1,27 @@
+import argparse
 import logging
+from typing import Dict
 
 import aiohttp
 from aiohttp import web
 from aiohttp.web import StaticResource as StaticRoute
 import aiohttp_jinja2
-import argparse
 import jinja2
-from typing import Dict
 
 from snare.middlewares import SnareMiddleware
 from snare.tanner_handler import TannerHandler
 
 
 class HttpRequestHandler:
-    def __init__(self, meta: Dict, run_args: argparse.Namespace, snare_uuid: bytes, debug: bool = False, keep_alive: int = 75, **kwargs: Dict[str, str]) -> None:
+    def __init__(
+        self,
+        meta: Dict,
+        run_args: argparse.Namespace,
+        snare_uuid: bytes,
+        debug: bool = False,
+        keep_alive: int = 75,
+        **kwargs: Dict[str, str]
+    ) -> None:
         """HTTP request handler class
 
         :param meta: Meta info from `meta.json`
@@ -115,8 +123,7 @@ class HttpRequestHandler:
             del response.headers["Server"]
 
     async def start(self) -> None:
-        """Start Snare web server
-        """
+        """Start Snare web server"""
         app = web.Application()
         app.add_routes([web.route("*", "/{tail:.*}", self.handle_request)])
         app.on_response_prepare.append(self.remove_default_server_header)
@@ -137,6 +144,5 @@ class HttpRequestHandler:
         print("======== Running on {} ========\n" "(Press CTRL+C to quit)".format(", ".join(names)))
 
     async def stop(self) -> None:
-        """Clean up and close connections
-        """
+        """Clean up and close connections"""
         await self.runner.cleanup()

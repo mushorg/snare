@@ -12,8 +12,7 @@ from bs4 import BeautifulSoup
 
 class VersionManager:
     def __init__(self) -> None:
-        """Version manager class for Snare-Tanner compatibility checking
-        """
+        """Version manager class for Snare-Tanner compatibility checking"""
         self.logger = logging.getLogger(__name__)
         self.version = "0.3.0"
         self.version_mapper = {
@@ -42,8 +41,7 @@ class VersionManager:
 
 class Converter:
     def __init__(self) -> None:
-        """Converter class
-        """
+        """Converter class"""
         self.logger = logging.getLogger(__name__)
         self.meta = {}
 

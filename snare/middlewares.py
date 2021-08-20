@@ -1,11 +1,14 @@
+from typing import Callable, Dict, List, Union
+
 from aiohttp import web
 import aiohttp_jinja2
 import multidict
-from typing import Callable, Dict, List, Union
 
 
 class SnareMiddleware:
-    def __init__(self, error_404: Union[None, str], headers: List[Dict[str, str]] = [], server_header: str = "") -> None:
+    def __init__(
+        self, error_404: Union[None, str], headers: List[Dict[str, str]] = [], server_header: str = ""
+    ) -> None:
         """Middleware class for Snare's aiohttp web server
 
         :param error_404: 404 page's file name (hash)
@@ -50,7 +53,9 @@ class SnareMiddleware:
         """
         raise web.HTTPInternalServerError(headers=self.headers)
 
-    def create_error_middleware(self, overrides: Dict) -> Callable[[web.Request, Callable[[web.Request], web.Response]], web.Response]:
+    def create_error_middleware(
+        self, overrides: Dict
+    ) -> Callable[[web.Request, Callable[[web.Request], web.Response]], web.Response]:
         """Create middleware for given errors
 
         :param overrides: Status codes and their handlers
@@ -58,8 +63,11 @@ class SnareMiddleware:
         :return: Middleware function to prepare response from handlers
         :rtype: web.middleware
         """
+
         @web.middleware
-        async def error_middleware(request: web.Request, handler: Callable[[web.Request], web.Response]) -> web.Response:
+        async def error_middleware(
+            request: web.Request, handler: Callable[[web.Request], web.Response]
+        ) -> web.Response:
             try:
                 response = await handler(request)
                 status = response.status
