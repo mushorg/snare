@@ -22,8 +22,10 @@ animation = "|/-\\"
 
 
 class BaseCloner:
+    """Abstract base class for all core functions of cloner"""
+
     def __init__(self, root: str, max_depth: int, css_validate: bool, default_path: str = "/opt/snare") -> None:
-        """Base class for all core functions of the cloner
+        """Constructor method
 
         :param root: Website root URL
         :type root: str
@@ -109,7 +111,7 @@ class BaseCloner:
         return headers, content_type
 
     async def process_link(self, url: str, level: int, check_host: bool = False) -> Union[str, None]:
-        """Process (relative and absolute) links to make them suitable for serving and add new URLs to the queue
+        """Add URL to the queue if new and return its relative URL
 
         :param url: Page URL
         :type url: str
@@ -152,7 +154,7 @@ class BaseCloner:
         return res
 
     async def replace_links(self, data: Union[bytes, str], level: int) -> BeautifulSoup:
-        """Replace website links to make them suitable for serving
+        """Replace all links present in the page's data with their relative versions
 
         :param data: Page data
         :type data: Union[bytes, str]
@@ -299,10 +301,12 @@ class BaseCloner:
 
 
 class SimpleCloner(BaseCloner):
+    """aiohttp-driven data fetching"""
+
     async def fetch_data(
         self, session: aiohttp.ClientSession, current_url: yarl.URL, level: int, try_count: int
     ) -> Tuple[Union[yarl.URL, None], bytes, List[Dict[str, str]], str]:
-        """Fetch data from the given URL using aiohttp
+        """Fetch data from the given URL using aiohttp's ClientSession
 
         :param session: aiohttp ClientSession object
         :type session: aiohttp.ClientSession
@@ -335,10 +339,12 @@ class SimpleCloner(BaseCloner):
 
 
 class HeadlessCloner(BaseCloner):
+    """Pyppeteer-driven data fetching"""
+
     async def fetch_data(
         self, browser: pyppeteer.browser.Browser, current_url: yarl.URL, level: int, try_count: int
     ) -> Tuple[Union[yarl.URL, None], Union[str, bytes], List[Dict[str, str]], Union[str, None]]:
-        """Fetch data from the given URL using Pyppeteer
+        """Fetch data from the given URL using Pyppeteer's headless browser
 
         :param browser: Pyppeteer Browser object
         :type browser: pyppeteer.Browser.browser
@@ -378,10 +384,12 @@ class HeadlessCloner(BaseCloner):
 
 
 class CloneRunner:
+    """One class to rule them all - Runner class for all cloners"""
+
     def __init__(
         self, root: str, max_depth: int, css_validate: bool, default_path: str = "/opt/snare", headless: bool = False
     ) -> None:
-        """Runner class for all cloners
+        """Constructor method
 
         :param root: Website root URL
         :type root: str

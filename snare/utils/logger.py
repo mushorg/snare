@@ -21,12 +21,13 @@ class LevelFilter(logging.Filter):
         :return: True if record's level is lesser than the set level
         :rtype: bool
         """
+        # "<" instead of "<=": since logger.setLevel is inclusive, this should be exclusive
         return record.levelno < self.level
-
-    # "<" instead of "<=": since logger.setLevel is inclusive, this should be exclusive
 
 
 class Logger:
+    """Modify built-in logger's format and handlers for Snare and Cloner"""
+
     @staticmethod
     def create_logger(debug_filename: str, err_filename: str, logger_name: str) -> logging.Logger:
         """Create logger with debugging and error level handlers for Snare

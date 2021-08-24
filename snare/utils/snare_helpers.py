@@ -11,8 +11,10 @@ from bs4 import BeautifulSoup
 
 
 class VersionManager:
+    """Check Snare-Tanner compatibility"""
+
     def __init__(self) -> None:
-        """Version manager class for Snare-Tanner compatibility checking"""
+        """Constructor method"""
         self.logger = logging.getLogger(__name__)
         self.version = "0.3.0"
         self.version_mapper = {
@@ -40,13 +42,15 @@ class VersionManager:
 
 
 class Converter:
+    """Convert a website's source files to a Snare-friendly form"""
+
     def __init__(self) -> None:
-        """Converter class"""
+        """Constructor method"""
         self.logger = logging.getLogger(__name__)
         self.meta = {}
 
     def convert(self, path: str) -> None:
-        """Convert all pages to a Snare-friendly form and write meta info
+        """Rename all page files to their MD5 hash and populate meta.json with their hash and Content-Type header
 
         :param path: Page files storage directory
         :type path: str

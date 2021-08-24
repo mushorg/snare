@@ -9,8 +9,10 @@ import cssutils
 
 
 class HtmlHandler:
+    """Handle HTML content of pages"""
+
     def __init__(self, no_dorks: bool, tanner: str):
-        """Class to handle HTML contents of pages
+        """Constructor method
 
         :param no_dorks: Disable dorks
         :type no_dorks: bool

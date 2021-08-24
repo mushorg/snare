@@ -15,8 +15,10 @@ from snare.html_handler import HtmlHandler
 
 
 class TannerHandler:
+    """Handle Tanner communication"""
+
     def __init__(self, run_args: argparse.Namespace, meta: Dict, snare_uuid: bytes) -> None:
-        """Class for handling Tanner communication
+        """Constructor method
 
         :param run_args: Runtime CLI arguments
         :type run_args: argparse.Namespace

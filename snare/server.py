@@ -13,6 +13,8 @@ from snare.tanner_handler import TannerHandler
 
 
 class HttpRequestHandler:
+    """Handle all HTTP requests to Snare"""
+
     def __init__(
         self,
         meta: Dict,
@@ -22,7 +24,7 @@ class HttpRequestHandler:
         keep_alive: int = 75,
         **kwargs: Dict[str, str]
     ) -> None:
-        """HTTP request handler class
+        """Constructor method
 
         :param meta: Meta info from `meta.json`
         :type meta: Dict

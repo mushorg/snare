@@ -6,10 +6,12 @@ import multidict
 
 
 class SnareMiddleware:
+    """Middleware for Snare's aiohttp web server"""
+
     def __init__(
         self, error_404: Union[None, str], headers: List[Dict[str, str]] = [], server_header: str = ""
     ) -> None:
-        """Middleware class for Snare's aiohttp web server
+        """Constructor method
 
         :param error_404: 404 page's file name (hash)
         :type error_404: Union[None, str]
