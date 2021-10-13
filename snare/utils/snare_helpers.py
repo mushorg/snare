@@ -42,7 +42,7 @@ class VersionManager:
 
 
 class Converter:
-    """Convert a website's source files to a Snare-friendly form"""
+    """Convert a website's source files to make it servable by Snare"""
 
     def __init__(self) -> None:
         """Constructor method"""
@@ -50,7 +50,7 @@ class Converter:
         self.meta = {}
 
     def convert(self, path: str) -> None:
-        """Rename all page files to their MD5 hash and populate meta.json with their hash and Content-Type header
+        """Rename all page files to their MD5 hash and populate meta.json with their hash, empty headers and Content-Type
 
         :param path: Page files storage directory
         :type path: str
@@ -69,9 +69,8 @@ class Converter:
             hash_name = m.hexdigest()
             self.meta[file_name] = {
                 "hash": hash_name,
-                "headers": [
-                    {"Content-Type": mimetypes.guess_type(file_name)[0]},
-                ],
+                "headers": [],
+                "content_type": mimetypes.guess_type(file_name)[0],
             }
             self.logger.debug("Converting the file as %s ", os.path.join(path, hash_name))
             shutil.copyfile(fn, os.path.join(path, hash_name))
@@ -82,7 +81,7 @@ class Converter:
 
 
 def add_meta_tag(page_dir: str, index_page: str, config: dict, base_path: str) -> None:
-    """Add meta tags to index page
+    """Add google and bing meta tags to index page
 
     :param page_dir: Page files storage directory
     :type page_dir: str
@@ -121,10 +120,10 @@ def add_meta_tag(page_dir: str, index_page: str, config: dict, base_path: str) -
 
 
 def check_meta_file(meta_info: dict) -> bool:
-    """Verify meta info
+    """Verify meta info by checking the presence of `hash`, `headers` and `content_type` keys
 
     :param meta_info: Meta info from meta.json
-    :type meta_info: Dict
+    :type meta_info: dict
     :return: True if contents are properly present
     :rtype: bool
     """
@@ -159,7 +158,7 @@ def parse_timeout(timeout: str) -> int:
 
 
 def print_color(msg: str, mode: str = "INFO", end: str = "\n") -> None:
-    """Color printing
+    r"""Color printing
 
     :param msg: Message to be printed
     :type msg: str

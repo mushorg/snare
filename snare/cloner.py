@@ -63,12 +63,20 @@ class BaseCloner:
 
     @staticmethod
     def add_scheme(url: str) -> Tuple[yarl.URL, yarl.URL]:
-        """Generate root and 404 URLs with proper schemes
+        """Generate root and 404 URLs with schemes (http/https)
 
         :param url: Raw website root URL
         :type url: str
         :return: root URL, 404 page URL
         :rtype: Tuple[yarl.URL, yarl.URL]
+
+        Example:
+        .. code-block:: python
+
+            >>> from snare.cloner import BaseCloner
+            >>> BaseCloner.add_scheme("foo.bar")
+            (URL('http://foo.bar'), URL('http://foo.bar/status_404'))
+
         """
         new_url = yarl.URL(url)
         if not new_url.scheme:
@@ -121,6 +129,23 @@ class BaseCloner:
         :type check_host: bool, optional
         :return: Processed link
         :rtype: Union[str, None]
+
+        Example:
+        .. code-block:: python
+
+            >>> import asyncio
+            >>> from snare.cloner import BaseCloner
+            >>> from yarl import URL
+            >>> root_url = "http://foo.com"
+            >>> cloner = BaseCloner(root_url, max_depth=10, css_validate=False)
+            >>> url = "http://foo.com/bar"
+            >>> processed_url = ""
+            >>> async def test_process_link():
+            >>>     processed_url = await cloner.process_link(url, level=1)
+            >>> asyncio.run(test_process_link())
+            >>> processed_url
+            '/bar'
+
         """
         try:
             url = yarl.URL(url)
@@ -154,7 +179,7 @@ class BaseCloner:
         return res
 
     async def replace_links(self, data: Union[bytes, str], level: int) -> BeautifulSoup:
-        """Replace all links present in the page's data with their relative versions
+        """Replace all links present in the page's data with their relative counterparts
 
         :param data: Page data
         :type data: Union[bytes, str]
@@ -197,6 +222,18 @@ class BaseCloner:
         :type url: yarl.URL
         :return: File name, its MD5 hash
         :rtype: Tuple[str, str]
+
+        Example:
+        .. code-block:: python
+
+            >>> from snare.cloner import BaseCloner
+            >>> from yarl import URL
+            >>> root_url = "http://foo.com"
+            >>> cloner = BaseCloner(root_url, max_depth=10, css_validate=False)
+            >>> url = URL("http://foo.com/bar")
+            >>> cloner._make_filename(url)
+            ('/bar', '6a764eebfa109a9ef76c113f3f608c6b')
+
         """
         if url.is_absolute():
             file_name = url.relative().human_repr()
@@ -288,7 +325,7 @@ class BaseCloner:
                 await self.new_urls.put({"url": current_url, "level": level, "try_count": try_count + 1})
 
     async def get_root_host(self) -> None:
-        """Update the website's root host"""
+        """Fetch the root page and update the website's root host"""
         try:
             async with aiohttp.ClientSession() as session:
                 resp = await session.get(self.root)
