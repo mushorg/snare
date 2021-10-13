@@ -13,6 +13,7 @@ Welcome to SNARE's documentation!
    quick-start
    parameters
    cloner
+   Snare API <dev/modules>
 
 
 
