@@ -70,8 +70,8 @@ def main():
 
     logger.Logger.create_clone_logger(log_file, __package__)
     print_color("  Logs will be stored in {}".format(log_file), "INFO", end="")
+    start = datetime.now()
     try:
-        start = datetime.now()
         cloner = Cloner(
             args.target, int(args.max_depth), args.css_validate, default_path
         )
@@ -82,6 +82,7 @@ def main():
         end = datetime.now() - start
     finally:
         print("")
+        end = datetime.now() - start
         print_color("-" * 36 + ">SUMMARY<" + "-" * 36, "INFO")
         print_color(
             "\tTotal number of URLs cloned: {}".format(str(cloner.counter)), "INFO"
