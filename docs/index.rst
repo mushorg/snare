@@ -13,7 +13,7 @@ SNARE
    quick-start
    parameters
    cloner
-
+   faq
 
 
 Indices and tables
