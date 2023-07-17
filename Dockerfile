@@ -1,4 +1,4 @@
-FROM python:3.6-alpine3.8
+FROM python:3.10-alpine3.14
 
 RUN apk -U --no-cache add git build-base && \
     rm -rf /root/* && \
