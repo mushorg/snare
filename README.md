@@ -3,5 +3,6 @@
 docker-compose up --build -d
 ```
 
-### NOTR
-Chỉnh link web
+### NOTE:
+Chỉnh link web trong Dockerfile
+
