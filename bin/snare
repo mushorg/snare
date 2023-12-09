@@ -133,7 +133,7 @@ if __name__ == '__main__':
     page_group.add_argument("--page-dir", help="name of the folder to be served")
     page_group.add_argument("--list-pages", help="list available pages", action='store_true')
     parser.add_argument("--index-page", help="file name of the index page", default='index.html')
-    parser.add_argument("--port", help="port to listen on", default='8080')
+    parser.add_argument("--port", type=int, help="port to listen on", default='8080')
     parser.add_argument("--host-ip", help="host ip to bind to", default='127.0.0.1')
     parser.add_argument("--debug", help="run web server in debug mode", default=False)
     parser.add_argument("--tanner", help="ip of the tanner service", default='tanner.mushmush.org')
