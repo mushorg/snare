@@ -3,6 +3,7 @@ import aiohttp
 import aiohttp_jinja2
 import jinja2
 
+from snare.middleware.logger import logging_middleware
 from aiohttp import web
 from aiohttp.web import StaticResource as StaticRoute
 
@@ -72,7 +73,9 @@ class HttpRequestHandler:
         return web.Response(body=content, status=status_code, headers=headers)
 
     async def start(self):
-        app = web.Application()
+        app = web.Application(
+            middlewares=[logging_middleware]
+        )
         app.add_routes([web.route("*", "/{tail:.*}", self.handle_request)])
         aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(self.dir))
         middleware = SnareMiddleware(
