@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Synapse Flow Management | Asset Ingestion Core</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #05070a;
+      --card-bg: #0d1117;
+      --accent: #00ff88; /* Warna neon cyber yang menggiurkan */
+      --text-main: #e6edf3;
+      --text-dim: #8b949e;
+      --border: #30363d;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      color: var(--text-main);
+      line-height: 1.6;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 80px 20px;
+      background: radial-gradient(circle at top right, #10151d 0%, var(--bg) 70%);
+    }
+
+    .header-content {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .header-content h1 {
+      margin: 0;
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      color: var(--text-main);
+    }
+
+    .header-content span {
+      color: var(--accent);
+      font-family: 'JetBrains+Mono', monospace;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: -40px auto 100px;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      padding: 50px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+    }
+
+    .sys-badge {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(0, 255, 136, 0.1);
+      color: var(--accent);
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      margin-bottom: 25px;
+      display: inline-block;
+    }
+
+    .intro-text {
+      font-size: 1.2rem;
+      color: var(--text-dim);
+      margin-bottom: 45px;
+      border-left: 2px solid var(--border);
+      padding-left: 25px;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .service-item {
+      padding: 25px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .service-item:hover {
+      border-color: var(--accent);
+      background: rgba(0, 255, 136, 0.03);
+    }
+
+    .service-item strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+    }
+
+    .service-item p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--text-dim);
+    }
+
+    .access-zone {
+      margin-top: 50px;
+      padding: 40px;
+      border: 1px solid #3e1b1b; /* Border merah gelap sedikit peringatan */
+      background: linear-gradient(to bottom right, #0d1117, #1a0d0d);
+      border-radius: 4px;
+    }
+
+    .btn {
+      display: inline-block;
+      background: var(--text-main);
+      color: var(--bg);
+      padding: 12px 30px;
+      font-weight: 700;
+      text-decoration: none;
+      border-radius: 4px;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      margin-top: 20px;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: #484f58;
+    }
+
+    .security-status {
+      display: flex;
+      gap: 20px;
+      margin-top: 30px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .status-item span {
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-content">
+    <span>Department of Asset & Logistics</span>
+    <h1>Synapse Flow Management</h1>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <div class="sys-badge">NODE_ID: SFM-8801-LX // CLUSTER: AP-SOUTH-1</div>
+    
+    <div class="intro-text">
+      Secure transit gateway for centralized high-integrity data streams. Synapse Flow 
+      orchestrates the ingestion and multi-layer validation of global transaction logs 
+      and telemetry archives.
+    </div>
+
+    <div class="services-grid">
+      <div class="service-item">
+        <strong>Direct Stream Ingress</strong>
+        <p>Encapsulated TCP/UDP listeners for sub-10ms packet processing and buffering.</p>
+      </div>
+      <div class="service-item">
+        <strong>Vault-6 Cold Storage</strong>
+        <p>Quantum-resistant encryption layers for long-term PII and sensitive asset retention.</p>
+      </div>
+      <div class="service-item">
+        <strong>Edge Validation</strong>
+        <p>Pre-auth filtering at the network boundary to ensure payload integrity before core commit.</p>
+      </div>
+      <div class="service-item">
+        <strong>Recursive Analytics</strong>
+        <p>Deep-packet inspection and metadata harvesting for regulatory audit compliance.</p>
+      </div>
+      <div class="service-item">
+        <strong>Sync-Relay Hub</strong>
+        <p>Inter-node synchronization for distributed high-availability data replication.</p>
+      </div>
+      <div class="service-item">
+        <strong>API Core Interface</strong>
+        <p>Direct-to-kernel API access for rapid data retrieval by authorized internal services.</p>
+      </div>
+    </div>
+
+    <div class="access-zone">
+      <h3>Internal Console Access</h3>
+      <p style="color: var(--text-dim); font-size: 0.95rem;">
+        Unauthorized access is strictly prohibited. Current session is being routed through 
+        the Global Security Operations Center (GSOC). MFA via physical security key is required.
+      </p>
+      <a href="/console" class="btn" onclick="window.location='/console'">Connect to Console</a>
+
+      
+      <div class="security-status">
+        <div class="status-item">ENCRYPTION: <span>AES-256-GCM</span></div>
+        <div class="status-item">UPLINK: <span>STABLE</span></div>
+        <div class="status-item">PORTAL: <span>RESTRICTED</span></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  PROPERTY OF SYNAPSE FLOW MANAGEMENT. <br>
+  INTERNAL SYSTEM USE ONLY. ALL ACTIONS ARE LOGGED AND AUDITED UNDER THE FEDERAL PRIVACY ACT.
+</footer>
+
+</body>
+</html>

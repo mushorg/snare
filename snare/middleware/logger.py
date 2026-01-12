@@ -1,6 +1,9 @@
 import time
 import json
 import uuid
+from aiohttp import web
+
+from snare.middleware.tool_fingerprint import fingerprint_tool
 
 # session sederhana per IP (sementara, nanti pindah Redis)
 ATTACKER_SESSIONS = {}
@@ -30,15 +33,23 @@ async def logging_middleware(request, handler):
 
     session["last_seen"] = now
 
+    # 🔍 fingerprinting (PASIF)
+    fingerprint = fingerprint_tool(ua, path)
+
     event = {
         "ts": now,
         "ip": ip,
+        "session_id": session["session_id"],
         "method": method,
         "path": path,
         "query": query,
         "user_agent": ua,
         "delta_ms": delta_ms
     }
+
+    # enrich log jika fingerprint ada
+    if fingerprint:
+        event.update(fingerprint)
 
     session["requests"].append(event)
 

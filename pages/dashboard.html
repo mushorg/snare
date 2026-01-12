@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Synapse Flow | Neural Command Center</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #05070a;
+      --sidebar: #080a0f;
+      --card: #0d1117;
+      --accent: #00ff88;
+      --accent-dim: rgba(0, 255, 136, 0.2);
+      --border: #21262d;
+      --danger: #ff4757;
+      --text: #e6edf3;
+      --text-dim: #8b949e;
+      --neon-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+    }
+
+    * { box-sizing: border-box; }
+    body { 
+      background: var(--bg); color: var(--text); 
+      font-family: 'Inter', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden;
+    }
+
+    /* Sidebar Navigation */
+    nav {
+      width: 260px;
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+      z-index: 10;
+    }
+
+    .nav-header { padding: 0 20px 30px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .nav-header h1 { 
+        font-size: 1.1rem; color: var(--accent); margin: 0; 
+        font-family: 'JetBrains Mono'; text-shadow: var(--neon-shadow);
+        letter-spacing: 2px;
+    }
+
+    .nav-item {
+      padding: 12px 25px;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .nav-item:hover {
+      background: rgba(0, 255, 136, 0.05);
+      color: var(--text);
+      padding-left: 30px;
+    }
+
+    .nav-item.active {
+      background: linear-gradient(90deg, var(--accent-dim) 0%, transparent 100%);
+      color: var(--accent);
+      border-right: 3px solid var(--accent);
+    }
+
+    /* Main Area */
+    main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; position: relative; }
+    
+    header {
+      padding: 15px 30px;
+      background: rgba(13, 17, 23, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      z-index: 5;
+    }
+
+    .page-content { padding: 25px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; position: relative; }
+
+    /* Widgets */
+    .widget {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    .span-4 { grid-column: span 4; }
+    .span-8 { grid-column: span 8; }
+    .span-3 { grid-column: span 3; }
+    .span-6 { grid-column: span 6; }
+    .span-9 { grid-column: span 9; }
+    .span-12 { grid-column: span 12; }
+
+    .label { 
+      font-family: 'JetBrains Mono'; font-size: 10px; color: var(--accent); 
+      text-transform: uppercase; margin-bottom: 15px; display: flex; 
+      justify-content: space-between; letter-spacing: 1px;
+    }
+
+    .big-value { font-size: 2.2rem; font-weight: 800; font-family: 'JetBrains Mono'; margin-bottom: 5px; }
+
+    /* Progress Bar */
+    .progress-bg { width: 100%; height: 4px; background: #1f242c; border-radius: 2px; margin-top: 10px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--accent); box-shadow: 0 0 10px var(--accent); transition: width 1s ease-in-out; }
+
+    /* Map Radar */
+    .map-placeholder {
+      height: 320px;
+      background: radial-gradient(circle at center, #161b22 0%, #080a0f 100%);
+      border-radius: 4px; position: relative; overflow: hidden;
+    }
+    .scanner-line {
+      position: absolute; width: 100%; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      top: 0; left: 0; opacity: 0.3; animation: scan 4s linear infinite;
+    }
+    .map-dot {
+      position: absolute; width: 8px; height: 8px; background: var(--accent); border-radius: 50%;
+      box-shadow: 0 0 15px var(--accent); animation: pulse 2s infinite;
+    }
+
+    /* Console */
+    .console {
+      background: #000; height: 220px; font-family: 'JetBrains Mono';
+      font-size: 11px; padding: 20px; overflow-y: hidden; color: #58a6ff;
+      border-top: 4px solid #161b22;
+    }
+
+    /* Animations */
+    @keyframes scan { from { top: 0%; } to { top: 100%; } }
+    @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(2.5); opacity: 0; } 100% { transform: scale(1); opacity: 0; } }
+    .glitch { animation: glitch-anim 0.5s infinite alternate; }
+    @keyframes glitch-anim { 0% { transform: translate(0); } 20% { transform: translate(-1px, 1px); } 100% { transform: translate(0); } }
+
+    /* Table Style */
+    table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono'; font-size: 12px; }
+    th { text-align: left; color: var(--accent); padding: 10px; border-bottom: 1px solid var(--border); }
+    td { padding: 10px; border-bottom: 1px solid #1f242c; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-header">
+    <h1>SYNAPSE_CORE</h1>
+    <div style="display:flex; justify-content: space-between; margin-top: 10px;">
+        <small style="color:var(--accent); font-size: 9px; font-family: 'JetBrains Mono';">v3.4.1-STABLE</small>
+        <small id="session-display" style="color:var(--text-dim); font-size: 9px;">ID: ...</small>
+    </div>
+  </div>
+  
+  <div class="nav-item active" onclick="showPage('overview', this)">SYSTEM_OVERVIEW</div>
+  <div class="nav-item" onclick="showPage('nodes', this)">NODE_DISTRIBUTION</div>
+  <div class="nav-item" onclick="showPage('vaults', this)">ENCRYPTION_KEYS</div>
+  <div class="nav-item" onclick="showPage('logs', this)">NEURAL_NET_LOGS</div>
+  
+  <div style="margin-top: auto; padding: 20px;">
+      <div class="label" style="margin-bottom: 5px;">Secure Tunnel</div>
+      <div style="font-size: 10px; color: var(--accent);">AES-256 ACTIVE</div>
+      <button onclick="triggerPurge()" style="background:none; border: 1px solid var(--danger); color: var(--danger); font-size: 10px; padding: 8px; margin-top: 15px; cursor: pointer; width: 100%; font-family: 'JetBrains Mono';">TERMINATE SYSTEM</button>
+  </div>
+</nav>
+
+<main>
+  <header>
+    <div style="font-family: 'JetBrains Mono'; font-size: 0.75rem;">
+        USER: <span style="color:var(--accent)">ADMIN</span> | 
+        SOCKET: <span id="socket-id" style="color:var(--text-dim)">-</span>
+    </div>
+    <div style="display: flex; gap: 25px; font-size: 0.75rem; font-family: 'JetBrains Mono';">
+      <span>CPU <span id="cpu-load" style="color:var(--accent)">0%</span></span>
+      <span>RAM <span id="mem-load" style="color:var(--accent)">0%</span></span>
+      <span style="color: var(--accent); text-shadow: 0 0 5px var(--accent);">● UPLINK_STABLE</span>
+    </div>
+  </header>
+
+  <div id="page-overview" class="page-content">
+    <div class="widget span-3">
+      <span class="label">Incoming Stream</span>
+      <div class="big-value" id="ingress-val">142.8</div>
+      <div style="color: var(--accent); font-size: 11px;">GB/s Transfer Rate</div>
+      <div class="progress-bg"><div class="progress-fill" style="width: 65%;"></div></div>
+    </div>
+    <div class="widget span-3">
+      <span class="label">Live Handshakes</span>
+      <div class="big-value" id="val-sessions">8,142</div>
+      <div style="color: var(--text-dim); font-size: 11px;">Active Decryption</div>
+    </div>
+    <div class="widget span-3">
+      <span class="label">Mainframe Storage</span>
+      <div class="big-value">84%</div>
+      <div class="progress-bg"><div class="progress-fill" style="width: 84%; background: #f1c40f;"></div></div>
+    </div>
+    <div class="widget span-3">
+        <span class="label">Breach Attempts</span>
+        <div class="big-value glitch" style="color: var(--danger);">0</div>
+        <div style="color: var(--danger); font-size: 11px;">Countermeasures: ON</div>
+    </div>
+
+    <div class="widget span-8">
+      <span class="label">Global Traffic Route Map</span>
+      <div class="map-placeholder">
+        <div class="scanner-line"></div>
+        <div id="map-dots-container"></div>
+      </div>
+    </div>
+
+    <div class="widget span-4">
+        <span class="label">Node Cluster Health</span>
+        <div id="health-container"></div>
+    </div>
+
+    <div class="widget span-9">
+      <span class="label">Neural Flow Analysis (60s Window)</span>
+      <div style="height: 220px;"><canvas id="liveChart"></canvas></div>
+    </div>
+
+    <div class="widget span-3">
+      <span class="label">System Alerts</span>
+      <div style="font-size: 11px; line-height: 1.6;">
+        <div style="margin-bottom: 10px; border-left: 2px solid var(--accent); padding-left: 10px;">
+            <div style="color:var(--accent)">[FIREWALL]</div>
+            <div style="color:var(--text-dim)">Port 8080 redirect active</div>
+        </div>
+        <div style="margin-bottom: 10px; border-left: 2px solid var(--danger); padding-left: 10px;">
+            <div style="color:var(--danger)">[CRYPTO]</div>
+            <div style="color:var(--text-dim)">Invalid handshake from CIDR: 42</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="widget span-12" style="padding:0; overflow:hidden;">
+      <div class="console" id="log-console"></div>
+    </div>
+  </div>
+
+  <div id="page-nodes" class="page-content" style="display:none;">
+    <div class="widget span-12">
+        <span class="label">Active Edge Nodes</span>
+        <table>
+            <tr><th>NODE ID</th><th>LOCATION</th><th>LATENCY</th><th>LOAD</th><th>STATUS</th></tr>
+            <tr><td>SG-01</td><td>Singapore</td><td>12ms</td><td>42%</td><td style="color:var(--accent)">ONLINE</td></tr>
+            <tr><td>US-W2</td><td>Oregon, US</td><td>145ms</td><td>12%</td><td style="color:var(--accent)">ONLINE</td></tr>
+            <tr><td>EU-FRA</td><td>Frankfurt</td><td>88ms</td><td>94%</td><td style="color:var(--danger)">OVERLOAD</td></tr>
+            <tr><td>BR-SP</td><td>Sao Paulo</td><td>--</td><td>0%</td><td style="color:var(--text-dim)">OFFLINE</td></tr>
+        </table>
+    </div>
+  </div>
+
+  <div id="page-vaults" class="page-content" style="display:none;">
+    <div class="widget span-6">
+        <span class="label">Access Keys (Encrypted)</span>
+        <div style="background:#000; padding:15px; font-family:'JetBrains Mono'; font-size:12px;">
+            <p style="color:var(--text-dim)"># primary_ssh_vault</p>
+            <p style="word-break: break-all;">$2b$12$R9h/cIPz0gi.URrK2vN3..7vE2pS/k5vY5XW...</p>
+            <hr style="border:0; border-top:1px solid #222; margin:10px 0;">
+            <p style="color:var(--text-dim)"># database_backup_root</p>
+            <p style="word-break: break-all;">$2b$12$Kj65fSDF987.asdfQWErty... (LOCKED)</p>
+        </div>
+    </div>
+    <div class="widget span-6">
+        <span class="label">Recent File Access</span>
+        <div style="font-size:12px;">
+            <div style="padding:5px 0;">> backup_configs.zip <span style="color:var(--text-dim)">(4.2GB)</span></div>
+            <div style="padding:5px 0;">> user_credentials_encrypted.db <span style="color:var(--text-dim)">(1.1GB)</span></div>
+            <div style="padding:5px 0; color:var(--danger);">> shadow_passwords.bak (ACCESS DENIED)</div>
+        </div>
+    </div>
+  </div>
+
+  <div id="page-logs" class="page-content" style="display:none;">
+    <div class="widget span-12" style="background:#000; height:80vh; overflow-y:scroll;" id="full-log-view">
+        <span class="label">Full Neural Stream Logs</span>
+        </div>
+  </div>
+
+</main>
+
+<script>
+  // Setup Visuals
+  const socketId = Math.random().toString(36).substring(2, 10).toUpperCase();
+  document.getElementById('socket-id').innerText = socketId;
+  document.getElementById('session-display').innerText = 'ID: ' + socketId;
+
+  // Chart
+  const ctx = document.getElementById('liveChart').getContext('2d');
+  const liveChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: Array(40).fill(''),
+      datasets: [{
+        data: Array(40).fill(0).map(() => Math.random() * 100),
+        borderColor: '#00ff88', borderWidth: 2, pointRadius: 0, fill: true,
+        backgroundColor: 'rgba(0, 255, 136, 0.05)', tension: 0.4
+      }]
+    },
+    options: { maintainAspectRatio: false, plugins: {legend: {display: false}}, scales: {x:{display:false}, y:{grid:{color:'#1f242c'}, ticks:{display:false}}} }
+  });
+
+  // Pages Logic
+  function showPage(pageId, el) {
+    document.querySelectorAll('.page-content').forEach(p => p.style.display = 'none');
+    document.getElementById('page-' + pageId).style.display = 'grid';
+    document.querySelectorAll('.nav-item').forEach(n => {
+        n.classList.remove('active');
+        n.innerHTML = n.innerHTML.replace('●', '○');
+    });
+    el.classList.add('active');
+    el.innerHTML = el.innerHTML.replace('○', '●');
+  }
+
+  // Dynamic Content Generation
+  const healthContainer = document.getElementById('health-container');
+  ['SG-01', 'US-W2', 'EU-FRA', 'AU-SYD'].forEach(name => {
+      healthContainer.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #1f242c; font-size:12px;">
+          <span>${name}</span><span style="color:var(--accent); font-size:10px;">ONLINE</span></div>`;
+  });
+
+  const mapDots = document.getElementById('map-dots-container');
+  for(let i=0; i<10; i++) {
+    const d = document.createElement('div');
+    d.className = 'map-dot';
+    d.style.top = Math.random()*80+10+'%'; d.style.left = Math.random()*80+10+'%';
+    mapDots.appendChild(d);
+  }
+
+  // Intervals
+  setInterval(() => {
+    liveChart.data.datasets[0].data.shift();
+    liveChart.data.datasets[0].data.push(Math.random() * 100);
+    liveChart.update('none');
+    document.getElementById('cpu-load').innerText = Math.floor(Math.random()*20+10)+'%';
+    document.getElementById('mem-load').innerText = Math.floor(Math.random()*10+40)+'%';
+    document.getElementById('ingress-val').innerText = (140 + Math.random()*10).toFixed(1);
+  }, 1000);
+
+  // Logging System
+  const logMsgs = ["FIREWALL_BLOCK: 192.168.1.1", "AUTH_SUCCESS: admin", "SQL_QUERY: SELECT * FROM vault", "ENCRYPT_ROTATION: Complete", "NODE_SYNC: SG-01"];
+  function addLog() {
+    const con = document.getElementById('log-console');
+    const fullLog = document.getElementById('full-log-view');
+    const div = document.createElement('div');
+    div.style.marginBottom = "5px";
+    const txt = `[${new Date().toLocaleTimeString()}] > ${logMsgs[Math.floor(Math.random()*logMsgs.length)]}`;
+    div.innerHTML = `<span style="color:var(--text-dim)">${txt}</span>`;
+    
+    con.insertBefore(div.cloneNode(true), con.firstChild);
+    if(con.childNodes.length > 12) con.removeChild(con.lastChild);
+    
+    fullLog.appendChild(div);
+    if(fullLog.childNodes.length > 100) fullLog.removeChild(fullLog.childNodes[1]);
+  }
+  setInterval(addLog, 1500);
+
+  // Honeypot Trap
+  function triggerPurge() {
+    if(confirm("CRITICAL: Wipe all system nodes?")) {
+        document.body.innerHTML = `<div style="background:#000; color:red; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'JetBrains Mono'; text-align:center;">
+            <h1 class="glitch">SYSTEM PURGE INITIATED</h1>
+            <p>BROADCASTING TRACE SIGNAL TO ORIGIN IP...</p>
+            <div style="width:300px; height:2px; background:#222; margin:20px;"><div id="pbar" style="width:0%; height:100%; background:red;"></div></div>
+        </div>`;
+        let w = 0;
+        const iv = setInterval(() => {
+            w += 2;
+            document.getElementById('pbar').style.width = w+'%';
+            if(w >= 100) { clearInterval(iv); alert("FATAL ERROR: Connection Interrupted by Peer."); location.reload(); }
+        }, 50);
+    }
+  }
+</script>
+
+<script>
+function audit(action, extra={}) {
+  fetch("/audit/event", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      action: action,
+      extra: extra,
+      ts: Date.now()
+    })
+  });
+}
+
+document.querySelectorAll(".nav-item").forEach(el => {
+  el.addEventListener("click", () => {
+    audit("NAV_CLICK", {menu: el.innerText});
+  });
+});
+</script>
+
+</body>
+</html>
