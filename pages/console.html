@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synapse Flow | Secure Gateway</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #05070a;
+      --card: #0d1117;
+      --accent: #00ff88;
+      --border: #30363d;
+      --danger: #ff4757;
+      --text: #e6edf3;
+      --text-dim: #8b949e;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .login-box {
+      width: 400px;
+      padding: 40px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 50px rgba(0,0,0,0.7);
+      position: relative;
+    }
+
+    .login-box::before {
+      content: "RESTRICTED AREA";
+      position: absolute;
+      top: -12px;
+      left: 20px;
+      background: var(--bg);
+      padding: 0 10px;
+      font-size: 10px;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+      letter-spacing: 2px;
+    }
+
+    h2 {
+      color: var(--accent);
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-bottom: 25px;
+      text-transform: uppercase;
+    }
+
+    #auth-error {
+      display: none;
+      background: rgba(255, 71, 87, 0.1);
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      padding: 12px;
+      margin-bottom: 20px;
+      font-size: 11px;
+    }
+
+    label {
+      font-size: 10px;
+      color: var(--text-dim);
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      background: #020408;
+      border: 1px solid var(--border);
+      color: var(--accent);
+      margin-bottom: 15px;
+      font-family: 'JetBrains Mono';
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 1px;
+    }
+
+    .footer-note {
+      margin-top: 25px;
+      font-size: 9px;
+      color: #3e444d;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-box">
+  <h2>SYNAPSE FLOW v3.4</h2>
+  <div class="subtitle">Neural Link Authentication</div>
+
+  <div id="auth-error">
+    <strong>[AUTH FAILURE]</strong><br>
+    Authentication rejected. Security policy enforced.
+  </div>
+
+  <!-- SERVER-DRIVEN AUTH -->
+  <form method="POST" action="/console/auth">
+    <label>SERVICE ACCOUNT</label>
+    <input name="username" autocomplete="off" required>
+
+    <label>ACCESS KEY</label>
+    <input name="password" type="password" required>
+
+    <button type="submit">ESTABLISH CONNECTION</button>
+  </form>
+
+  <div class="footer-note">
+    Unauthorized access attempts are logged and audited.
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+
+  if (params.get("err") === "auth") {
+    // tampilkan error
+    document.getElementById("auth-error").style.display = "block";
+
+    // bersihkan URL TANPA reload
+    setTimeout(() => {
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }, 300);
+  }
+</script>
+
+</body>
+</html>

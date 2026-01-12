@@ -1,94 +1,247 @@
+import os
+import re
+import json
+import time
+import uuid
+import random
 import logging
-import aiohttp
-import aiohttp_jinja2
-import jinja2
+import asyncio
 
 from aiohttp import web
-from aiohttp.web import StaticResource as StaticRoute
-
-from snare.middlewares import SnareMiddleware
+from snare.middleware.logger import logging_middleware
+from snare.middleware.server_header import server_header_middleware
 from snare.tanner_handler import TannerHandler
 
 
+# =========================================================
+# Credential scoring (adaptive realism)
+# =========================================================
+def credential_score(username, password):
+    score = 0
+
+    if re.match(r"^[a-z][a-z0-9._-]{3,20}$", username):
+        score += 2
+    if len(password) >= 10:
+        score += 2
+    if re.search(r"[A-Z]", password):
+        score += 1
+    if re.search(r"[a-z]", password):
+        score += 1
+    if re.search(r"[0-9]", password):
+        score += 1
+    if re.search(r"[@#\\-_$!]", password):
+        score += 1
+
+    return score
+
+
 class HttpRequestHandler:
-    def __init__(self, meta, run_args, snare_uuid, debug=False, keep_alive=75, **kwargs):
+    def __init__(self, meta, run_args, snare_uuid, **kwargs):
         self.run_args = run_args
         self.dir = run_args.full_page_path
         self.meta = meta
         self.snare_uuid = snare_uuid
-        self.logger = logging.getLogger(__name__)
-        self.sroute = StaticRoute(name=None, prefix="/", directory=self.dir)
+
+        self.logger = logging.getLogger("SNARE-AUDIT")
         self.tanner_handler = TannerHandler(run_args, meta, snare_uuid)
 
-    async def submit_slurp(self, data):
-        try:
-            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
-                r = await session.post(
-                    "https://{0}:8080/api?auth={1}&chan=snare_test&msg={2}".format(
-                        self.run_args.slurp_host, self.run_args.slurp_auth, data
-                    ),
-                    json=data,
-                    timeout=10.0,
-                )
-                assert r.status == 200
-                r.close()
-        except Exception as e:
-            self.logger.error("Error submitting slurp: %s", e)
+        self.sessions = {}
+        self.sensitive_paths = {"/admin", "/.git", "/config", "/backup"}
 
+    # =====================================================
+    # Unified audit logger (JSON)
+    # =====================================================
+    def audit(self, request, event, extra=None):
+        payload = {
+            "event": event,
+            "ip": request.remote,
+            "method": request.method,
+            "path": request.path_qs,
+            "ua": request.headers.get("User-Agent"),
+            "time": time.time(),
+            "session": request.cookies.get("session_id"),
+        }
+        if extra:
+            payload.update(extra)
+
+        self.logger.warning(json.dumps(payload))
+
+    # =====================================================
     async def handle_request(self, request):
-        self.logger.info("Request path: {0}".format(request.path_qs))
-        data = self.tanner_handler.create_data(request, 200)
-        if request.method == "POST":
-            post_data = await request.post()
-            self.logger.info("POST data:")
-            for key, val in post_data.items():
-                self.logger.info("\t- {0}: {1}".format(key, val))
-            data["post_data"] = dict(post_data)
+        # -------------------------------------------------
+        # Tanner side-channel (network telemetry)
+        # -------------------------------------------------
+        try:
+            data = self.tanner_handler.create_data(request, 200)
+            if request.method == "POST":
+                data["post_data"] = dict(await request.post())
+            await self.tanner_handler.submit_data(data)
+        except Exception:
+            pass
 
-        # Submit the event to the TANNER service
-        event_result = await self.tanner_handler.submit_data(data)
+        path = request.path.rstrip("/") or "/"
+        ua = request.headers.get("User-Agent", "").lower()
 
-        # Log the event to slurp service if enabled
-        if self.run_args.slurp_enabled:
-            await self.submit_slurp(request.path_qs)
+        # -------------------------------------------------
+        # Scanner fingerprint delay (soft)
+        # -------------------------------------------------
+        if any(x in ua for x in ["dirsearch", "ffuf", "gobuster", "sqlmap"]):
+            await asyncio.sleep(0.2)
 
-        content, headers, status_code = await self.tanner_handler.parse_tanner_response(
-            request.path_qs, event_result["response"]["message"]["detection"]
-        )
+        # =================================================
+        # LANDING
+        # =================================================
+        if path == "/":
+            page = self.meta.get("/index.html") or next(iter(self.meta.values()))
+            return web.Response(
+                body=open(os.path.join(self.dir, page["hash"]), "rb").read(),
+                content_type="text/html",
+            )
 
-        if self.run_args.server_header:
-            headers["Server"] = self.run_args.server_header
+        # =================================================
+        # CONSOLE
+        # =================================================
+        if path == "/console" and request.method == "GET":
+            self.audit(request, "view_console")
+            page = self.meta.get("/console.html")
+            return web.Response(
+                body=open(os.path.join(self.dir, page["hash"]), "rb").read(),
+                content_type="text/html",
+            )
 
-        if "cookies" in data and "sess_uuid" in data["cookies"]:
-            previous_sess_uuid = data["cookies"]["sess_uuid"]
-        else:
-            previous_sess_uuid = None
+        # =================================================
+        # AUTH
+        # =================================================
+        if path == "/console/auth" and request.method == "POST":
+            form = await request.post()
+            username = form.get("username", "")
+            password = form.get("password", "")
 
-        if event_result is not None and "sess_uuid" in event_result["response"]["message"]:
-            cur_sess_id = event_result["response"]["message"]["sess_uuid"]
-            if previous_sess_uuid is None or not previous_sess_uuid.strip() or previous_sess_uuid != cur_sess_id:
-                headers.add("Set-Cookie", "sess_uuid=" + cur_sess_id)
+            score = credential_score(username, password)
+            self.audit(request, "auth_attempt", {
+                "username": username,
+                "score": score,
+            })
 
-        return web.Response(body=content, status=status_code, headers=headers)
+            # Fast fail (junk credential)
+            if score < 4:
+                return web.HTTPFound("/console?err=auth")
+
+            # Human delay
+            await asyncio.sleep(random.uniform(0.8, 1.5))
+
+            # Fake success
+            if score >= 6 and random.random() < 0.25:
+                session_id = str(uuid.uuid4())
+                self.sessions[session_id] = {
+                    "username": username,
+                    "ip": request.remote,
+                    "created": time.time(),
+                }
+
+                self.audit(request, "auth_fake_success", {
+                    "username": username,
+                    "session": session_id,
+                })
+
+                resp = web.HTTPFound("/dashboard")
+                resp.set_cookie(
+                    "session_id",
+                    session_id,
+                    httponly=True,
+                    samesite="Strict",
+                )
+                return resp
+
+            self.audit(request, "auth_fail_slow", {"username": username})
+            return web.HTTPFound("/console?err=auth")
+
+        # =================================================
+        # DASHBOARD
+        # =================================================
+        if path == "/dashboard":
+            sess = request.cookies.get("session_id")
+            if not sess or sess not in self.sessions:
+                return web.HTTPFound("/console")
+
+            self.audit(request, "dashboard_access", {
+                "username": self.sessions[sess]["username"]
+            })
+
+            page = self.meta.get("/dashboard.html")
+            return web.Response(
+                body=open(os.path.join(self.dir, page["hash"]), "rb").read(),
+                content_type="text/html",
+            )
+
+        # =================================================
+        # 🔥 OPSI 2: AUDIT EVENT SINK
+        # =================================================
+        if path == "/audit/event" and request.method == "POST":
+            try:
+                payload = await request.json()
+            except Exception:
+                payload = await request.text()
+
+            self.audit(
+                request,
+                "client_side_audit_event",
+                {
+                    "payload": payload,
+                },
+            )
+
+            return web.json_response(
+                {"status": "received"},
+                headers={
+                    "X-Audit-Node": "sfm-collector-01",
+                    "X-Audit-Version": "1.2",
+                },
+            )
+
+        # =================================================
+        # API SURFACE
+        # =================================================
+        if path.startswith("/api"):
+            self.audit(request, "api_access")
+            if path == "/api/health":
+                return web.json_response(
+                    {"status": "ok", "node": "sfm-ap-01"},
+                    headers={
+                        "X-Service-Version": "3.4.1",
+                        "X-Backend": "synapse-core",
+                    },
+                )
+            return web.json_response({"error": "access_denied"}, status=403)
+
+        # =================================================
+        # HIGH INTEREST
+        # =================================================
+        if path in self.sensitive_paths:
+            self.audit(request, "sensitive_probe")
+            await asyncio.sleep(0.1)
+            return web.Response(status=403, text="Forbidden")
+
+        # =================================================
+        # CLEAN 404
+        # =================================================
+        self.audit(request, "404")
+        return web.Response(status=404, text="Not Found")
 
     async def start(self):
-        app = web.Application()
-        app.add_routes([web.route("*", "/{tail:.*}", self.handle_request)])
-        aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(self.dir))
-        middleware = SnareMiddleware(
-            error_404=self.meta["/status_404"].get("hash"),
-            headers=self.meta["/status_404"].get("headers", []),
-            server_header=self.run_args.server_header,
+        app = web.Application(
+            middlewares=[logging_middleware, server_header_middleware]
         )
-        middleware.setup_middlewares(app)
+        app.add_routes([web.route("*", "/{tail:.*}", self.handle_request)])
 
-        self.runner = web.AppRunner(app)
-        await self.runner.setup()
-        site = web.TCPSite(self.runner, self.run_args.host_ip, self.run_args.port)
+        runner = web.AppRunner(app)
+        await runner.setup()
 
+        site = web.TCPSite(
+            runner,
+            self.run_args.host_ip,
+            int(self.run_args.port),
+        )
         await site.start()
-        names = sorted(str(s.name) for s in self.runner.sites)
-        print("======== Running on {} ========\n" "(Press CTRL+C to quit)".format(", ".join(names)))
 
-    async def stop(self):
-        await self.runner.cleanup()
+        print(f"🔥 SNARE ACTIVE @ {self.run_args.host_ip}:{self.run_args.port}")
