@@ -57,6 +57,7 @@ class Cloner(object):
             "etag",
             "expires",
             "x-cache",
+            "transfer-encoding",
         ]
 
         headers = []
