@@ -101,21 +101,30 @@ class TannerHandler:
             for requested_name in possible_requests:
                 if requested_name == "/":
                     requested_name = self.run_args.index_page
-                if requested_name[-1] == "/":
-                    requested_name = requested_name[:-1]
                 requested_name = unquote(requested_name)
-                try:
-                    file_name = self.meta[requested_name]["hash"]
-                    for header in self.meta[requested_name].get("headers", []):
-                        for key, value in header.items():
-                            headers.add(key, value)
-                    # overwrite headers with legacy content-type if present and not none
-                    content_type = self.meta[requested_name].get("content_type")
-                    if content_type:
-                        headers["Content-Type"] = content_type
-                except KeyError:
-                    pass
+            
+                candidates = [requested_name]
+                if requested_name.endswith("/") and requested_name != "/":
+                    candidates.append(requested_name[:-1])
                 else:
+                    candidates.append(requested_name + "/")
+            
+                found = False
+                for candidate in candidates:
+                    try:
+                        file_name = self.meta[candidate]["hash"]
+                        for header in self.meta[candidate].get("headers", []):
+                            for key, value in header.items():
+                                headers.add(key, value)
+                        content_type = self.meta[candidate].get("content_type")
+                        if content_type:
+                            headers["Content-Type"] = content_type
+                    except KeyError:
+                        continue
+                    else:
+                        found = True
+                        break
+                if found:
                     break
 
             if not file_name:
