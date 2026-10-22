@@ -9,6 +9,9 @@ from aiohttp.web import StaticResource as StaticRoute
 from snare.middlewares import SnareMiddleware
 from snare.tanner_handler import TannerHandler
 
+# Upper bound for the raw request body that is forwarded to TANNER.
+MAX_RAW_POST_DATA = 65536
+
 
 class HttpRequestHandler:
     def __init__(self, meta, run_args, snare_uuid, debug=False, keep_alive=75, **kwargs):
@@ -44,6 +47,12 @@ class HttpRequestHandler:
             for key, val in post_data.items():
                 self.logger.info("\t- {0}: {1}".format(key, val))
             data["post_data"] = dict(post_data)
+            # request.post() only understands key=value form data. Anything
+            # else (a PHP payload, JSON, ...) ends up as a dictionary key with
+            # an empty value, or is dropped when the content type is not a
+            # form. Forward the body as it was received so it is not lost.
+            raw_body = await request.read()
+            data["post_data_raw"] = raw_body.decode("utf-8", errors="replace")[:MAX_RAW_POST_DATA]
 
         # Submit the event to the TANNER service
         event_result = await self.tanner_handler.submit_data(data)
