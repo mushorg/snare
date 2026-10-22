@@ -66,7 +66,7 @@ class TestHandleRequest(unittest.TestCase):
         )
         self.request = web.Request(
             message=message,
-            payload=None,
+            payload=aiohttp.streams.EmptyStreamReader(),
             protocol=protocol,
             payload_writer=None,
             task="POST",
